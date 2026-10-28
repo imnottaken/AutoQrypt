@@ -1,0 +1,23 @@
+{
+  "libcurl": {
+    "7.88.1": {
+      "cve_id": "CVE-2023-38545",
+      "severity": "HIGH",
+      "description": "Heap based buffer overflow in SOCKS5 proxy handshake."
+    }
+  },
+  "openssl": {
+    "1.1.1t": {
+      "cve_id": "CVE-2023-0286",
+      "severity": "HIGH",
+      "description": "X.400 address type confusion vulnerability."
+    }
+  },
+  "sqlite": {
+    "3.40.0": {
+      "cve_id": "CVE-2022-46908",
+      "severity": "MEDIUM",
+      "description": "SQLite array bounds overflow execution."
+    }
+  }
+}

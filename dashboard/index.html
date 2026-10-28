@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q-Shield OTA: Post-Quantum Automotive Firmware Authentication (PQC-02)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #23272a;
+            --panel-bg: #2c2f33;
+            --panel-border: rgba(255, 255, 255, 0.05);
+            --text-main: #ffffff;
+            --text-dim: #99aab5;
+            --accent: #7289da;
+            --success: #ffffff;
+            --danger: #ed4245;
+            --warning: #fee75c;
+        }
+
+        body {
+            margin: 0;
+            padding: 2rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 300;
+            background: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        /* Widgets Grid */
+        .metrics-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            flex: 1;
+            min-width: 140px;
+            background: #1e2124;
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 1rem;
+            /* Taller padding */
+        }
+
+        .metric-title {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            font-weight: 400;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-value {
+            font-size: 1.2rem;
+            font-weight: 300;
+            margin: 0;
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+
+        #val-ota_start {
+            color: var(--accent);
+        }
+
+        #val-install_success {
+            color: var(--text-main);
+        }
+
+        #val-attack_detected {
+            color: var(--danger);
+        }
+
+        #val-safety_block {
+            color: var(--text-main);
+        }
+
+        /* Scenario 3: 10-Chunk Grid Viewer */
+        .chunk-viewer {
+            background: #1e2124;
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chunk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .chunk-header h3 {
+            font-weight: 400;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0;
+        }
+
+        .chunk-list {
+            display: flex;
+            gap: 4px;
+        }
+
+        .chunk-box {
+            flex: 1;
+            background: transparent;
+            border: 1px solid var(--panel-border);
+            border-radius: 2px;
+            padding: 14px 0;
+            /* Taller padding */
+            text-align: center;
+            font-weight: 300;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+        .cb-PENDING {
+            border-color: var(--panel-border);
+        }
+
+        .cb-DOWNLOADED {
+            border-color: var(--accent);
+            color: var(--text-main);
+        }
+
+        .cb-VERIFIED {
+            border-color: #57F287;
+            color: #57F287;
+            background: rgba(87, 242, 135, 0.15);
+        }
+
+        .cb-CORRUPTED {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: rgba(237, 66, 69, 0.15);
+        }
+
+        .cb-RETRANSMIT {
+            border-color: var(--warning);
+            color: var(--warning);
+            background: rgba(254, 231, 92, 0.15);
+        }
+
+        .cb-ROLLBACK,
+        .cb-ABORT {
+            border-color: #9b59b6;
+            color: #9b59b6;
+            background: rgba(155, 89, 182, 0.15);
+        }
+
+        /* Scenario 6: SBOM vulnerability Tracker */
+        .sbom-viewer {
+            border: 1px solid var(--warning);
+            background: rgba(254, 231, 92, 0.08);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            /* hidden until triggered */
+        }
+
+        .sbom-viewer h2 {
+            margin: 0 0 0.5rem 0;
+            color: var(--warning);
+            display: flex;
+            align-items: center;
+            font-weight: 400;
+            gap: 0.5rem;
+        }
+
+        .cve-item {
+            background: rgba(254, 231, 92, 0.06);
+            padding: 0.75rem;
+            border-left: 2px solid var(--warning);
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--text-main);
+        }
+
+
+
+        /* Logs Section */
+        .logs-section {
+            background: #1e2124;
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            padding: 1rem;
+            /* Tighter outer padding to maximize terminal */
+            flex: 1;
+            /* Stretch to max remaining vertical space */
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .logs-section.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 100vh;
+            margin: 0;
+            border-radius: 0;
+            z-index: 1000;
+        }
+
+        .logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .logs-header h2 {
+            font-weight: 400;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .console-btn {
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--panel-border);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 400;
+        }
+
+        .console-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .console-btn.btn-danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .console-btn.btn-danger:hover {
+            background: rgba(237, 66, 69, 0.1);
+        }
+
+        .logs-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding-right: 0.5rem;
+        }
+
+        .logs-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .logs-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .log-item {
+            background: transparent;
+            border-left: 2px solid var(--panel-border);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: row;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+
+        .log-meta {
+            display: flex;
+            gap: 0.5rem;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .badge {
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 400;
+            font-size: 0.7rem;
+        }
+
+        .badge.INFO {
+            background: rgba(114, 137, 218, 0.1);
+            color: var(--accent);
+        }
+
+        .badge.WARNING {
+            background: rgba(254, 231, 92, 0.1);
+            color: var(--warning);
+        }
+
+        .badge.ERROR,
+        .badge.CRITICAL {
+            background: rgba(237, 66, 69, 0.1);
+            color: var(--danger);
+        }
+
+        .log-item.level-WARNING {
+            background-color: rgba(254, 231, 92, 0.15);
+            border-left-color: var(--warning);
+        }
+
+        .log-item.level-ERROR,
+        .log-item.level-CRITICAL {
+            background-color: rgba(237, 66, 69, 0.15);
+            border-left-color: var(--danger);
+        }
+
+        .log-message {
+            color: var(--text-main);
+            word-break: break-word;
+        }
+
+        .log-item.attack_detected {
+            border-left-color: var(--danger);
+        }
+
+        .log-item.install_success {
+            background-color: rgba(87, 242, 135, 0.15);
+            border-left-color: #57F287;
+        }
+
+        .log-item.safety_block {
+            border-left-color: var(--text-main);
+        }
+
+        .log-item.rollback,
+        .log-item.sbom_cve_block {
+            border-left-color: var(--warning);
+        }
+
+        .log-item.signature_failure,
+        .log-item.update_abort {
+            border-left-color: var(--danger);
+        }
+
+        .log-item.sbom_force_patch {
+            border-left-color: var(--warning);
+        }
+
+        #empty-logs {
+            color: var(--text-dim);
+            text-align: center;
+            margin-top: 2rem;
+            font-style: italic;
+        }
+
+        .demo-btn {
+            background: #7289da;
+            color: #ffffff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 400;
+        }
+
+        .demo-btn:hover {
+            background: #5b6eae;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(30, 33, 36, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(6px);
+        }
+
+        .modal {
+            background: #2c2f33;
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 600px;
+            padding: 1.5rem;
+            color: var(--text-main);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-weight: 500;
+            font-size: 1.25rem;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: var(--text-main);
+        }
+
+        .demo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .demo-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .demo-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .demo-item {
+            background: #23272a;
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .demo-info h4 {
+            margin: 0 0 0.25rem 0;
+            font-weight: 500;
+        }
+
+        .demo-info p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            line-height: 1.2;
+        }
+
+        .run-btn {
+            background: #7289da;
+            color: #fff;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 400;
+        }
+
+        .run-btn:hover {
+            background: #5b6eae;
+        }
+
+        /* Measured Performance Button */
+        .measured-btn {
+            background: rgba(87, 242, 135, 0.15);
+            color: #57F287;
+            border: 1px solid #57F287;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .measured-btn:hover {
+            background: rgba(87, 242, 135, 0.3);
+            box-shadow: 0 0 12px rgba(87, 242, 135, 0.2);
+        }
+
+        /* Performance Metrics Modal */
+        .perf-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(30, 33, 36, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 3vh;
+            z-index: 10001;
+            backdrop-filter: blur(6px);
+        }
+
+        .perf-modal {
+            background: #2c2f33;
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 820px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 1.5rem;
+            color: var(--text-main);
+        }
+
+        .perf-modal::-webkit-scrollbar { width: 6px; }
+        .perf-modal::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+        .perf-section {
+            margin-bottom: 1.25rem;
+        }
+
+        .perf-section h3 {
+            color: var(--accent);
+            font-weight: 500;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0 0 0.75rem 0;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--panel-border);
+        }
+
+        .perf-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .perf-item {
+            background: #23272a;
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 0.75rem 1rem;
+        }
+
+        .perf-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.25rem;
+        }
+
+        .perf-value {
+            font-size: 1.1rem;
+            font-weight: 400;
+            font-family: 'Courier New', monospace;
+            color: #57F287;
+        }
+
+        .perf-value.warn { color: var(--warning); }
+        .perf-value.danger { color: var(--danger); }
+        .perf-value.neutral { color: var(--text-main); }
+
+        .perf-item.wide {
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="modal-overlay" id="demo-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Select Simulator Scenario</h2>
+                <button class="close-btn" id="modal-close-btn"
+                    onclick="document.getElementById('demo-modal').style.display='none'">&times;</button>
+            </div>
+            <div class="demo-list">
+                <div class="demo-item">
+                    <div class="demo-info">
+                        <h4>Normal OTA Update</h4>
+                        <p>Standard chunk verification and installation success.</p>
+                    </div>
+                    <button class="run-btn" onclick="runDemo('demo_1_normal.py', 'Normal Update')">Run</button>
+                </div>
+                <div class="demo-item">
+                    <div class="demo-info">
+                        <h4>Payload Tampering Attack</h4>
+                        <p>Simulates malicious network injection catching corrupted chunks.</p>
+                    </div>
+                    <button class="run-btn" onclick="runDemo('demo_2_tampered.py', 'Tampering Attack')">Run</button>
+                </div>
+                <div class="demo-item">
+                    <div class="demo-info">
+                        <h4>Chunk Loss Retransmit</h4>
+                        <p>Asserts robust network recovery with chunk retransmissions.</p>
+                    </div>
+                    <button class="run-btn" onclick="runDemo('demo_3_retransmit.py', 'Retransmits')">Run</button>
+                </div>
+                <div class="demo-item">
+                    <div class="demo-info">
+                        <h4>OTA Resume Recovery</h4>
+                        <p>Hard interrupts the connection, then verifies seamless restart.</p>
+                    </div>
+                    <button class="run-btn" onclick="runDemo('demo_4_resume.py', 'Resume Recovery')">Run</button>
+                </div>
+                <div class="demo-item">
+                    <div class="demo-info">
+                        <h4>Rogue HSM Injection</h4>
+                        <p>Defends against unverified keys attempting to side-load updates.</p>
+                    </div>
+                    <button class="run-btn" onclick="runDemo('demo_5_rogue_hsm.py', 'Rogue Injection')">Run</button>
+                </div>
+                <div class="demo-item">
+                    <div class="demo-info">
+                        <h4>Vulnerable SBOM Scenario</h4>
+                        <p>Software Bill of Materials vulnerability halts the update.</p>
+                    </div>
+                    <button class="run-btn" onclick="runDemo('demo_6_sbom_cve.py', 'SBOM Exploit Block')">Run</button>
+                </div>
+                <div class="demo-item">
+                    <div class="demo-info">
+                        <h4>Rollback / Freeze Attack</h4>
+                        <p>Replays an old, validly-signed manifest after a newer version is installed.</p>
+                    </div>
+                    <button class="run-btn" onclick="runDemo('demo_7_rollback.py', 'Rollback Attack')">Run</button>
+                </div>
+                <div class="demo-item">
+                    <div class="demo-info">
+                        <h4>Compromised Director</h4>
+                        <p>Stolen fleet-server key alone is not enough — the separate Image key was never compromised.</p>
+                    </div>
+                    <button class="run-btn" onclick="runDemo('demo_8_compromised_director.py', 'Compromised Director')">Run</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Q-Shield OTA Console (PQC-02)</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button id="measured-btn" class="measured-btn" onclick="openPerfModal()">Measured</button>
+                <button id="demo-btn" class="demo-btn">Select Demo</button>
+            </div>
+        </header>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Updates Initiated</div>
+                <div class="metric-value" id="val-ota_start">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Retransmissions Requested</div>
+                <div class="metric-value" id="val-chunk_retransmission_requested" style="color: var(--warning)">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Successful Installs</div>
+                <div class="metric-value" id="val-install_success" style="color: #57F287">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Chunks Corrupted</div>
+                <div class="metric-value" id="val-chunk_corrupted" style="color: var(--danger)">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Update Aborts (Fail/Rollback)</div>
+                <div class="metric-value" id="val-rollback" style="color: var(--danger)">0</div>
+            </div>
+        </div>
+
+        <!-- Firmware SBOM Scanner Alert (Scenario 6) -->
+        <div class="sbom-viewer" id="sbom-viewer">
+            <h2>SBOM Supply Chain Alert</h2>
+            <div id="sbom-version-mismatch"
+                style="background: rgba(254, 231, 92, 0.06); padding: 0.5rem 0.75rem; border-left: 2px solid var(--warning); border-radius: 4px; font-family: monospace; color: var(--warning); margin-bottom: 0.5rem; display: none;">
+            </div>
+            <div class="cve-item" id="cve-details">
+                Awaiting dynamic SBOM scan results...
+            </div>
+        </div>
+
+        <!-- Real-time Chunk Grid (Scenario 3 & 4) -->
+        <div class="chunk-viewer">
+            <div class="chunk-header">
+                <h3>Payload Validation</h3>
+                <button onclick="resetChunks()"
+                    style="background:transparent; color:var(--text-dim); border:1px solid var(--panel-border); padding:6px 12px; border-radius:4px; cursor:pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; font-weight: 400; transition: all 0.2s;">&#8635;
+                    Reset</button>
+            </div>
+            <div class="chunk-list" id="chunk-list">
+                <!-- JS will inject 10 chunks here -->
+            </div>
+        </div>
+
+        <div class="logs-section" id="logs-section">
+            <div class="logs-header">
+                <div>
+                    <h2>Terminal Telemetry</h2>
+                    <span id="log-count" style="font-size: 0.7rem; color: var(--text-dim);">0 items</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="console-btn" id="fs-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen"
+                        style="display: flex; align-items: center; justify-content: center; padding: 6px 10px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3">
+                            </path>
+                        </svg>
+                    </button>
+                    <button class="console-btn btn-danger" onclick="clearLogs()">Clear</button>
+                </div>
+            </div>
+            <div class="logs-container" id="logs-container">
+                <div id="empty-logs">Waiting for vehicle telemetry...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics Modal -->
+    <div class="perf-overlay" id="perf-overlay">
+        <div class="perf-modal">
+            <div class="modal-header">
+                <h2>Session Performance Report</h2>
+                <button class="close-btn" onclick="document.getElementById('perf-overlay').style.display='none'">&times;</button>
+            </div>
+
+            <!-- Section 1: Security & Validation Overhead -->
+            <div class="perf-section">
+                <h3>1. Security & Validation Overhead</h3>
+                <div class="perf-grid">
+                    <div class="perf-item">
+                        <div class="perf-label">Cryptographic Handshake Latency</div>
+                        <div class="perf-value" id="perf-crypto-handshake">—</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Per-Chunk Validation Time</div>
+                        <div class="perf-value" id="perf-chunk-validation">—</div>
+                    </div>
+                    <div class="perf-item wide">
+                        <div class="perf-label">Manifest Parsing Speed (SBOM CVE Scan)</div>
+                        <div class="perf-value" id="perf-manifest-parse">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Update Resilience & Bandwidth -->
+            <div class="perf-section">
+                <h3>2. Update Resilience & Bandwidth</h3>
+                <div class="perf-grid">
+                    <div class="perf-item wide">
+                        <div class="perf-label">Surgical Retransmit Efficiency</div>
+                        <div class="perf-value" id="perf-retransmit-eff">—</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Cold-Start Resume Latency</div>
+                        <div class="perf-value" id="perf-resume-latency">—</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Payload-to-Metadata Ratio</div>
+                        <div class="perf-value" id="perf-payload-ratio">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Fail-Safe Recovery Speeds -->
+            <div class="perf-section">
+                <h3>3. Fail-Safe Recovery Speeds</h3>
+                <div class="perf-grid">
+                    <div class="perf-item">
+                        <div class="perf-label">Rollback Execution Time</div>
+                        <div class="perf-value" id="perf-rollback-time">—</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">Threat Mitigation Latency</div>
+                        <div class="perf-value" id="perf-threat-latency">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: System Footprint -->
+            <div class="perf-section">
+                <h3>4. System Footprint (Simulated)</h3>
+                <div class="perf-grid">
+                    <div class="perf-item">
+                        <div class="perf-label">Gateway Memory Peak</div>
+                        <div class="perf-value" id="perf-memory-peak">—</div>
+                    </div>
+                    <div class="perf-item">
+                        <div class="perf-label">I/O Throughput (Flash Write)</div>
+                        <div class="perf-value" id="perf-io-throughput">—</div>
+                    </div>
+                    <div class="perf-item wide">
+                        <div class="perf-label">Total Workflow Time</div>
+                        <div class="perf-value neutral" id="perf-total-time">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lastLogCount = 0;
+
+        // Initialize 10 chunks
+        const chunkList = document.getElementById('chunk-list');
+        for (let i = 0; i < 10; i++) {
+            const box = document.createElement('div');
+            box.className = 'chunk-box cb-PENDING';
+            box.id = `chunk-${i}`;
+            box.innerText = `#${i}`;
+            chunkList.appendChild(box);
+        }
+
+        async function runDemo(scriptName, demoTitle) {
+            document.getElementById('demo-modal').style.display = 'none';
+            document.getElementById('demo-btn').innerText = `Running: ${demoTitle}`;
+
+            try {
+                await fetch('/logs/clear', { method: 'DELETE' });
+                document.getElementById('logs-container').innerHTML = '';
+                lastLogCount = 0;
+                resetChunks();
+            } catch (e) { }
+
+            fetch('/run-demo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ script_name: scriptName })
+            });
+        }
+
+        document.getElementById('demo-btn').addEventListener('click', () => {
+            document.getElementById('demo-modal').style.display = 'flex';
+            document.getElementById('modal-close-btn').style.display = 'block'; // Allow cancel when re-opening
+        });
+
+        // Initialize modal open on load with no close option
+        window.addEventListener('load', () => {
+            document.getElementById('demo-modal').style.display = 'flex';
+            document.getElementById('modal-close-btn').style.display = 'none';
+        });
+
+        function resetChunks() {
+            for (let i = 0; i < 10; i++) {
+                const box = document.getElementById(`chunk-${i}`);
+                if (box) box.className = 'chunk-box cb-PENDING';
+            }
+            document.getElementById('sbom-viewer').style.display = 'none';
+            document.getElementById('sbom-version-mismatch').style.display = 'none';
+            document.getElementById('cve-details').innerText = 'Awaiting dynamic SBOM scan results...';
+        }
+
+        function updateMetrics(metricsData) {
+            const m = metricsData.metrics || {};
+            const updateField = (id, val) => {
+                const el = document.getElementById(id);
+                if (el && el.innerText !== String(val)) {
+                    el.innerText = val;
+                }
+            };
+
+            updateField('val-ota_start', m.ota_start || 0);
+            updateField('val-install_success', m.install_success || 0);
+            updateField('val-chunk_corrupted', m.chunk_corrupted || 0);
+            updateField('val-chunk_retransmission_requested', m.chunk_retransmission_requested || 0);
+            // Combine failures and rollbacks into aborts
+            const aborts = (m.rollback || 0) + (m.chunk_retry_exceeded || 0) + (m.signature_failure || 0) + (m.update_abort || 0);
+            updateField('val-rollback', aborts);
+
+            document.getElementById('log-count').innerText = `${metricsData.total_logs || 0} Events`;
+        }
+
+        // State priority: higher number = more advanced state, never downgrade
+        const CHUNK_PRIORITY = {
+            'cb-PENDING': 0,
+            'cb-DOWNLOADED': 1,
+            'cb-CORRUPTED': 2,
+            'cb-RETRANSMIT': 2,
+            'cb-VERIFIED': 3,
+            'cb-ROLLBACK': 4
+        };
+
+        function setChunkState(box, newClass) {
+            const currentClass = box.className.replace('chunk-box ', '').trim();
+            const currentPriority = CHUNK_PRIORITY[currentClass] || 0;
+            const newPriority = CHUNK_PRIORITY[newClass] || 0;
+            // Only allow forward transitions (or same-level lateral like CORRUPTED↔RETRANSMIT)
+            if (newPriority >= currentPriority) {
+                box.className = 'chunk-box ' + newClass;
+            }
+        }
+
+        function processLogEvent(log) {
+            // Update visual chunk grid
+            if (log.chunk_id !== undefined && log.chunk_id >= 0 && log.chunk_id < 10) {
+                const box = document.getElementById(`chunk-${log.chunk_id}`);
+                if (box) {
+                    if (log.event_type === "chunk_downloaded") {
+                        setChunkState(box, 'cb-DOWNLOADED');
+                    } else if (log.event_type === "chunk_corrupted") {
+                        setChunkState(box, 'cb-CORRUPTED');
+                    } else if (log.event_type === "chunk_retransmission_requested") {
+                        setChunkState(box, 'cb-RETRANSMIT');
+                    } else if (log.event_type === "chunk_verified" || log.event_type === "chunk_verified_resume") {
+                        setChunkState(box, 'cb-VERIFIED');
+                    }
+                }
+            }
+
+            // SBOM events (Scenario 6)
+            if (log.event_type === "sbom_scan_started") {
+                document.getElementById('sbom-viewer').style.display = 'block';
+                document.getElementById('cve-details').innerText = 'Scanning component manifest against CVE database...';
+                document.getElementById('cve-details').style.color = 'var(--text-main)';
+                document.getElementById('cve-details').style.borderLeftColor = 'var(--warning)';
+            }
+            if (log.event_type === "sbom_version_mismatch") {
+                const mismatchEl = document.getElementById('sbom-version-mismatch');
+                mismatchEl.style.display = 'block';
+                mismatchEl.style.color = 'var(--danger)';
+                mismatchEl.style.borderLeftColor = 'var(--danger)';
+                mismatchEl.innerText = '✗ ' + log.message;
+            }
+            if (log.event_type === "sbom_cve_block") {
+                const cveEl = document.getElementById('cve-details');
+                cveEl.style.color = 'var(--danger)';
+                cveEl.style.borderLeftColor = 'var(--danger)';
+                if (log.cve_meta) {
+                    cveEl.innerText = `✗ [CVE DETECTED] ${log.cve_meta.name} @ ${log.cve_meta.version} | ${log.cve_meta.cve_id} | SEVERITY: ${log.cve_meta.severity}`;
+                } else {
+                    cveEl.innerText = '✗ ' + log.message;
+                }
+            }
+            if (log.event_type === "sbom_force_patch") {
+                const mismatchEl = document.getElementById('sbom-version-mismatch');
+                mismatchEl.style.color = 'var(--warning)';
+                mismatchEl.style.borderLeftColor = 'var(--warning)';
+                mismatchEl.innerText = '⚠ ' + log.message;
+            }
+            if (log.event_type === "sbom_corrected") {
+                const mismatchEl = document.getElementById('sbom-version-mismatch');
+                mismatchEl.style.color = '#57F287';
+                mismatchEl.style.borderLeftColor = '#57F287';
+                mismatchEl.innerText = '✓ ' + log.message;
+                document.getElementById('cve-details').style.color = '#57F287';
+                document.getElementById('cve-details').style.borderLeftColor = '#57F287';
+                document.getElementById('cve-details').innerText = '✓ CVE resolved — safe to proceed with OTA.';
+            }
+            if (log.event_type === "ota_start") {
+                for (let i = 0; i < 10; i++) {
+                    const box = document.getElementById(`chunk-${i}`);
+                    if (box) box.className = 'chunk-box cb-PENDING';
+                }
+            }
+
+            if (log.event_type === "rollback" || log.event_type === "safety_block" || log.event_type === "update_abort" || log.event_type === "signature_failure") {
+                for (let i = 0; i < 10; i++) {
+                    const box = document.getElementById(`chunk-${i}`);
+                    if (box) box.className = 'chunk-box cb-ROLLBACK';
+                }
+                // Hide SBOM div on rollback/abort — not relevant for this demo
+                document.getElementById('sbom-viewer').style.display = 'none';
+            }
+        }
+
+        const uiQueue = [];
+        let isProcessingQueue = false;
+
+        async function processUIQueue() {
+            if (isProcessingQueue) return;
+            isProcessingQueue = true;
+
+            const container = document.getElementById('logs-container');
+            const emptyState = document.getElementById('empty-logs');
+            if (uiQueue.length > 0 && emptyState) emptyState.remove();
+
+            while (uiQueue.length > 0) {
+                const log = uiQueue.shift();
+
+                // levelClass/event_type come from server-controlled log levels/event
+                // names (not free text), so they're safe to use as class tokens.
+                const levelClass = log.level || 'INFO';
+                const div = document.createElement('div');
+                div.className = `log-item level-${levelClass} ${log.event_type || ''}`;
+
+                let timeStr = "00:00:00";
+                if (log.timestamp) {
+                    try {
+                        timeStr = new Date(log.timestamp).toLocaleTimeString();
+                    } catch (e) { }
+                }
+
+                // Build structure with innerHTML, but never interpolate untrusted
+                // fields (message/logger/device_id) directly into markup — set
+                // them afterward via textContent so HTML in a log payload can't
+                // execute (stored XSS via /ingest).
+                div.innerHTML = `
+                    <div class="log-meta">
+                        <span class="badge ${levelClass}">${levelClass}</span>
+                        <span>${timeStr}</span>
+                        <span class="log-logger"></span>
+                        <span class="log-device" style="display:none"></span>
+                    </div>
+                    <div class="log-message"></div>
+                `;
+                div.querySelector('.log-logger').textContent = `[${log.logger || 'system'}]`;
+                if (log.device_id) {
+                    const deviceEl = div.querySelector('.log-device');
+                    deviceEl.textContent = `(${log.device_id})`;
+                    deviceEl.style.display = '';
+                }
+                div.querySelector('.log-message').textContent = log.message || JSON.stringify(log);
+
+                container.insertBefore(div, container.firstChild);
+                processLogEvent(log);
+                checkPerfAvailable(log);
+
+                // Provide visual staggered delay (35ms for fast but traceable progression)
+                await new Promise(r => setTimeout(r, 35));
+            }
+
+            isProcessingQueue = false;
+        }
+
+        function renderLogs(logs) {
+            const container = document.getElementById('logs-container');
+
+            // Handle Server Restarts (if logs abruptly reset)
+            if (logs.length < lastLogCount) {
+                container.innerHTML = '';
+                lastLogCount = 0;
+                uiQueue.length = 0;
+                resetChunks();
+            }
+
+            if (logs.length > lastLogCount) {
+                const newLogs = logs.slice(lastLogCount);
+                for (const log of newLogs) {
+                    uiQueue.push(log);
+                }
+                lastLogCount = logs.length;
+                processUIQueue();
+            }
+        }
+
+        async function fetchDashboardData() {
+            try {
+                const resM = await fetch('/metrics');
+                if (resM.ok) updateMetrics(await resM.json());
+
+                // If processing queue heavily, skip fetching new logs to avoid backpressure race condition overrides
+                if (!isProcessingQueue || uiQueue.length < 50) {
+                    const resL = await fetch('/logs');
+                    if (resL.ok) renderLogs(await resL.json());
+                }
+            } catch (err) { }
+        }
+
+        async function clearLogs() {
+            try {
+                await fetch('/logs/clear', { method: 'DELETE' });
+                document.getElementById('logs-container').innerHTML = '';
+                lastLogCount = 0;
+                uiQueue.length = 0;
+                resetChunks();
+            } catch (e) { }
+        }
+
+        function toggleFullscreen() {
+            const section = document.getElementById('logs-section');
+            section.classList.toggle('fullscreen');
+            const fsBtn = document.getElementById('fs-btn');
+            if (section.classList.contains('fullscreen')) {
+                fsBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3h-3M16 3v3h3M8 21v-3h-3M16 21v-3h3M3 8l5-5M21 8l-5-5M3 16l5 5M21 16l-5 5"></path></svg>';
+            } else {
+                fsBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>';
+            }
+        }
+
+        async function openPerfModal() {
+            const overlay = document.getElementById('perf-overlay');
+            overlay.style.display = 'flex';
+            try {
+                const res = await fetch('/perf');
+                if (res.ok) {
+                    const p = await res.json();
+                    // Section 1
+                    setText('perf-crypto-handshake', p.crypto_handshake_latency_ms, 'ms');
+                    setText('perf-chunk-validation', p.per_chunk_validation_time_us, 'μs');
+                    setText('perf-manifest-parse', p.manifest_parsing_speed_ms, 'ms');
+                    // Section 2
+                    setTextRaw('perf-retransmit-eff', p.surgical_retransmit_efficiency);
+                    setText('perf-resume-latency', p.cold_start_resume_latency_ms, 'ms');
+                    setTextRaw('perf-payload-ratio', p.payload_to_metadata_ratio
+                        ? `${p.payload_to_metadata_ratio} (${p.firmware_payload_bytes || '?'}B payload / ${p.security_metadata_bytes || '?'}B meta)`
+                        : null);
+                    // Section 3
+                    setText('perf-rollback-time', p.rollback_execution_time_ms, 'ms');
+                    setText('perf-threat-latency', p.threat_mitigation_latency_us, 'μs');
+                    // Section 4
+                    setText('perf-memory-peak', p.gateway_memory_peak_kb, 'KB');
+                    setText('perf-io-throughput', p.io_throughput_mbps, 'MB/s');
+                    setText('perf-total-time', p.total_workflow_time_ms, 'ms');
+                }
+            } catch(e) { console.error('Perf fetch error', e); }
+        }
+
+        function setText(id, val, suffix) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = val !== undefined && val !== null ? `${val} ${suffix}` : 'N/A (not triggered)';
+        }
+        function setTextRaw(id, val) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = val || 'N/A (not triggered)';
+        }
+
+        // Track perf availability (button is always visible, no-op here)
+        function checkPerfAvailable(log) {
+            // No-op: Measured button is always visible
+        }
+
+        fetchDashboardData();
+        setInterval(fetchDashboardData, 1000); // Poll slightly faster for UI responsiveness
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Logs
+*.log
+demo_trace*.txt
+demo_out.txt
+demo_cmd_out.txt
+tree.txt
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+audit/audit_log.json

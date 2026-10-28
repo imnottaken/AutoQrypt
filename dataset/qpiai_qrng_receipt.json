@@ -1,14 +1,14 @@
 {
-  "job_id": "qpiai-qsv-5f74212806d8",
+  "job_id": "qpiai-qsv-e7f6602d479c",
   "experiment_name": "PQC02_Automotive_QRNG_Seed",
   "device_name": "QpiAI-QSV-Local",
   "qubits": 8,
   "shots": 1024,
-  "shannon_entropy": 7.8069,
-  "nist_min_entropy": 6.8301,
+  "shannon_entropy": 7.8248,
+  "nist_min_entropy": 6.0931,
   "entropy_health_pass": true,
-  "seed_sha256": "2ca985fd0097b64bbfeca1c79a223c43b3e18253436b1631ced935451c61595e",
-  "seed_bytes_hex": "303c8e0757a042de534be7c1eee7cef9bb685b40f107eb11fac6ce5c5d53baaa",
-  "timestamp": "2026-10-28T14:27:03.845651+00:00",
+  "seed_sha256": "661a9f977980cb2df89345a5f5724902fdfc6b94d84ee6ac9be48701c240035b",
+  "seed_bytes_hex": "3fb9795c52aafd8c44de508e58982085c5b53291e8faa933f390b87c79c12a72",
+  "timestamp": "2026-10-28T14:41:16.296013+00:00",
   "backend_mode": "QpiAI-QSV-Local (Statevector Simulator)"
 }

@@ -89,8 +89,8 @@ class QpiAIEntropyEngine:
             return "None / Not configured"
         clean_key = self.api_key.strip("'\"")
         if len(clean_key) <= 8:
-            return "****"
-        return f"{clean_key[:4]}****...{clean_key[-4:]}"
+            return "qpi_****"
+        return f"qpi_{clean_key[:4]}****...{clean_key[-4:]}"
 
     def generate_qrng_seed(
         self,

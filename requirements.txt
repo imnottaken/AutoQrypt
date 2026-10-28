@@ -4,3 +4,7 @@ cryptography==50.0.1
 pydantic==2.13.5
 requests==2.34.2
 httpx==0.28.1
+qpiai-quantum>=0.7.5
+cbor2>=6.1.5
+dilithium-py>=1.5.1
+python-dotenv>=1.0.0

@@ -5,7 +5,9 @@ __pycache__/
 
 # Environments
 .env
+qcloud.env
 .venv
+output/
 env/
 venv/
 ENV/

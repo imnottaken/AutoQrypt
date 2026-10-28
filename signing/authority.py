@@ -79,10 +79,16 @@ class SigningAuthority:
 def _verify(public_key_bytes: bytes, payload: bytes, signature_b64: str) -> bool:
     try:
         signature = base64.b64decode(signature_b64)
+        # NIST FIPS 204 (ML-DSA-44 / Dilithium2): 1,312-byte public key
+        if len(public_key_bytes) == 1312:
+            from dilithium_py.dilithium import Dilithium2
+            return Dilithium2.verify(public_key_bytes, payload, signature)
+        
+        # Classical Ed25519 (32-byte public key)
         public_key = ed25519.Ed25519PublicKey.from_public_bytes(public_key_bytes)
         public_key.verify(signature, payload)
         return True
-    except (InvalidSignature, ValueError, TypeError):
+    except (InvalidSignature, ValueError, TypeError, Exception):
         return False
 
 

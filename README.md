@@ -55,12 +55,17 @@ The system implements a three-tier security model:
 ```
 AutoQrypt/
 ├── main.py                 # Orchestrator (Server & Vehicle runtime)
-├── requirements.txt        # Dependencies (FastAPI, Cryptography, Pydantic)
+├── requirements.txt        # Dependencies (FastAPI, Cryptography, Pydantic, qpiai-quantum)
+├── qcloud.env.example      # QpiAI QCloud & Bloq API environment template
+├── dataset/                # Automotive ECU hardware profiles & constraints
+├── notebooks/              # Bloq Platform Jupyter optimization workflows
+├── src/sponsors/           # QpiAI QRNG entropy engine & Bloq QUBO optimizer
+├── tests/                  # Verification test suites (test_sponsors.py)
 ├── build_pipeline/         # Firmware release assembly & Image signing
 ├── server/                 # Cloud OTA distribution service (Director role)
 ├── vehicle/                # Gateway ECU, chunk manager, and installer
 ├── signing/                # Cryptographic signing authorities & digest binding
-├── key_management/         # Simulated Hardware Security Module (HSM)
+├── key_management/         # Hardware Security Module (HSM) with PQC/QRNG support
 ├── merkle/                 # HMAC leaf hashing and root reconstruction
 ├── sbom/                   # SBOM generator & local CVE database
 ├── attacker/               # MITM adversary simulation (bitflip, truncation, replay)
@@ -133,12 +138,27 @@ python scripts/demo_8_compromised_director.py
 
 ---
 
-## Current Status & PQC Transition Roadmap
+## Quantum Integrations (QpiAI QCloud & Bloq Platform)
 
-The current implementation provides the verified architectural pipeline, state machines, and threat-mitigation logic.
+AutoQrypt integrates sponsor technologies across quantum entropy generation and algorithmic agility optimization:
 
-- **Current Baseline:** Dual-role Ed25519 signatures, HMAC-SHA256 chunk trees, and local CVE feeds.
-- **PQC Migration Path:**
-  1. Replace Ed25519 in `key_management/hsm.py` and `signing/authority.py` with **ML-DSA-44** (NIST FIPS 204) and **Falcon-512** via `liboqs`.
-  2. Implement hybrid signature wrappers (`Ed25519 + ML-DSA-44`) for backwards compatibility.
-  3. Integrate hardware entropy sources (QRNG) for key seed generation.
+### 1. QpiAI QCloud Quantum Entropy Engine (`src/sponsors/qpiai_qcloud.py`)
+- **Quantum Circuit:** Executes an 8-qubit Hadamard superposition circuit ($H^{\otimes 8} |0\rangle^{\otimes 8}$) with measurement collapse (`PQC02_Automotive_QRNG_Seed`).
+- **Execution Target:** Supports remote authentication via `QpiAIQuantumAuth` against `qcloud.qpiai.tech` and falls back automatically to local `QpiAI-QSV-Local` (StatevectorSimulator) for offline determinism.
+- **Entropy Health Tests:** Evaluates Shannon entropy and NIST SP 800-90B min-entropy thresholds, returning a structured `QpiAIEntropyReceipt`.
+- **PQC Key Seeding:** Feeds the certified 32-byte quantum entropy directly into NIST FIPS 204 (`ML-DSA-44` / Dilithium2) keypair derivation in `key_management/hsm.py`.
+
+### 2. Bloq Quantum Crypto-Agility Optimizer (`src/sponsors/bloq_platform.py`)
+- **QUBO / QAOA Cost Hamiltonian:** Solves constrained algorithm assignment over automotive ECU hardware profiles (`dataset/ecu_hardware_profiles.json`):
+  $$\min \sum_{e,a} \left[ w_1 \frac{\text{RAM}_{e,a}}{\text{RAM}_e^{\max}} + w_2 \frac{\text{Frames}_{e,a}}{\text{Bandwidth}_e} + w_3 \frac{\text{Latency}_{e,a}}{\text{Deadline}_e} \right] x_{e,a} + \lambda \sum_e \left(1 - \sum_a x_{e,a}\right)^2$$
+- **Assignment Results:**
+  - `ECU-01-BRAKE` (64KB RAM, CAN-FD, ASIL-D) $\rightarrow$ **Falcon-512** (666-byte signature, 11 CAN-FD frames, 0.94ms latency) + 32-byte OTP eFuse hash pinning.
+  - `ECU-02-BMS` (128KB RAM, CAN-FD) $\rightarrow$ **ML-DSA-44** (NIST FIPS 204 primary standard, integer-only lattice arithmetic).
+  - `ECU-03-ADAS` (512KB RAM, 100Mbps Ethernet) $\rightarrow$ **ML-DSA-44 + SPHINCS+-128s** (Hybrid lattice + stateless hash root anchor for 20-year platform longevity).
+- **Bloq Notebook Export:** Generates `notebooks/bloq_pqc_ota_optimizer.ipynb` ready for execution in the Bloq Experiments UI at `platform.bloq.in`.
+
+### Running Verification Suite
+```bash
+python3 tests/test_sponsors.py
+```
+

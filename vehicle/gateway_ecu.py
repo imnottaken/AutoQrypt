@@ -48,6 +48,7 @@ class GatewayECU:
         workflow_start = time.perf_counter()
         
         self.perf = {}  # Reset metrics for this session
+        self.hybrid_verified = False
         
         self.logger.info(f"Starting OTA update to version {requested_version}", event_type="ota_start", device_id=self.device_id)
 
@@ -121,16 +122,21 @@ class GatewayECU:
             manifest.merkle_root, manifest.sbom_hash, manifest.metadata_signature
         )
 
-        image_pqc_valid = True
-        if manifest.metadata_signature_pqc and self.pinned_image_pqc_pub:
-            image_pqc_valid = SigningAuthority.verify_manifest_signature_pqc(
-                self.pinned_image_pqc_pub, manifest.version, manifest.build_number,
-                manifest.merkle_root, manifest.sbom_hash, manifest.metadata_signature_pqc
-            )
+        # MANDATORY hybrid policy: the ML-DSA-44 signature is verified unconditionally.
+        # An absent signature or unpinned PQC key is a rejection, never a skip.
+        image_pqc_valid = SigningAuthority.verify_manifest_signature_pqc(
+            self.pinned_image_pqc_pub, manifest.version, manifest.build_number,
+            manifest.merkle_root, manifest.sbom_hash, manifest.metadata_signature_pqc
+        )
 
         if not (image_classical_valid and image_pqc_valid):
             threat_detect_time = time.perf_counter_ns()
-            failure_reason = "IMAGE_PQC_SIGNATURE_VERIFICATION_FAILURE" if not image_pqc_valid else "IMAGE_SIGNATURE_VERIFICATION_FAILURE"
+            if not manifest.metadata_signature_pqc:
+                failure_reason = "IMAGE_PQC_SIGNATURE_MISSING"
+            elif not image_pqc_valid:
+                failure_reason = "IMAGE_PQC_SIGNATURE_VERIFICATION_FAILURE"
+            else:
+                failure_reason = "IMAGE_SIGNATURE_VERIFICATION_FAILURE"
             self.logger.critical(
                 f"IMAGE SIGNATURE VERIFICATION FAILED ({failure_reason}). Director authorization was valid, but this firmware "
                 "failed PQ/T Hybrid 2FA verification. Rejecting despite valid Director signature.",
@@ -148,11 +154,11 @@ class GatewayECU:
             self._emit_perf_report(workflow_start)
             return
 
-        if manifest.metadata_signature_pqc:
-            self.logger.info(
-                "PQ/T Hybrid 2FA Verification: Classical Ed25519 [PASS] + Quantum ML-DSA-44 [PASS].",
-                event_type="pqc_hybrid_verified", device_id=self.device_id
-            )
+        self.hybrid_verified = True
+        self.logger.info(
+            "PQ/T Hybrid 2FA Verification: Classical Ed25519 [PASS] + Quantum ML-DSA-44 [PASS].",
+            event_type="pqc_hybrid_verified", device_id=self.device_id
+        )
 
         # 2b. Director <-> Image binding — the Director must be pointing at
         # THIS exact image, not mixing a valid Director signature with
@@ -341,7 +347,7 @@ class GatewayECU:
         self.perf["stack_high_water_mark_bytes"] = 18640  # 18.2 KB inside 520 KB SRAM ESP32 budget
         self.perf["sram_utilization_pct"] = "3.58% of 520 KB"
         self.perf["active_partition_slot"] = self.installer.active_partition
-        self.perf["pqt_hybrid_status"] = "ML-DSA-44 + Ed25519 (2FA Verified)"
+        self.perf["pqt_hybrid_status"] = "ML-DSA-44 + Ed25519 (2FA Verified)" if self.hybrid_verified else "NOT VERIFIED (hybrid check failed or not reached)"
         
         # Total workflow time
         self.perf["total_workflow_time_ms"] = round((time.perf_counter() - workflow_start) * 1000, 2)

@@ -157,9 +157,9 @@ def run_vehicle_node():
             # already moved past -- distinct from Demo 5's rogue/untrusted
             # key scenario, where the signature itself fails to verify.
             old_firmware = b"\xef\xbe\xad\xde" * 320
-            old_manifest, _ = build_firmware_release(old_firmware, "v1.0.0", 1, IMAGE_HSM, FACTORY_HMAC_SECRET)
+            old_manifest, _ = build_firmware_release(old_firmware, "v1.0.0", 1, IMAGE_HSM, FACTORY_HMAC_SECRET, pqc_hsm=IMAGE_PQC_HSM)
             old_digest = compute_image_digest(old_manifest.version, old_manifest.build_number, old_manifest.merkle_root, old_manifest.sbom_hash)
-            replay_director_sig = SigningAuthority(SimulatedHSM(seed=DIRECTOR_HSM_SEED)).generate_director_signature(
+            replay_director_sig = SigningAuthority(SimulatedHSM(seed=DIRECTOR_HSM_SEED, algorithm="FALCON-512")).generate_director_signature(
                 "VEH-1", old_manifest.version, old_manifest.build_number, old_digest
             )
             ecu.mitm_actor.replay_manifest = {
@@ -179,10 +179,11 @@ def run_vehicle_node():
             # simulates the whole trust chain being wrong; this simulates
             # ONLY the online role being compromised, which alone must not
             # be enough to install arbitrary code.
-            stolen_director_authority = SigningAuthority(SimulatedHSM(seed=DIRECTOR_HSM_SEED))
+            stolen_director_authority = SigningAuthority(SimulatedHSM(seed=DIRECTOR_HSM_SEED, algorithm="FALCON-512"))
             rogue_image_hsm = SimulatedHSM()  # attacker does NOT have the real Image key
+            rogue_image_pqc_hsm = SimulatedHSM(algorithm="ML-DSA-44")  # ...nor the real ML-DSA key
             fake_firmware = b"\x90\x90\x90\x90" * 320  # attacker-fabricated payload
-            fake_manifest, _ = build_firmware_release(fake_firmware, "v9.9.9", 999, rogue_image_hsm, FACTORY_HMAC_SECRET)
+            fake_manifest, _ = build_firmware_release(fake_firmware, "v9.9.9", 999, rogue_image_hsm, FACTORY_HMAC_SECRET, pqc_hsm=rogue_image_pqc_hsm)
             fake_digest = compute_image_digest(fake_manifest.version, fake_manifest.build_number, fake_manifest.merkle_root, fake_manifest.sbom_hash)
             forged_director_sig = stolen_director_authority.generate_director_signature(
                 "VEH-1", fake_manifest.version, fake_manifest.build_number, fake_digest

@@ -27,3 +27,11 @@ tree.txt
 .DS_Store
 
 audit/audit_log.json
+
+# Dev signing keys (simulated HSM)
+key_management/.keystore/
+
+# ESP-IDF build outputs
+firmware/build/
+firmware/sdkconfig
+firmware/sdkconfig.old

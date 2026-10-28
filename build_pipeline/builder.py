@@ -51,6 +51,7 @@ def build_firmware_release(
         leaf_hashes=leaf_hashes,
         total_chunks=len(chunks),
         sbom_hash=sbom_hash,
+        sbom=sbom_artifact["sbom"],
         metadata_signature=signature_b64,
         metadata_signature_pqc=signature_pqc_b64
     )

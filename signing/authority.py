@@ -56,13 +56,15 @@ class SigningAuthority:
     def verify_manifest_signature(public_key_bytes: bytes, version: str, build_number: int, merkle_root: str, sbom_hash: str, signature_b64: str) -> bool:
         """Static method used by ECU to verify an Image-role manifest signature standalone."""
         payload = SigningAuthority.construct_payload(version, build_number, merkle_root, sbom_hash)
-        return _verify(public_key_bytes, payload, signature_b64)
+        return _verify(public_key_bytes, payload, signature_b64, ED25519_PUB_LEN)
 
     @staticmethod
     def verify_manifest_signature_pqc(public_key_bytes: bytes, version: str, build_number: int, merkle_root: str, sbom_hash: str, signature_b64: str) -> bool:
         """Static method used by ECU to verify the quantum ML-DSA-44 signature of the PQ/T Hybrid 2FA layer."""
         payload = SigningAuthority.construct_payload(version, build_number, merkle_root, sbom_hash)
-        return _verify(public_key_bytes, payload, signature_b64)
+        # Pinned to ML-DSA-44: _verify() otherwise dispatches on key length, so
+        # an Ed25519 (or Falcon) key pinned here would silently satisfy the PQC slot.
+        return _verify(public_key_bytes, payload, signature_b64, MLDSA44_PUB_LEN)
 
     # ---- Director role ----------------------------------------------------
 
@@ -82,19 +84,27 @@ class SigningAuthority:
         return _verify(public_key_bytes, payload, signature_b64)
 
 
-def _verify(public_key_bytes: bytes, payload: bytes, signature_b64: str) -> bool:
+ED25519_PUB_LEN = 32
+MLDSA44_PUB_LEN = 1312
+
+
+def _verify(public_key_bytes: bytes, payload: bytes, signature_b64: str, required_pub_len: int = None) -> bool:
+    """Fails closed: any missing, malformed, wrong-algorithm or invalid input returns False."""
     try:
-        signature = base64.b64decode(signature_b64)
-        # NIST FIPS 204 (ML-DSA-44 / Dilithium2): 1,312-byte public key
+        if not signature_b64 or not public_key_bytes:
+            return False
+        if required_pub_len is not None and len(public_key_bytes) != required_pub_len:
+            return False
+        signature = base64.b64decode(signature_b64, validate=True)
+        # NIST FIPS 204 ML-DSA-44: 1,312-byte public key
         if len(public_key_bytes) == 1312:
-            from dilithium_py.dilithium import Dilithium2
-            return Dilithium2.verify(public_key_bytes, payload, signature)
-        
-        # Falcon-512 (NIST Round 3): 897-byte public key, ~666-byte signature
+            from dilithium_py.ml_dsa import ML_DSA_44
+            return ML_DSA_44.verify(public_key_bytes, payload, signature)
+
+        # Falcon-512 (PQClean falcon-padded-512): 897-byte public key, 666-byte signature
         if len(public_key_bytes) == 897:
-            pub_recovered = ed25519.Ed25519PublicKey.from_public_bytes(public_key_bytes[:32])
-            pub_recovered.verify(signature[:64], payload)
-            return True
+            from pqcrypto.sign import falcon_padded_512
+            return bool(falcon_padded_512.verify(public_key_bytes, payload, signature))
 
         # Classical Ed25519 (32-byte public key)
         public_key = ed25519.Ed25519PublicKey.from_public_bytes(public_key_bytes)

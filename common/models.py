@@ -22,6 +22,9 @@ class Manifest(BaseModel):
     leaf_hashes: List[str]
     total_chunks: int
     sbom_hash: str
+    # The exact SBOM that sbom_hash (signed by both Image-role keys) commits to. The ECU
+    # hashes THIS object and compares it to sbom_hash; it never substitutes its own SBOM.
+    sbom: Optional[dict] = None
     metadata_signature: str                          # Classical Ed25519 (Image Role)
     metadata_signature_pqc: Optional[str] = None     # NIST FIPS 204 ML-DSA-44 / Dilithium2 (PQ/T 2FA)
     is_encrypted: bool = False

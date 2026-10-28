@@ -37,14 +37,18 @@ class SBOMGenerator:
 
         return deps
 
+    @staticmethod
+    def compute_hash(sbom_data: dict) -> str:
+        """Canonical SBOM digest: SHA-256 over json.dumps(sort_keys=True). Builder and ECU must both use this."""
+        return hashlib.sha256(json.dumps(sbom_data, sort_keys=True).encode('utf-8')).hexdigest()
+
     def build_sbom(self) -> dict:
         """Constructs the JSON SBOM and computes its digest."""
         sbom_data = {
             "spec_version": "1.4",
             "components": self._get_active_dependencies()
         }
-        sbom_str = json.dumps(sbom_data, sort_keys=True)
-        sbom_hash = hashlib.sha256(sbom_str.encode('utf-8')).hexdigest()
+        sbom_hash = self.compute_hash(sbom_data)
         
         return {
             "sbom": sbom_data,

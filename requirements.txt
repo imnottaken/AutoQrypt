@@ -7,4 +7,6 @@ httpx==0.28.1
 qpiai-quantum>=0.7.5
 cbor2>=6.1.5
 dilithium-py>=1.5.1
+pqcrypto==0.4.0
+pyserial>=3.5
 python-dotenv>=1.0.0

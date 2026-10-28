@@ -207,11 +207,14 @@ class GatewayECU:
         # 3. SBOM Manifest Validation (Zone 3)
         sbom_gen = SBOMGenerator()
         
-        # In reality, this comes from manifest_data["_raw_sbom"]. 
-        # Since our mock OTA server doesn't host the bulky JSON directly, we simulate fetching it.
-        raw_sbom = manifest_data.get("_raw_sbom")
-        if not raw_sbom:
-            raw_sbom = sbom_gen.build_sbom().get("sbom", {})
+        # The SBOM shipped in the manifest is hashed and compared to the signed sbom_hash before
+        # anything is read from it. A missing SBOM is a rejection; we never regenerate our own.
+        raw_sbom = manifest.sbom
+        if not isinstance(raw_sbom, dict) or not raw_sbom:
+            return self._abort('SBOM_MISSING', 'sbom_missing', 'SBOM MISSING or malformed - cannot validate supply chain. Rejecting.', workflow_start)
+        if SBOMGenerator.compute_hash(raw_sbom) != manifest.sbom_hash:
+            return self._abort('SBOM_HASH_MISMATCH', 'sbom_hash_mismatch',
+                               'SBOM HASH MISMATCH - SBOM content does not match the signed sbom_hash. Rejecting.', workflow_start)
 
         # ---- PERF: Manifest Parsing Speed (SBOM scan) ----
         sbom_scan_start = time.perf_counter()
@@ -221,7 +224,7 @@ class GatewayECU:
         # ---- END PERF ----
 
         # Calculate metadata sizes for ratio
-        manifest_json_size = len(json.dumps(manifest_data).encode('utf-8'))
+        manifest_json_size = len(json.dumps({k: v for k, v in manifest_data.items() if k != "sbom"}).encode('utf-8'))
         sbom_json_size = len(json.dumps(raw_sbom).encode('utf-8'))
         
         if not is_safe:
@@ -290,7 +293,8 @@ class GatewayECU:
         # manifest-provided (now root-verified) leaf hash — no separate,
         # unauthenticated "dummy fetch" needed to derive trusted hashes.
         manager = ChunkManager(self.server, self.hmac_secret, self.logger)
-        success = manager.fetch_and_verify(manifest.total_chunks, manifest.leaf_hashes, self.mitm_actor, force_interrupt_at=force_interrupt_at)
+        success = manager.fetch_and_verify(manifest.total_chunks, manifest.leaf_hashes, self.mitm_actor,
+                                           force_interrupt_at=force_interrupt_at, merkle_root=manifest.merkle_root)
         
         # Collect chunk-level perf metrics from manager
         self.perf.update(manager.perf)
@@ -310,7 +314,12 @@ class GatewayECU:
             self._emit_perf_report(workflow_start)
             return
 
-        validated_payload = manager.assemble_binary(manifest.total_chunks)
+        # Final gate: every chunk must be present and re-verify against the authenticated leaf hashes.
+        try:
+            validated_payload = manager.assemble_binary(manifest.total_chunks, manifest.leaf_hashes)
+        except ValueError as e:
+            return self._abort("FINAL_IMAGE_INTEGRITY_FAILURE", "final_image_integrity_failure",
+                               f"Assembled firmware failed final integrity check: {e}. Rejecting.", workflow_start)
         firmware_size = len(validated_payload)
 
         # Compute payload-to-metadata ratio
@@ -336,6 +345,16 @@ class GatewayECU:
             # written, so there's nothing to roll back — just abort the workflow.
             self.logger.critical("UPDATE ABORTED — Safety interlocks not satisfied.", event_type="update_abort", device_id=self.device_id)
 
+        self._emit_perf_report(workflow_start)
+
+    def _abort(self, reason: str, event_type: str, message: str, workflow_start: float):
+        """Common rejection path: log, roll back, report. Callers `return self._abort(...)`."""
+        t0 = time.perf_counter_ns()
+        self.logger.critical(message, event_type=event_type, device_id=self.device_id)
+        rb = time.perf_counter()
+        self.installer.rollback(reason=reason)
+        self.perf["rollback_execution_time_ms"] = round((time.perf_counter() - rb) * 1000, 2)
+        self.perf["threat_mitigation_latency_us"] = round((time.perf_counter_ns() - t0) / 1000, 2)
         self._emit_perf_report(workflow_start)
 
     def _emit_perf_report(self, workflow_start: float):

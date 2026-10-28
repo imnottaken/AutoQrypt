@@ -33,6 +33,7 @@ class ChunkManager:
         
         self.MAX_RETRIES = 3
         self.state_file = "output/resume_state.json"
+        self.merkle_root = ""
         
         # Performance metrics
         self.perf = {}
@@ -40,34 +41,55 @@ class ChunkManager:
         self._resume_start_time = None
 
     def _save_state(self):
+        """Persists the verified chunk BYTES plus the image they belong to. The file is only a cache."""
         os.makedirs("output", exist_ok=True)
-        verified = [k for k, v in self.chunk_states.items() if v == ChunkState.VERIFIED]
+        chunks = {str(k): base64.b64encode(self.chunk_data[k]).decode("ascii")
+                  for k, v in self.chunk_states.items() if v == ChunkState.VERIFIED}
         with open(self.state_file, "w") as f:
-            json.dump({"verified": verified}, f)
+            json.dump({"merkle_root": self.merkle_root, "chunks": chunks}, f)
 
-    def _load_state(self, total_chunks: int):
+    def _load_state(self, total_chunks: int, leaf_hashes: List[str]):
         for i in range(total_chunks):
             self.chunk_states[i] = ChunkState.PENDING
             self.retry_counts[i] = 0
-            
-        if os.path.exists(self.state_file):
+
+        if not os.path.exists(self.state_file):
+            return
+        try:
             with open(self.state_file, "r") as f:
                 state = json.load(f)
-                verified = state.get("verified", [])
-                
-                # Mock loading bytes from disk for the demo.
-                # In a real system, we read the exact .part file from ext4 partition.
-                for v in verified:
-                    self.chunk_states[v] = ChunkState.VERIFIED
-                    # Mock byte size (50 bytes per chunk as defined by builder later)
-                    self.chunk_data[v] = b"\x01\x02\x03\x04\x05" * 10 
+            if state["merkle_root"] != self.merkle_root or not isinstance(state["chunks"], dict):
+                raise ValueError("resume state belongs to a different image")
+            stored = state["chunks"]
+        except (OSError, ValueError, KeyError, TypeError):
+            self.logger.warning("Discarding unusable/foreign resume state.", event_type="resume_state_discarded")
+            self._clear_state()
+            return
+
+        # Persisted bytes are untrusted input: a chunk counts as VERIFIED only if it
+        # re-verifies against the leaf hash of the CURRENTLY authenticated manifest.
+        tree = MerkleTreeBuilder(self.secret)
+        for key, b64 in stored.items():
+            try:
+                idx = int(key)
+                data = base64.b64decode(b64, validate=True)
+            except (ValueError, TypeError):
+                continue
+            if 0 <= idx < total_chunks and tree.verify_chunk(data, leaf_hashes[idx]):
+                self.chunk_states[idx] = ChunkState.VERIFIED
+                self.chunk_data[idx] = data
+            else:
+                self.logger.warning(f"Persisted chunk {key} failed re-verification - will re-download.", event_type="resume_chunk_rejected")
 
     def _clear_state(self):
         if os.path.exists(self.state_file):
             os.remove(self.state_file)
 
-    def fetch_and_verify(self, total_chunks: int, leaf_hashes: List[str], mitm_actor=None, force_interrupt_at: int = -1) -> bool:
-        self._load_state(total_chunks)
+    def fetch_and_verify(self, total_chunks: int, leaf_hashes: List[str], mitm_actor=None, force_interrupt_at: int = -1, merkle_root: str = "") -> bool:
+        if len(leaf_hashes) != total_chunks:
+            return False
+        self.merkle_root = merkle_root
+        self._load_state(total_chunks, leaf_hashes)
         
         verified_count = sum(1 for v in self.chunk_states.values() if v == ChunkState.VERIFIED)
         is_resume = verified_count > 0
@@ -180,5 +202,15 @@ class ChunkManager:
         else:
             self.perf["surgical_retransmit_efficiency"] = "100% — zero corruption detected"
 
-    def assemble_binary(self, total_chunks: int) -> bytes:
-        return b"".join(self.chunk_data[i] for i in range(total_chunks))
+    def assemble_binary(self, total_chunks: int, leaf_hashes: List[str]) -> bytes:
+        """Raises ValueError unless EVERY chunk is present, marked verified, and re-verifies against its leaf hash."""
+        if len(leaf_hashes) != total_chunks:
+            raise ValueError("leaf hash count != total_chunks")
+        tree = MerkleTreeBuilder(self.secret)
+        parts = []
+        for i in range(total_chunks):
+            data = self.chunk_data.get(i)
+            if self.chunk_states.get(i) != ChunkState.VERIFIED or data is None or not tree.verify_chunk(data, leaf_hashes[i]):
+                raise ValueError(f"chunk {i} missing or failed final verification")
+            parts.append(data)
+        return b"".join(parts)

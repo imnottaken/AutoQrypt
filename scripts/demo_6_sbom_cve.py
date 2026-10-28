@@ -12,6 +12,7 @@ def run_demo():
     print("=============================================\n")
     
     env = os.environ.copy()
+    env["FORCE_CVE"] = "true"  # compromised build pipeline: the server signs an SBOM containing the vulnerable libcurl
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     server_process = popen_detachable([sys.executable, "main.py", "--server"], env=env, cwd=root_dir)
     time.sleep(10)

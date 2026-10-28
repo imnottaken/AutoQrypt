@@ -27,3 +27,4 @@ tree.txt
 .DS_Store
 
 audit/audit_log.json
+qcloud.env

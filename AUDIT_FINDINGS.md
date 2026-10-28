@@ -1,6 +1,6 @@
-# Security & Completeness Audit — Q-Shield OTA: Post-Quantum Automotive Firmware Authentication (PQC-02)
+# Security & Completeness Audit — AutoQrypt: Post-Quantum Automotive Firmware Authentication (PQC-02)
 
-Scope: full repo (`pqc-automotive-ota`), read + ran locally (end-to-end testing, venv install, dependency check).
+Scope: full repo (`AutoQrypt`), read + ran locally (end-to-end testing, venv install, dependency check).
 
 Verified by running: `python -m venv`, installed `requirements.txt` clean, ran `scripts/demo_1_normal.py` end-to-end (server + dashboard + vehicle), inspected `audit/audit_log.json` output, confirmed install succeeded. Cleaned up all artifacts afterward (`git status` clean).
 

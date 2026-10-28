@@ -2,11 +2,17 @@
 
 [![Security: Post-Quantum](https://img.shields.io/badge/Security-Post--Quantum%20Ready-blueviolet.svg)](#supported-pqc-algorithms)
 [![NIST Standard](https://img.shields.io/badge/NIST-FIPS%20204%20%7C%20ML--DSA-success.svg)](https://csrc.nist.gov/pubs/fips/204/final)
-[![ISO 26262](https://img.shields.io/badge/Compliance-ISO%2026262%20ASIL--D-orange.svg)](#failure-recovery-engine--ab-partition-safety)
+[![ISO 26262](https://img.shields.io/badge/Compliance-ISO%2026262%20ASIL--D-orange.svg)](#tier-3-constrained-ecu-verifier--dual-bank-ab-fail-safe-engine)
 [![Uptane Aligned](https://img.shields.io/badge/Architecture-Uptane%20Two--Role-informational.svg)](#system-architecture)
 
 > **Next-Generation End-to-End Quantum-Resilient Firmware Delivery & Hardware Security Pipeline for Software-Defined Vehicles (SDVs).**  
 > Architected for constrained embedded ECUs, extreme lifecycles (15+ years), and active defense against "Harvest Now, Decrypt / Forge Later" quantum threats.
+
+---
+
+<p align="center">
+  <img src="images/q_shield_banner.jpg" alt="Q-Shield OTA: Post-Quantum Automotive Security Banner" width="100%" />
+</p>
 
 ---
 
@@ -24,7 +30,54 @@ Transitioning automotive firmware authentication to Post-Quantum Cryptography (P
 
 ---
 
-## 2. System Architecture (ASCII Diagram)
+## 2. System Architecture
+
+<p align="center">
+  <img src="images/Architecture_Diagram.png" alt="Q-Shield System Architecture Diagram" width="90%" />
+</p>
+
+### End-to-End PQC Architecture Pipeline
+
+```mermaid
+flowchart TD
+    subgraph T1["Tier 1: OEM Signing Authority & Quantum Entropy Layer"]
+        direction TB
+        QPIAI["QpiAI Cloud Engine<br/><code>qcloud.qpiai.tech</code>"] -->|QRNG Entropy Seeds| AGILITY["Bloq Crypto-Agility Platform<br/><code>platform.bloq.in</code>"]
+        AGILITY -->|Quantum-Safe Key Material| SIGNER["Offline OEM Image Signer<br/><b>ML-DSA-44 / Falcon-512</b>"]
+        SBOM_GEN["CycloneDX / SPDX<br/>SBOM Generator"] -->|Digest Binding| SIGNER
+        FW_BIN["Firmware Binary Payload"] -->|HMAC-SHA256 Leaf Chunking| SIGNER
+    end
+
+    subgraph T2["Tier 2: Signed Manifest & Cloud Distribution"]
+        direction TB
+        SIGNER -->|Cryptographic Commitment| MANIFEST["Signed Update Manifest (JSON/CBOR)<br/>• ecu_id: 'ECU-BRAKE-01'<br/>• monotonic_security_version: 104<br/>• firmware_sha256 & merkle_root<br/>• pqc_algo_id: 'ML-DSA-44'<br/>• public_key_id: 'OEM-PQC-001'<br/>• pqc_signature (Base64)"]
+        MANIFEST --> OTA_DIR["Cloud OTA Director Server<br/>(Uptane Dynamic Dispatcher)"]
+        OTA_DIR -->|Direct Instruction & Telemetry Check| SEC_CHANNEL["Secure Channel (CAN-FD / TLS)"]
+    end
+
+    subgraph T3["Tier 3: Vehicle Gateway ECU & Dual-Bank Fail-Safe Engine"]
+        direction TB
+        SEC_CHANNEL --> GW_ECU["Vehicle Gateway ECU"]
+        GW_ECU --> PQC_VERIFY{"PQC Signature<br/>Verification Valid?"}
+        PQC_VERIFY -- No --> ABORT_SIG["SECURITY ALERT: Drop Payload & Log Attack"]
+        PQC_VERIFY -- Yes --> ROLLBACK_CHK{"Monotonic Counter<br/>Build > Golden?"}
+        ROLLBACK_CHK -- No --> ABORT_ROLLBACK["FREEZE ATTACK BLOCKED: Reject Old Manifest"]
+        ROLLBACK_CHK -- Yes --> SBOM_CHK{"SBOM Vulnerability<br/>CVE Scan Clear?"}
+        SBOM_CHK -- Found CVE --> ABORT_CVE["SUPPLY CHAIN ATTACK: Quarantined"]
+        SBOM_CHK -- Clean --> CHUNK_MGR["Chunk Manager: Selective Retransmission & Resume"]
+        
+        CHUNK_MGR --> ISO_SAFETY{"ISO 26262 Interlocks<br/>Battery >= 50% | Engine IDLE | Gear PARK"}
+        ISO_SAFETY -- Unsafe --> DELAY_STAGE["Hold Staging Until Vehicle Parked"]
+        ISO_SAFETY -- Safe --> DUAL_BANK["Dual-Bank A/B Bootloader Flash Engine"]
+        
+        DUAL_BANK --> FLASH_B["Stage Firmware into Bank B"]
+        FLASH_B --> WATCHDOG{"Automated Watchdog<br/>Post-Flash Self-Test"}
+        WATCHDOG -- Pass --> COMMIT["Commit Bank B as Active<br/>Update Monotonic Counter in Flash"]
+        WATCHDOG -- Fail --> ROLLBACK["ATOMIC FAIL-SAFE ROLLBACK:<br/>Revert to Bank A Golden Image"]
+    end
+```
+
+### High-Level Architectural Layout (ASCII Representation)
 
 ```
 ====================================================================================================
@@ -134,7 +187,7 @@ Q-Shield OTA benchmarks Post-Quantum cryptographic algorithms against the legacy
 
 ## 5. Detailed Architecture & Technical Features
 
-### Tier 1: OEM Signing Authority & Quantum Entropy
+### Tier 1: OEM Signing Authority & Quantum Entropy Layer
 - **Entropy Injection:** Quantum Random Number Generation (QRNG) entropy seeds integrated via **QpiAI (`qcloud.qpiai.tech`)** and **Bloq (`platform.bloq.in`)** ensure unpredictable key generation resilient against side-channel lattice attacks.
 - **Role Separation (Uptane Standard):**
   - **Image Role:** Maintained offline in an isolated build pipeline; signs the binary content, Merkle leaf hashes, and SBOM audit metadata.
@@ -144,14 +197,88 @@ Q-Shield OTA benchmarks Post-Quantum cryptographic algorithms against the legacy
 - **Canonical Payload Commitment:** The manifest cryptographically binds `version || build_number || merkle_root || sbom_hash`.
 - **HMAC-Bound Ordered Merkle Leaves:** Chunks are protected by factory HMAC keys, preventing chunk substitution or insertion attacks over untrusted bus proxies.
 
-### Tier 3: Constrained ECU Verifier & Functional Safety
+### Tier 3: Constrained ECU Verifier & Dual-Bank (A/B) Fail-Safe Engine
+
+<p align="center">
+  <img src="images/pqc_fail_safe.jpg" alt="Automotive Embedded ECU Dual-Bank Architecture" width="90%" />
+</p>
+
+#### Dual-Bank Lifecycle State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> Standby: Vehicle Operational
+    Standby --> ManifestReceived: OTA Update Polled
+    ManifestReceived --> PQCVerifying: Checking ML-DSA-44 Signature
+    PQCVerifying --> ManifestRejected: Signature Invalid / Rogue HSM
+    ManifestRejected --> Standby: Security Alert Dispatched
+    
+    PQCVerifying --> RollbackCheck: Image & Director Signatures Verified
+    RollbackCheck --> ManifestRejected: Monotonic Counter <= Golden Build (Replay Attack)
+    RollbackCheck --> SBOMAudit: Monotonic Counter > Golden Build
+    
+    SBOMAudit --> Quarantined: CVE Detected in Firmware Dependencies
+    Quarantined --> Standby: Vulnerability Reported to Dashboard
+    
+    SBOMAudit --> DownloadingChunks: SBOM Clean & Verified
+    DownloadingChunks --> Retransmitting: Chunk Bitflip / Truncation Detected
+    Retransmitting --> DownloadingChunks: Selective Retransmission
+    DownloadingChunks --> StagingBankB: All HMAC Leaf Digests Reconstruct Merkle Root
+    
+    StagingBankB --> SafetyInterlocks: Pre-Installation Check
+    SafetyInterlocks --> StagingBankB: Battery < 50% or Driving (Wait)
+    SafetyInterlocks --> FlashingBankB: Battery >= 50% & Engine IDLE & Gear PARK
+    
+    FlashingBankB --> WatchdogSelfTest: Execute Boot Validation
+    WatchdogSelfTest --> ActiveBankB: Self-Test Passed (Commit Build Counter)
+    WatchdogSelfTest --> AtomicRollbackBankA: Self-Test Failed / Integrity Panic
+    AtomicRollbackBankA --> Standby: Golden Image Preserved
+    ActiveBankB --> Standby: Update Complete
+```
+
 - **Anti-Rollback / Freeze Protection:** The ECU checks candidate `build_number` against non-volatile hardware state before accepting payloads. Replayed valid old manifests are rejected immediately.
 - **ISO 26262 ASIL-D Interlocks:** Flashing only initiates when vehicle safety interlocks pass: `Battery >= 50%`, `Engine == IDLE`, and `Gear == PARK`.
 - **Selective Retransmission & Secure Resume:** Transient network errors re-request only corrupted chunks; interrupted updates resume without re-downloading validated blocks.
 
 ---
 
-## 6. Quickstart & Reproduction Commands
+## 6. End-to-End Sequence & Negative-Test Suite
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor OEM as OEM / CI-CD (Image Role)
+    participant DIR as OTA Director Server
+    actor MITM as Adversary / MITM Proxy
+    participant ECU as Gateway ECU
+    participant BOOT as A/B Fail-Safe Bootloader
+
+    OEM->>OEM: Generate QRNG Seed (QpiAI & Bloq)
+    OEM->>OEM: Sign Manifest with ML-DSA-44 / Falcon-512
+    OEM->>DIR: Publish Release Bundle (Manifest + Chunks)
+    ECU->>DIR: Send UpdateRequest (Telemetry, Version, Battery)
+    DIR->>ECU: Return DirectorInstruction + ImageMetadata
+    
+    alt Negative Test: Bitflip / Rogue Signature / Replay Manifest
+        MITM->>ECU: Intercept & Corrupt Signature / Payload
+        ECU->>ECU: Validate PQC Signature & Monotonic Version
+        ECU-->>DIR: Emit SecurityEvent (Tamper Detected, Abort)
+    else Authentic Flow
+        ECU->>ECU: PQC Verification OK & Monotonic Counter Increment Verified
+        loop Download 10 Chunks
+            ECU->>DIR: GET /chunk/{index}
+            DIR-->>ECU: Return Chunk Bytes
+            ECU->>ECU: Compute HMAC-SHA256 & Verify Against Leaf Hashes
+        end
+        ECU->>BOOT: Check ISO 26262 Interlocks & Flash to Bank B
+        BOOT->>BOOT: Watchdog Diagnostic Boot
+        BOOT-->>ECU: Self-Test OK -> Promote Bank B to Active
+    end
+```
+
+---
+
+## 7. Quickstart & Reproduction Commands
 
 ### 1. Environment Setup
 
@@ -219,7 +346,7 @@ python scripts/demo_8_compromised_director.py
 
 ---
 
-## 7. Project Structure
+## 8. Project Structure
 
 ```
 pqc-automotive-ota/
@@ -230,7 +357,7 @@ pqc-automotive-ota/
 ├── AUDIT_FINDINGS.md            # Security audit report and vulnerability hardening roadmap
 │
 ├── common/                      # Shared infrastructure
-│   ├── config.py                # Environment configuration & port assignments
+│   ├── config.py                # Network host/port configuration & security flags
 │   ├── logger.py                # Structured JSON security logger with async dashboard pipe
 │   ├── models.py                # Pydantic schemas (Manifest, DirectorInstruction, Telemetry)
 │   └── proc.py                  # Process lifecycle management
@@ -271,9 +398,9 @@ pqc-automotive-ota/
 
 ---
 
-## 8. Cryptographic Agility & PQC Upgrade Roadmap
+## 9. Cryptographic Agility & PQC Upgrade Roadmap
 
-To transition from classical Ed25519 primitives to full post-quantum production hardware:
+To transition from classical primitives to full post-quantum production hardware:
 1. **NIST FIPS 204 (ML-DSA-44):** Integration of `liboqs-python` or native C bindings for Dilithium2 signature generation and verification.
 2. **Hybrid Dual-Signature Transition:** Manifests carry both an Ed25519 signature and an ML-DSA-44 signature during the migration period, ensuring backward compatibility with legacy ECUs while protecting against quantum adversaries.
 3. **Hardware Acceleration:** Offloading PQC polynomial matrix multiplications to automotive secure hardware elements (e.g., Infineon AURIX™ TC4x or NXP S32G HSE).

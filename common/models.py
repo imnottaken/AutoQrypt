@@ -22,7 +22,11 @@ class Manifest(BaseModel):
     leaf_hashes: List[str]
     total_chunks: int
     sbom_hash: str
-    metadata_signature: str
+    metadata_signature: str                          # Classical Ed25519 (Image Role)
+    metadata_signature_pqc: Optional[str] = None     # NIST FIPS 204 ML-DSA-44 / Dilithium2 (PQ/T 2FA)
+    is_encrypted: bool = False
+    encryption_iv: Optional[str] = None
+    encryption_tag: Optional[str] = None
 
 # DirectorInstruction is the per-device "install this image now" order issued
 # dynamically by the OTA server's Director role, signed with a key
@@ -35,7 +39,8 @@ class DirectorInstruction(BaseModel):
     version: str
     build_number: int
     image_digest: str
-    director_signature: str
+    director_signature: str                          # Falcon-512 / Ed25519
+    director_algorithm: Optional[str] = "Falcon-512"
 
 # UpdateRequest defines the structure of the OTA update request sent by the vehicle to the server
 class UpdateRequest(BaseModel):

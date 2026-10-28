@@ -28,11 +28,11 @@ from signing.authority import SigningAuthority, compute_image_digest
 # server's own signature never substitutes for that.
 # ---------------------------------------------------------
 
-app = FastAPI(title="Q-Shield OTA Distribution Server (Director) (PQC-02)")
+app = FastAPI(title="AutoQrypt OTA Distribution Server (Director) (PQC-02)")
 logger = SecurityLogger("ota_server")
 
 _seed_b64 = os.environ.get("DIRECTOR_HSM_SEED_B64")
-DIRECTOR_HSM = SimulatedHSM(seed=base64.b64decode(_seed_b64)) if _seed_b64 else SimulatedHSM()
+DIRECTOR_HSM = SimulatedHSM(seed=base64.b64decode(_seed_b64), algorithm="FALCON-512") if _seed_b64 else SimulatedHSM(algorithm="FALCON-512")
 DIRECTOR_AUTHORITY = SigningAuthority(DIRECTOR_HSM)
 
 # In-memory storage for demonstration

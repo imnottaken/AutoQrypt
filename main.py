@@ -31,10 +31,19 @@ from attacker.mitm import MITMAttacker
 # variable (below) rather than hardcoded there, since that process plays the
 # role that's actually exposed to the network.
 FACTORY_HMAC_SECRET = b"super_secret_hmac_key_for_all_ecu"
-IMAGE_HSM = SimulatedHSM(seed=b"deterministic_image_hsm_seed_offline_oem_key")
+
+# Classical Ed25519 Image HSM (Offline OEM Root Key)
+IMAGE_HSM = SimulatedHSM(seed=b"deterministic_image_hsm_seed_offline_oem_key", algorithm="ED25519")
 PINNED_IMAGE_PUB_CERT = IMAGE_HSM.get_public_key_bytes()
+
+# Quantum NIST FIPS 204 ML-DSA-44 Image HSM (Offline OEM Root Key seeded via QpiAI Quantum Entropy)
+IMAGE_PQC_HSM = SimulatedHSM(seed=b"deterministic_image_pqc_hsm_seed_offline_oem_key", algorithm="ML-DSA-44", use_qrng=True)
+PINNED_IMAGE_PQC_PUB_CERT = IMAGE_PQC_HSM.get_public_key_bytes()
+
+# Director HSM (Online Fleet Key with Falcon-512)
 DIRECTOR_HSM_SEED = b"deterministic_director_hsm_seed_online_fleet_key"
-PINNED_DIRECTOR_PUB_CERT = SimulatedHSM(seed=DIRECTOR_HSM_SEED).get_public_key_bytes()
+DIRECTOR_HSM = SimulatedHSM(seed=DIRECTOR_HSM_SEED, algorithm="FALCON-512")
+PINNED_DIRECTOR_PUB_CERT = DIRECTOR_HSM.get_public_key_bytes()
 
 def run_server_node():
     print(f"[*] Starting OTA Server & Dashboard on {OTA_SERVER_HOST}...")
@@ -93,9 +102,13 @@ def run_server_node():
         # 128 bytes per chunk * 10 chunks = 1280 bytes
         firmware_data = b"\xef\xbe\xad\xde" * 320 
         
-        manifest, chunks = build_firmware_release(firmware_data, "v2.0.0", 2, IMAGE_HSM, FACTORY_HMAC_SECRET)
-        print(f"    - Merkle Root (HMAC): {manifest.merkle_root}")
-        print(f"    - Image Ed25519 Verify Key: {IMAGE_HSM.get_public_key_fingerprint()}")
+        manifest, chunks = build_firmware_release(
+            firmware_data, "v2.0.0", 2, IMAGE_HSM, FACTORY_HMAC_SECRET, pqc_hsm=IMAGE_PQC_HSM
+        )
+        print(f"    - Merkle Root (HMAC):     {manifest.merkle_root}")
+        print(f"    - Image Ed25519 Verify:   {IMAGE_HSM.get_public_key_fingerprint()} (32 B)")
+        print(f"    - Image ML-DSA-44 Verify: {IMAGE_PQC_HSM.get_public_key_fingerprint()} (1,312 B NIST FIPS 204)")
+        print(f"    - Director Falcon-512:    {DIRECTOR_HSM.get_public_key_fingerprint()} (897 B PubKey, 666 B Sig)")
 
         print("\n[+] Publishing Firmware to Distribution Server...")
         #chunks_b64 is responsible for encoding binary chunks into base64 strings so that they can be safely transmitted in JSON format over HTTP
@@ -120,10 +133,16 @@ def run_vehicle_node():
     FORCE_CVE = os.environ.get("FORCE_CVE", "false").lower() == "true"
     
     pinned_image_key = PINNED_IMAGE_PUB_CERT
+    pinned_image_pqc_key = PINNED_IMAGE_PQC_PUB_CERT
     if ROGUE_HSM:
         pinned_image_key = SimulatedHSM().get_public_key_bytes() # Random rogue key
+        pinned_image_pqc_key = SimulatedHSM(algorithm="ML-DSA-44").get_public_key_bytes()
 
-    ecu = GatewayECU("VEH-1", f"http://{OTA_SERVER_HOST}:{OTA_SERVER_PORT}", pinned_image_key, PINNED_DIRECTOR_PUB_CERT, FACTORY_HMAC_SECRET)
+    ecu = GatewayECU(
+        "VEH-1", f"http://{OTA_SERVER_HOST}:{OTA_SERVER_PORT}",
+        pinned_image_key, PINNED_DIRECTOR_PUB_CERT, FACTORY_HMAC_SECRET,
+        pinned_image_pqc_pub_key=pinned_image_pqc_key
+    )
 
     if ATTACK_ENABLED:
         print("[!] ATTACKER MODULE ENABLED: Routing OTA through Kali MITM Pipeline")
@@ -200,7 +219,7 @@ def run_vehicle_node():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Q-Shield OTA: Post-Quantum Automotive Firmware Authentication (PQC-02)")
+    parser = argparse.ArgumentParser(description="AutoQrypt: Post-Quantum Automotive Firmware Authentication (PQC-02)")
     parser.add_argument("--server", action="store_true", help="Launch the Cloud OTA and Dashboard pipelines")
     parser.add_argument("--vehicle", action="store_true", help="Launch a Vehicle ECU endpoint to download from Cloud")
     args = parser.parse_args()

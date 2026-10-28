@@ -1,5 +1,5 @@
 """
-Q-Shield AutoQrypt - Sponsor Integrations
+AutoQrypt - Sponsor Integrations
 Tier 1: QpiAI QCloud (Quantum Entropy & QRNG Seeding)
 Tier 2: Bloq Platform (Quantum Crypto-Agility & Hardware Constrained Optimization)
 """

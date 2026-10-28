@@ -151,7 +151,7 @@ def test_bloq_platform():
 
 if __name__ == "__main__":
     print("=" * 80)
-    print("  Q-SHIELD AUTOQRYPT — PQC-02 SPONSOR INTEGRATION VERIFICATION")
+    print("  AUTOQRYPT — PQC-02 SPONSOR INTEGRATION VERIFICATION")
     print("  Powered by QpiAI QCloud (qcloud.qpiai.tech) & Bloq (platform.bloq.in)")
     print("=" * 80)
 

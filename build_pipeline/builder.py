@@ -1,15 +1,15 @@
+from typing import Tuple, List, Optional
 from common.models import Manifest
 from sbom.generator import SBOMGenerator
 from merkle.tree import MerkleTreeBuilder
 from key_management.hsm import SimulatedHSM
 from signing.authority import SigningAuthority
-from typing import Tuple, List
 
-#This builder.py is responsible for returning the manifest and chunks after building the firmware release. 
-#It simulates a reproducible build pipeline that includes hashing the firmware into a Merkle Tree, \
-# generating SBOM, and requesting a signature from the HSM. 
-# The function takes in the firmware data, version, HSM instance, HMAC secret, and chunk size as parameters 
-# and returns the manifest and list of firmware chunks.
+# This builder.py is responsible for returning the manifest and chunks after building the firmware release. 
+# It simulates a reproducible build pipeline implementing the PQ/T Hybrid 2FA signing model:
+# 1. Hashes firmware into a Grover-resistant Merkle Tree (SHA3/HMAC)
+# 2. Generates SBOM audit artifact
+# 3. Dual-signs with Classical Ed25519 HSM and Quantum ML-DSA-44 (NIST FIPS 204) HSM
 
 def build_firmware_release(
     firmware_data: bytes,
@@ -17,14 +17,11 @@ def build_firmware_release(
     build_number: int,
     hsm: SimulatedHSM,
     hmac_secret: bytes,
-    chunk_size: int = 128
+    chunk_size: int = 128,
+    pqc_hsm: Optional[SimulatedHSM] = None
 ) -> Tuple[Manifest, List[bytes]]:
     """
-    Simulates a reproducible build pipeline.
-    Expectations:
-      1. Hashes firmware into a Merkle Tree
-      2. Generates SBOM
-      3. Requests HSM Signature
+    Simulates a reproducible build pipeline with PQ/T Hybrid 2FA signing.
     """
 
     # 1. Generate Software Bill of Materials (SBOM) Target
@@ -36,13 +33,17 @@ def build_firmware_release(
     merkle_builder = MerkleTreeBuilder(hmac_secret)
     root_hash, chunks, leaf_hashes = merkle_builder.build(firmware_data, chunk_size)
 
-    # 3. Create Signature over Canonical Payload (version, build_number,
-    # merkle_root and sbom_hash are all bound into the signature, so none of
-    # them can be tampered independently without invalidating it).
+    # 3. Create Classical Signature over Canonical Payload (Ed25519)
     authority = SigningAuthority(hsm)
     signature_b64 = authority.generate_manifest_signature(version, build_number, root_hash, sbom_hash)
 
-    # 4. Assemble Immutable Manifest
+    # 3b. Create Quantum Signature over Canonical Payload (ML-DSA-44 / NIST FIPS 204)
+    signature_pqc_b64 = None
+    if pqc_hsm:
+        pqc_authority = SigningAuthority(pqc_hsm)
+        signature_pqc_b64 = pqc_authority.generate_manifest_signature(version, build_number, root_hash, sbom_hash)
+
+    # 4. Assemble Immutable Manifest (PQ/T Hybrid 2FA)
     manifest = Manifest(
         version=version,
         build_number=build_number,
@@ -50,7 +51,8 @@ def build_firmware_release(
         leaf_hashes=leaf_hashes,
         total_chunks=len(chunks),
         sbom_hash=sbom_hash,
-        metadata_signature=signature_b64
+        metadata_signature=signature_b64,
+        metadata_signature_pqc=signature_pqc_b64
     )
 
     return manifest, chunks

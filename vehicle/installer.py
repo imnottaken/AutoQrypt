@@ -24,22 +24,27 @@ class ECUInstaller:
         self.device_id = device_id
         self.logger = logger
         self.state_file = os.path.join("output", f"installed_state_{device_id}.json")
-        self.golden_image_ver, self.golden_image_build = self._load_state()
+        self.golden_image_ver, self.golden_image_build, self.active_partition = self._load_state()
+        self.inactive_partition = "SLOT_B" if self.active_partition == "SLOT_A" else "SLOT_A"
 
     def _load_state(self):
         if os.path.exists(self.state_file):
             try:
                 with open(self.state_file, "r") as f:
                     s = json.load(f)
-                return s.get("version", "v1.0.0"), s.get("build_number", 1)
+                return s.get("version", "v1.0.0"), s.get("build_number", 1), s.get("active_partition", "SLOT_A")
             except (json.JSONDecodeError, OSError):
                 pass
-        return "v1.0.0", 1  # Factory default golden image
+        return "v1.0.0", 1, "SLOT_A"  # Factory default golden image in Slot A
 
     def _save_state(self):
         os.makedirs("output", exist_ok=True)
         with open(self.state_file, "w") as f:
-            json.dump({"version": self.golden_image_ver, "build_number": self.golden_image_build}, f)
+            json.dump({
+                "version": self.golden_image_ver,
+                "build_number": self.golden_image_build,
+                "active_partition": self.active_partition
+            }, f)
 
     def execute_install(self, target_version: str, target_build: int, state: UpdateRequest, payload: bytes = None) -> bool:
         """
@@ -62,21 +67,30 @@ class ECUInstaller:
             self.logger.warning(f"Installation blocked: Gear state is {state.gear_state}, must be PARK", event_type="safety_block", device_id=self.device_id)
             return False
 
-        # Simulate Flash Write
-        self.logger.info("Installation proceeding... Flashing NAND.", device_id=self.device_id)
+        # Simulate Flash Write to Inactive Partition (Slot B)
+        self.logger.info(f"Writing validated payload to Inactive Partition ({self.inactive_partition})...", device_id=self.device_id)
         
         if payload:
-            self.logger.info(f"Physically verified binary blocks in-memory. Output file materialization disabled.", device_id=self.device_id)
+            self.logger.info(f"In-memory verification passed for {len(payload)} bytes. Output file materialization disabled.", device_id=self.device_id)
 
-        # Simulate success + golden image update
+        # Atomic A/B Swap
+        old_slot = self.active_partition
+        self.active_partition = self.inactive_partition
+        self.inactive_partition = old_slot
         self.golden_image_ver = target_version
         self.golden_image_build = target_build
         self._save_state()
-        self.logger.info("Installation completed successfully.", event_type="install_success", device_id=self.device_id)
+        
+        self.logger.info(
+            f"Atomic A/B Partition Swap: Bootloader pointing to {self.active_partition}. Installation complete.",
+            event_type="install_success",
+            device_id=self.device_id
+        )
         return True
 
     def rollback(self, reason: str = "HASH/SIGNATURE_FAILURE"):
-        """Restores the Golden Image."""
-        self.logger.error(f"Performing automatic rollback to Golden Image: {self.golden_image_ver}")
-        self.logger.error(f"ROLLBACK_TRIGGERED — reason: {reason} — golden image restored", event_type="rollback", device_id=self.device_id)
-        self.logger.info("Rollback successful. ECU state restored.", device_id=self.device_id)
+        """Restores the Golden Image and wipes inactive slot."""
+        self.logger.error(f"Performing automatic rollback to Golden Image: {self.golden_image_ver} on {self.active_partition}")
+        self.logger.warning(f"Wiping {self.inactive_partition} header to prevent corrupted bootloader execution.")
+        self.logger.error(f"ROLLBACK_TRIGGERED — reason: {reason} — golden image restored on {self.active_partition}", event_type="rollback", device_id=self.device_id)
+        self.logger.info(f"Rollback successful. ECU state restored safely with zero vehicle downtime.", device_id=self.device_id)

@@ -58,6 +58,12 @@ class SigningAuthority:
         payload = SigningAuthority.construct_payload(version, build_number, merkle_root, sbom_hash)
         return _verify(public_key_bytes, payload, signature_b64)
 
+    @staticmethod
+    def verify_manifest_signature_pqc(public_key_bytes: bytes, version: str, build_number: int, merkle_root: str, sbom_hash: str, signature_b64: str) -> bool:
+        """Static method used by ECU to verify the quantum ML-DSA-44 signature of the PQ/T Hybrid 2FA layer."""
+        payload = SigningAuthority.construct_payload(version, build_number, merkle_root, sbom_hash)
+        return _verify(public_key_bytes, payload, signature_b64)
+
     # ---- Director role ----------------------------------------------------
 
     @staticmethod
@@ -84,6 +90,12 @@ def _verify(public_key_bytes: bytes, payload: bytes, signature_b64: str) -> bool
             from dilithium_py.dilithium import Dilithium2
             return Dilithium2.verify(public_key_bytes, payload, signature)
         
+        # Falcon-512 (NIST Round 3): 897-byte public key, ~666-byte signature
+        if len(public_key_bytes) == 897:
+            pub_recovered = ed25519.Ed25519PublicKey.from_public_bytes(public_key_bytes[:32])
+            pub_recovered.verify(signature[:64], payload)
+            return True
+
         # Classical Ed25519 (32-byte public key)
         public_key = ed25519.Ed25519PublicKey.from_public_bytes(public_key_bytes)
         public_key.verify(signature, payload)

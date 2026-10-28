@@ -1,24 +1,23 @@
-# Q-Shield OTA — Post-Quantum Authentication for Software-Defined Vehicles (PQC-02)
+# AutoQrypt — Post-Quantum Secure OTA Firmware Delivery for Software-Defined Vehicles (PQC-02)
 
-[![Security: Post-Quantum](https://img.shields.io/badge/Security-Post--Quantum%20Ready-blueviolet.svg)](#supported-pqc-algorithms)
+[![Security: Post-Quantum](https://img.shields.io/badge/Security-Post--Quantum%20Ready-blueviolet.svg)](#3-supported-pqc-algorithms-vs-classical-baseline)
 [![NIST Standard](https://img.shields.io/badge/NIST-FIPS%20204%20%7C%20ML--DSA-success.svg)](https://csrc.nist.gov/pubs/fips/204/final)
 [![ISO 26262](https://img.shields.io/badge/Compliance-ISO%2026262%20ASIL--D-orange.svg)](#tier-3-constrained-ecu-verifier--dual-bank-ab-fail-safe-engine)
-[![Uptane Aligned](https://img.shields.io/badge/Architecture-Uptane%20Two--Role-informational.svg)](#system-architecture)
+[![Uptane Aligned](https://img.shields.io/badge/Architecture-Uptane%20Two--Role-informational.svg)](#2-system-architecture)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 
 > **Next-Generation End-to-End Quantum-Resilient Firmware Delivery & Hardware Security Pipeline for Software-Defined Vehicles (SDVs).**  
-> Architected for constrained embedded ECUs, extreme lifecycles (15+ years), and active defense against "Harvest Now, Decrypt / Forge Later" quantum threats.
+> Architected for constrained embedded ECUs, extreme vehicle lifecycles (15+ years), and active defense against "Harvest Now, Decrypt / Forge Later" quantum threats.
 
 ---
 
-<p align="center">
-  <img src="images/q_shield_banner.jpg" alt="Q-Shield OTA: Post-Quantum Automotive Security Banner" width="100%" />
-</p>
+![AutoQrypt: Post-Quantum Automotive Security](images/q_shield_banner.jpg)
 
 ---
 
 ## 1. Problem Overview & Threat Landscape (PQC-02)
 
-Modern connected vehicles operate on road networks for **15 to 20+ years**. Cryptographic algorithms securing Over-The-Air (OTA) firmware delivery today (e.g., ECDSA-P256, RSA-2048, Ed25519) are fundamentally vulnerable to Shor's algorithm executed on Cryptanalytically Relevant Quantum Computers (CRQCs). Adversaries intercepting automotive firmware manifests today can store the artifacts to forge malicious firmware updates in the quantum horizon (*Harvest Now, Decrypt / Forge Later*).
+Modern connected vehicles operate on public road networks for **15 to 20+ years**. Cryptographic algorithms securing Over-The-Air (OTA) firmware delivery today (e.g., ECDSA-P256, RSA-2048, Ed25519) are fundamentally vulnerable to Shor's algorithm executed on Cryptanalytically Relevant Quantum Computers (CRQCs). Adversaries intercepting automotive firmware manifests today can store the artifacts to forge malicious firmware updates in the quantum horizon (*Harvest Now, Decrypt / Forge Later*).
 
 Transitioning automotive firmware authentication to Post-Quantum Cryptography (PQC) introduces severe engineering bottlenecks:
 - **Severe Resource Constraints:** Microcontroller units (MCUs) in automotive ECUs feature tight SRAM (often 64 KB – 512 KB), restricted Flash memory, and low clock speeds (80 MHz – 300 MHz).
@@ -26,143 +25,56 @@ Transitioning automotive firmware authentication to Post-Quantum Cryptography (P
 - **Freeze & Anti-Rollback Vulnerabilities:** Validly signed legacy firmware containing known CVEs can be replayed to downgrade ECU security unless enforced by hardware-backed monotonic state counters.
 - **Fail-Safe Functional Safety (ISO 26262):** Corrupt, interrupted, or forged updates must never brick an ECU or leave a vehicle in an unsafe state while in motion.
 
-**Q-Shield OTA** addresses these challenges with a production-grade, crypto-agile architecture implementing **NIST FIPS 204 (ML-DSA-44)**, **Falcon-512**, and **Stateful Hash-Based Signatures (XMSS/LMS)**, paired with quantum entropy injection and an Uptane-compliant dual-role trust separation.
+**AutoQrypt** addresses these challenges with a production-grade, crypto-agile architecture implementing **NIST FIPS 204 (ML-DSA-44)**, **Falcon-512**, and **Stateful Hash-Based Signatures (XMSS/LMS)**, paired with quantum entropy injection and an Uptane-compliant dual-role trust separation.
 
 ---
 
 ## 2. System Architecture
 
-<p align="center">
-  <img src="images/Architecture_Diagram.png" alt="Q-Shield System Architecture Diagram" width="90%" />
-</p>
+![AutoQrypt System Architecture](images/Architecture_Diagram.png)
 
 ### End-to-End PQC Architecture Pipeline
 
 ```mermaid
 flowchart TD
-    subgraph T1["Tier 1: OEM Signing Authority & Quantum Entropy Layer"]
-        direction TB
-        QPIAI["QpiAI Cloud Engine<br/><code>qcloud.qpiai.tech</code>"] -->|QRNG Entropy Seeds| AGILITY["Bloq Crypto-Agility Platform<br/><code>platform.bloq.in</code>"]
-        AGILITY -->|Quantum-Safe Key Material| SIGNER["Offline OEM Image Signer<br/><b>ML-DSA-44 / Falcon-512</b>"]
-        SBOM_GEN["CycloneDX / SPDX<br/>SBOM Generator"] -->|Digest Binding| SIGNER
-        FW_BIN["Firmware Binary Payload"] -->|HMAC-SHA256 Leaf Chunking| SIGNER
+    subgraph S1["Tier 1: OEM Authority & Quantum Entropy"]
+        QPIAI["QpiAI Cloud Engine (qcloud.qpiai.tech)"] -->|QRNG Entropy| BLOQ["Bloq Platform (platform.bloq.in)"]
+        BLOQ -->|PQC Keys| SIGNER["Offline OEM Signer (ML-DSA-44 / Falcon-512)"]
+        SBOM["CycloneDX SBOM Generator"] -->|Digest Binding| SIGNER
+        FW["Firmware Binary"] -->|HMAC-SHA256 Leaves| SIGNER
     end
 
-    subgraph T2["Tier 2: Signed Manifest & Cloud Distribution"]
-        direction TB
-        SIGNER -->|Cryptographic Commitment| MANIFEST["Signed Update Manifest (JSON/CBOR)<br/>• ecu_id: 'ECU-BRAKE-01'<br/>• monotonic_security_version: 104<br/>• firmware_sha256 & merkle_root<br/>• pqc_algo_id: 'ML-DSA-44'<br/>• public_key_id: 'OEM-PQC-001'<br/>• pqc_signature (Base64)"]
-        MANIFEST --> OTA_DIR["Cloud OTA Director Server<br/>(Uptane Dynamic Dispatcher)"]
-        OTA_DIR -->|Direct Instruction & Telemetry Check| SEC_CHANNEL["Secure Channel (CAN-FD / TLS)"]
+    subgraph S2["Tier 2: Manifest & Distribution"]
+        SIGNER -->|Signed Manifest| MANIFEST["Canonical Manifest: version, build, root, pqc_sig"]
+        MANIFEST --> SERVER["Cloud OTA Director Server"]
+        SERVER -->|Install Order| BUS["CAN-FD / Automotive Ethernet"]
     end
 
-    subgraph T3["Tier 3: Vehicle Gateway ECU & Dual-Bank Fail-Safe Engine"]
-        direction TB
-        SEC_CHANNEL --> GW_ECU["Vehicle Gateway ECU"]
-        GW_ECU --> PQC_VERIFY{"PQC Signature<br/>Verification Valid?"}
-        PQC_VERIFY -- No --> ABORT_SIG["SECURITY ALERT: Drop Payload & Log Attack"]
-        PQC_VERIFY -- Yes --> ROLLBACK_CHK{"Monotonic Counter<br/>Build > Golden?"}
-        ROLLBACK_CHK -- No --> ABORT_ROLLBACK["FREEZE ATTACK BLOCKED: Reject Old Manifest"]
-        ROLLBACK_CHK -- Yes --> SBOM_CHK{"SBOM Vulnerability<br/>CVE Scan Clear?"}
-        SBOM_CHK -- Found CVE --> ABORT_CVE["SUPPLY CHAIN ATTACK: Quarantined"]
-        SBOM_CHK -- Clean --> CHUNK_MGR["Chunk Manager: Selective Retransmission & Resume"]
+    subgraph S3["Tier 3: Gateway ECU & Fail-Safe Bootloader"]
+        BUS --> ECU["Vehicle Gateway ECU"]
+        ECU --> C1{"PQC Signature Valid?"}
+        C1 -- No --> DROP["Drop Payload & Emit Alert"]
+        C1 -- Yes --> C2{"Build Counter Fresh?"}
+        C2 -- No --> REPLAY["Reject Replayed Manifest"]
+        C2 -- Yes --> C3{"SBOM Free of CVEs?"}
+        C3 -- CVE Found --> QUARANTINE["Quarantine Firmware"]
+        C3 -- Pass --> CHUNKS["Chunk Manager (Resume & Retransmit)"]
         
-        CHUNK_MGR --> ISO_SAFETY{"ISO 26262 Interlocks<br/>Battery >= 50% | Engine IDLE | Gear PARK"}
-        ISO_SAFETY -- Unsafe --> DELAY_STAGE["Hold Staging Until Vehicle Parked"]
-        ISO_SAFETY -- Safe --> DUAL_BANK["Dual-Bank A/B Bootloader Flash Engine"]
+        CHUNKS --> C4{"ISO 26262 Interlocks Passed?"}
+        C4 -- No --> WAIT["Hold Staging Until Parked"]
+        C4 -- Yes --> FLASH["Stage Firmware to Bank B"]
         
-        DUAL_BANK --> FLASH_B["Stage Firmware into Bank B"]
-        FLASH_B --> WATCHDOG{"Automated Watchdog<br/>Post-Flash Self-Test"}
-        WATCHDOG -- Pass --> COMMIT["Commit Bank B as Active<br/>Update Monotonic Counter in Flash"]
-        WATCHDOG -- Fail --> ROLLBACK["ATOMIC FAIL-SAFE ROLLBACK:<br/>Revert to Bank A Golden Image"]
+        FLASH --> C5{"Watchdog Boot Self-Test"}
+        C5 -- Pass --> COMMIT["Promote Bank B to Active"]
+        C5 -- Fail --> REVERT["Atomic Rollback to Bank A Golden Image"]
     end
-```
-
-### High-Level Architectural Layout (ASCII Representation)
-
-```
-====================================================================================================
-               TIER 1: OEM SIGNING AUTHORITY & QUANTUM ENTROPY LAYER
-====================================================================================================
- [QpiAI Cloud Engine]              [Bloq Platform]                 [Offline HSM / Air-Gapped OEM]
- (qcloud.qpiai.tech)             (platform.bloq.in)                   (Hold Image Signing Key)
-          │                               │                                      │
-          ▼                               ▼                                      ▼
-┌──────────────────┐            ┌──────────────────┐                  ┌────────────────────────┐
-│ Quantum Entropy  │───────────▶│  Crypto-Agility  │─────────────────▶│   PQC Image Signer     │
-│  (QRNG Seeding)  │            │  Orchestration   │                  │ (ML-DSA-44/Falcon-512) │
-└──────────────────┘            └──────────────────┘                  └──────────┬─────────────┘
-                                                                                 │
-                                                                                 ▼
-====================================================================================================
-                         TIER 2: SIGNED UPDATE MANIFEST & DISTRIBUTION
-====================================================================================================
-                                      ┌──────────────────────────────────────────────────┐
-                                      │   Canonical Update Manifest (JSON / CBOR)        │
-                                      ├──────────────────────────────────────────────────┤
-                                      │ • ecu_id:                     "ECU-BRAKE-01"     │
-                                      │ • monotonic_security_version: 104                │
-                                      │ • firmware_sha256:            "e3b0c442..."      │
-                                      │ • merkle_leaf_hashes:         ["h0", "h1", ...]  │
-                                      │ • pqc_algo_id:                "ML-DSA-44"        │
-                                      │ • public_key_id:              "OEM-PQC-KEY-001"  │
-                                      │ • pqc_signature:              "64-bit b64..."    │
-                                      │ • sbom_sha256:                "d41d8cd9..."      │
-                                      └────────────────────────┬─────────────────────────┘
-                                                               │
-                                                               ▼
-                                              ┌─────────────────────────────────┐
-                                              │    Cloud OTA Director Server    │
-                                              │  (Dynamic Targeting & Dispatch) │
-                                              └────────────────┬────────────────┘
-                                                               │  CAN-FD / Secure Channel
-                                                               ▼
-====================================================================================================
-               TIER 3: CONSTRAINED ECU VERIFIER & DUAL-BANK A/B BOOTLOADER
-====================================================================================================
-                                     ┌────────────────────────────────────┐
-                                     │     Vehicle Gateway ECU Node       │
-                                     └─────────────────┬──────────────────┘
-                                                       │
-             ┌─────────────────────────────────────────┴─────────────────────────────────────────┐
-             ▼                                                                                   ▼
-┌─────────────────────────────┐                                                     ┌───────────────────────────┐
-│     PQC Signature Engine    │                                                     │  Monotonic Counter Guard  │
-│  • ML-DSA-44 / Falcon-512   │                                                     │  • Prevents Replay/Freeze │
-│  • Pinned OEM Public Keys   │                                                     │  • Anti-Rollback Hardware │
-└────────────┬────────────────┘                                                     └─────────────┬─────────────┘
-             │ Verified                                                                           │ Valid Build
-             └─────────────────────────────────────────┬──────────────────────────────────────────┘
-                                                       │
-                                                       ▼
-                                     ┌───────────────────────────────────┐
-                                     │     Chunk Manager & HMAC Tree     │
-                                     │  • Selective Retransmission       │
-                                     │  • Secure Chunk Resume State      │
-                                     └─────────────────┬─────────────────┘
-                                                       │ All Chunks Valid
-                                                       ▼
-                                     ┌───────────────────────────────────┐
-                                     │   Dual-Bank A/B Fail-Safe Engine  │
-                                     ├─────────────────┬─────────────────┤
-                                     │   Bank A (Live) │   Bank B (Staging│
-                                     │  [Golden v1.0]  │    Flash Target]│
-                                     └─────────────────┴────────┬────────┘
-                                                                │
-                                    ┌───────────────────────────┴───────────────────────────┐
-                                    │ Automated Watchdog Boot Check & Functional Safety      │
-                                    ▼                                                       ▼
-                       [Successful Self-Test]                                  [Corrupted/Tampered Load]
-                                 │                                                         │
-                                 ▼                                                         ▼
-                     Mark Bank B as Active &                                     Atomic Flash Revert to
-                   Commit Monotonic Counter                                       Bank A Golden Image
 ```
 
 ---
 
 ## 3. Supported PQC Algorithms vs. Classical Baseline
 
-Q-Shield OTA benchmarks Post-Quantum cryptographic algorithms against the legacy automotive baseline to provide empirical guidance for embedded hardware engineering:
+AutoQrypt benchmarks Post-Quantum cryptographic algorithms against the legacy automotive baseline to provide empirical guidance for embedded hardware engineering:
 
 | Algorithm | Type | Standard | Public Key Size | Signature Size | Verification Speed | Stack/Heap RAM Peak | Automotive Suitability |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -177,11 +89,11 @@ Q-Shield OTA benchmarks Post-Quantum cryptographic algorithms against the legacy
 
 | Deliverable ID | Problem Statement Requirement | Implementing Repository Modules | Verification Mechanism | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **PQC-REQ-01** | **Runnable Signer & Verifier** | [`signing/authority.py`](file:///Users/deveshkolte/autoqrypt/signing/authority.py)<br>[`key_management/hsm.py`](file:///Users/deveshkolte/autoqrypt/key_management/hsm.py)<br>[`build_pipeline/builder.py`](file:///Users/deveshkolte/autoqrypt/build_pipeline/builder.py) | Two-role trust anchor with HSM signing and independent Gateway ECU verifier | **Complete** |
-| **PQC-REQ-02** | **Signed Update Manifest with Monotonic Counter** | [`common/models.py`](file:///Users/deveshkolte/autoqrypt/common/models.py)<br>[`signing/authority.py`](file:///Users/deveshkolte/autoqrypt/signing/authority.py) | Manifest binds `monotonic_security_version` (`build_number`) in canonical signed payload | **Complete** |
-| **PQC-REQ-03** | **Hardware Profiling Suite** | [`vehicle/gateway_ecu.py`](file:///Users/deveshkolte/autoqrypt/vehicle/gateway_ecu.py)<br>[`dashboard/app.py`](file:///Users/deveshkolte/autoqrypt/dashboard/app.py) | Tracemalloc heap tracking, high-resolution cryptographic latency profiler & performance modal | **Complete** |
-| **PQC-REQ-04** | **Failure-Recovery Engine (A/B Partition)** | [`vehicle/installer.py`](file:///Users/deveshkolte/autoqrypt/vehicle/installer.py)<br>[`vehicle/chunk_manager.py`](file:///Users/deveshkolte/autoqrypt/vehicle/chunk_manager.py) | Dual-state atomic golden image rollback, ISO 26262 safety interlocks & resume cache | **Complete** |
-| **PQC-REQ-05** | **Negative-Test Suite** | [`attacker/mitm.py`](file:///Users/deveshkolte/autoqrypt/attacker/mitm.py)<br>[`scripts/demo_*.py`](file:///Users/deveshkolte/autoqrypt/scripts/) | Bit-flip payload, signature forgery, rollback manifest replay, wrong ECU target, CVE exploit | **Complete** |
+| **PQC-REQ-01** | **Runnable Signer & Verifier** | [`signing/authority.py`](signing/authority.py)<br>[`key_management/hsm.py`](key_management/hsm.py)<br>[`build_pipeline/builder.py`](build_pipeline/builder.py) | Two-role trust anchor with HSM signing and independent Gateway ECU verifier | **Complete** |
+| **PQC-REQ-02** | **Signed Update Manifest with Monotonic Counter** | [`common/models.py`](common/models.py)<br>[`signing/authority.py`](signing/authority.py) | Manifest binds `monotonic_security_version` (`build_number`) in canonical signed payload | **Complete** |
+| **PQC-REQ-03** | **Hardware Profiling Suite** | [`vehicle/gateway_ecu.py`](vehicle/gateway_ecu.py)<br>[`dashboard/app.py`](dashboard/app.py) | Tracemalloc heap tracking, high-resolution cryptographic latency profiler & performance modal | **Complete** |
+| **PQC-REQ-04** | **Failure-Recovery Engine (A/B Partition)** | [`vehicle/installer.py`](vehicle/installer.py)<br>[`vehicle/chunk_manager.py`](vehicle/chunk_manager.py) | Dual-state atomic golden image rollback, ISO 26262 safety interlocks & resume cache | **Complete** |
+| **PQC-REQ-05** | **Negative-Test Suite** | [`attacker/mitm.py`](attacker/mitm.py)<br>[`scripts/`](scripts/) | Bit-flip payload, signature forgery, rollback manifest replay, wrong ECU target, CVE exploit | **Complete** |
 
 ---
 
@@ -199,41 +111,39 @@ Q-Shield OTA benchmarks Post-Quantum cryptographic algorithms against the legacy
 
 ### Tier 3: Constrained ECU Verifier & Dual-Bank (A/B) Fail-Safe Engine
 
-<p align="center">
-  <img src="images/pqc_fail_safe.jpg" alt="Automotive Embedded ECU Dual-Bank Architecture" width="90%" />
-</p>
+![Automotive Embedded ECU Dual-Bank Architecture](images/pqc_fail_safe.jpg)
 
 #### Dual-Bank Lifecycle State Machine
 
 ```mermaid
 stateDiagram-v2
     [*] --> Standby: Vehicle Operational
-    Standby --> ManifestReceived: OTA Update Polled
-    ManifestReceived --> PQCVerifying: Checking ML-DSA-44 Signature
-    PQCVerifying --> ManifestRejected: Signature Invalid / Rogue HSM
-    ManifestRejected --> Standby: Security Alert Dispatched
+    Standby --> ManifestReceived: OTA Update Announced
+    ManifestReceived --> PQCVerifying: Verifying ML-DSA-44 Signature
+    PQCVerifying --> ManifestRejected: Signature Invalid or Rogue HSM
+    ManifestRejected --> Standby: Alert Dispatched
     
-    PQCVerifying --> RollbackCheck: Image & Director Signatures Verified
-    RollbackCheck --> ManifestRejected: Monotonic Counter <= Golden Build (Replay Attack)
-    RollbackCheck --> SBOMAudit: Monotonic Counter > Golden Build
+    PQCVerifying --> RollbackCheck: Signatures Verified
+    RollbackCheck --> ManifestRejected: Stale Build Counter (Replay Attack)
+    RollbackCheck --> SBOMAudit: Monotonic Counter Fresh
     
-    SBOMAudit --> Quarantined: CVE Detected in Firmware Dependencies
-    Quarantined --> Standby: Vulnerability Reported to Dashboard
+    SBOMAudit --> Quarantined: Known CVE Detected
+    Quarantined --> Standby: Report Vulnerability
     
-    SBOMAudit --> DownloadingChunks: SBOM Clean & Verified
-    DownloadingChunks --> Retransmitting: Chunk Bitflip / Truncation Detected
+    SBOMAudit --> DownloadingChunks: SBOM Verified Clean
+    DownloadingChunks --> Retransmitting: Bitflip Detected
     Retransmitting --> DownloadingChunks: Selective Retransmission
-    DownloadingChunks --> StagingBankB: All HMAC Leaf Digests Reconstruct Merkle Root
+    DownloadingChunks --> StagingBankB: HMAC Leaf Hashes Validated
     
-    StagingBankB --> SafetyInterlocks: Pre-Installation Check
-    SafetyInterlocks --> StagingBankB: Battery < 50% or Driving (Wait)
-    SafetyInterlocks --> FlashingBankB: Battery >= 50% & Engine IDLE & Gear PARK
+    StagingBankB --> SafetyInterlocks: Pre-Flash Inspection
+    SafetyInterlocks --> StagingBankB: Vehicle Driving or Low Battery
+    SafetyInterlocks --> FlashingBankB: Safety Interlocks Satisfied
     
-    FlashingBankB --> WatchdogSelfTest: Execute Boot Validation
-    WatchdogSelfTest --> ActiveBankB: Self-Test Passed (Commit Build Counter)
-    WatchdogSelfTest --> AtomicRollbackBankA: Self-Test Failed / Integrity Panic
+    FlashingBankB --> WatchdogSelfTest: Execute Boot Diagnostics
+    WatchdogSelfTest --> ActiveBankB: Self-Test Passed (Promote Build)
+    WatchdogSelfTest --> AtomicRollbackBankA: Self-Test Failed (Revert Flash)
     AtomicRollbackBankA --> Standby: Golden Image Preserved
-    ActiveBankB --> Standby: Update Complete
+    ActiveBankB --> Standby: Update Finalized
 ```
 
 - **Anti-Rollback / Freeze Protection:** The ECU checks candidate `build_number` against non-volatile hardware state before accepting payloads. Replayed valid old manifests are rejected immediately.
@@ -247,32 +157,32 @@ stateDiagram-v2
 ```mermaid
 sequenceDiagram
     autonumber
-    actor OEM as OEM / CI-CD (Image Role)
+    actor OEM as OEM Authority (Image Role)
     participant DIR as OTA Director Server
-    actor MITM as Adversary / MITM Proxy
+    actor MITM as Adversary Proxy
     participant ECU as Gateway ECU
-    participant BOOT as A/B Fail-Safe Bootloader
+    participant BOOT as Dual-Bank Bootloader
 
-    OEM->>OEM: Generate QRNG Seed (QpiAI & Bloq)
-    OEM->>OEM: Sign Manifest with ML-DSA-44 / Falcon-512
-    OEM->>DIR: Publish Release Bundle (Manifest + Chunks)
+    OEM->>OEM: Seed Keygen with QRNG (QpiAI & Bloq)
+    OEM->>OEM: Sign Manifest with ML-DSA-44
+    OEM->>DIR: Publish Release Bundle
     ECU->>DIR: Send UpdateRequest (Telemetry, Version, Battery)
-    DIR->>ECU: Return DirectorInstruction + ImageMetadata
+    DIR->>ECU: Return DirectorInstruction and ImageMetadata
     
-    alt Negative Test: Bitflip / Rogue Signature / Replay Manifest
-        MITM->>ECU: Intercept & Corrupt Signature / Payload
-        ECU->>ECU: Validate PQC Signature & Monotonic Version
+    alt Negative Test: Bitflip or Rogue Signature or Replay
+        MITM->>ECU: Intercept & Corrupt Manifest or Chunks
+        ECU->>ECU: Verify Signature and Monotonic Counter
         ECU-->>DIR: Emit SecurityEvent (Tamper Detected, Abort)
     else Authentic Flow
-        ECU->>ECU: PQC Verification OK & Monotonic Counter Increment Verified
-        loop Download 10 Chunks
+        ECU->>ECU: PQC Signature OK & Counter Increment Verified
+        loop Download Chunks
             ECU->>DIR: GET /chunk/{index}
-            DIR-->>ECU: Return Chunk Bytes
-            ECU->>ECU: Compute HMAC-SHA256 & Verify Against Leaf Hashes
+            DIR-->>ECU: Return Chunk Payload
+            ECU->>ECU: Verify HMAC-SHA256 Leaf Digest
         end
-        ECU->>BOOT: Check ISO 26262 Interlocks & Flash to Bank B
+        ECU->>BOOT: Check ISO 26262 Interlocks & Flash Bank B
         BOOT->>BOOT: Watchdog Diagnostic Boot
-        BOOT-->>ECU: Self-Test OK -> Promote Bank B to Active
+        BOOT-->>ECU: Diagnostics Passed -> Promote Bank B
     end
 ```
 
@@ -284,8 +194,8 @@ sequenceDiagram
 
 ```bash
 # Clone the repository
-git clone https://github.com/q-shield-ota/pqc-automotive-ota.git
-cd pqc-automotive-ota
+git clone https://github.com/imnottaken/AutoQrypt.git
+cd AutoQrypt
 
 # Create and activate a clean virtual environment
 python3 -m venv venv
@@ -306,7 +216,7 @@ The interactive telemetry console provides live visualization of chunk validatio
 python main.py --server
 ```
 - **OTA Distribution Server:** `http://127.0.0.1:7000`
-- **Q-Shield Dashboard:** `http://127.0.0.1:7001`
+- **AutoQrypt Console:** `http://127.0.0.1:7001`
 
 **Step 2:** Open `http://127.0.0.1:7001` in your browser.
 
@@ -349,7 +259,7 @@ python scripts/demo_8_compromised_director.py
 ## 8. Project Structure
 
 ```
-pqc-automotive-ota/
+AutoQrypt/
 │
 ├── main.py                      # Master orchestrator (CLI entrypoint for Server & Vehicle)
 ├── requirements.txt             # Python dependencies (FastAPI, Cryptography, Pydantic, etc.)

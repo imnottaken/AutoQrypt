@@ -1,77 +1,211 @@
-# AutoQrypt
+<p align="center">
+  <img src="images/autoqrypt_header.jpg" alt="AutoQrypt Banner" width="100%">
+</p>
 
-**Secure Over-The-Air (OTA) Firmware Delivery & Verification Framework for Automotive ECUs**  
-*Problem Statement PQC-02: Automotive Firmware Authentication & Rollback Defense*
+<h3 align="center">Quantum-Resilient Dual-Role Firmware Authentication & Rollback Defense for Automotive ECUs</h3>
+
+<p align="center">
+  <strong>Problem Statement PQC-02: Automotive Firmware Authentication</strong><br>
+  Built with QpiAI Quantum SDK & Bloq Platform
+</p>
+
+<p align="center">
+  <a href="#the-problem-pqc-02">The Problem</a> •
+  <a href="#pqt-hybrid-2fa-architecture">Architecture</a> •
+  <a href="#cryptographic-specifications">Crypto Specs</a> •
+  <a href="#end-to-end-workflow">Workflow</a> •
+  <a href="#hardware-telemetry--hil-testbed">HIL Telemetry</a> •
+  <a href="#quantum-integrations">Quantum Stack</a> •
+  <a href="#attack--defense-scenarios">Scenarios</a> •
+  <a href="#quickstart">Quickstart</a>
+</p>
 
 ---
 
-## Overview
+## The Problem (PQC-02)
 
-AutoQrypt is a modular testbed demonstrating end-to-end secure firmware delivery for automotive Electronic Control Units (ECUs). It addresses core automotive security challenges defined in ISO 26262 and the Uptane framework, including two-role trust separation, monotonic anti-rollback defense, supply chain SBOM auditing, and chunked transfer verification over constrained vehicle networks.
+Software-Defined Vehicles (SDVs) receive critical over-the-air (OTA) updates on Electronic Control Units (ECUs) controlling braking, powertrain, and ADAS. With the impending emergence of Cryptanalytically Relevant Quantum Computers (CRQCs), standard asymmetric algorithms (RSA, ECC/ECDSA) are provably vulnerable to Shor's algorithm.
+
+Because automotive platforms operate over 15–20 year operational lifespans, firmware signed today must withstand quantum decryption and forgery throughout its operational life. However, deploying pure Post-Quantum Cryptography (PQC) poses serious practical obstacles:
+1. **Cryptanalytic Risk**: Automotive OEMs consider pure PQC untested compared to decades of classical cryptanalysis.
+2. **Resource Constraints**: High-tier PQC algorithms exceed the strict RAM (often < 512 KB), flash, and execution-time limits of embedded automotive silicon.
+3. **Bus Bandwidth Overhead**: Large PQC signatures fragment automotive CAN / CAN-FD and LIN frames, inducing transmission latency and bus congestion.
 
 ---
 
-## Architecture
+## PQ/T Hybrid 2FA Architecture
 
-The system implements a three-tier security model:
+AutoQrypt resolves these trade-offs by combining an **Uptane-aligned dual-role trust separation** with a **Post-Quantum / Traditional (PQ/T) Hybrid** signature scheme:
 
 ```
-[ OEM Build Pipeline (Image Key) ]
-               │
-               ▼  (Signed Manifest: version, build, Merkle root, SBOM)
-[ Cloud Distribution Server (Director Key) ]
-               │
-               ▼  (Dynamic targeting & device instructions)
-[ Vehicle Gateway ECU ]
-   ├── Signature Verification (Image + Director trust split)
-   ├── Anti-Rollback Counter Check (Monotonic build validation)
-   ├── SBOM CVE Scanning (Dependency vulnerability audit)
-   ├── Chunk Integrity Engine (HMAC-SHA256 leaf verification)
-   └── ISO 26262 Safety Interlocks (Battery >= 50%, Engine IDLE, Gear PARK)
+                          OEM INFRASTRUCTURE (Untrusted / Cloud / HSM)
+    ┌──────────────────────────────────────────────────────────────────────────────────┐
+    │  [ QpiAI Quantum SDK ]                                                           │
+    │  Hadamard Superposition Circuit (QSV-Local / QCloud) ──► 256-bit Quantum Seed    │
+    │                                                                   │              │
+    │                                                     Key Generation Engine        │
+    │                                            ┌──────────────────────┴────────────┐ │
+    │                                            ▼                                   ▼ │
+    │                                  Offline Image Signer             Online Director│
+    │                           (ML-DSA-44 + Ed25519 + AES-256)           (Falcon-512) │
+    └────────────────────────────────────────────┬───────────────────────────────────┬─┘
+                                                 │ Signed Firmware                   │ Manifest
+                                                 └─────────────────┬─────────────────┘
+                                                                   │ OTA Bus Stream
+                                                                   ▼
+                                             AUTOMOTIVE ECU SURROGATE (ESP32-LX6)
+    ┌──────────────────────────────────────────────────────────────────────────────────┐
+    │ Streamed Chunks ──► Written to Inactive Partition (Flash Slot B)                 │
+    │                                                                                  │
+    │ On-Chip Cryptographic Verification Pipeline:                                     │
+    │   1. HW AES-256-GCM In-Place Decryption                                          │
+    │   2. Falcon-512 Director Signature Verification (Manifest targeting)             │
+    │   3. ML-DSA-44 (NIST FIPS 204) Verification (Post-Quantum Image Auth)            │
+    │   4. Ed25519 (RFC 8032) Verification (Classical Image Backup)                    │
+    │   5. NVS Monotonic Counter Validation (Anti-Rollback Defense)                    │
+    │                                                                                  │
+    │ Verdict Execution:                                                               │
+    │   ├─ SUCCESS: Atomic Partition Swap ──► Reboot Slot B (New Active Firmware)      │
+    │   └─ FAILURE: Wipe Slot B Header ──► Reboot Slot A (Zero Downtime Golden Image)  │
+    │                                                                                  │
+    │ Real-Time Telemetry: Stack High-Water Mark & Clock Cycles Streamed to Dashboard  │
+    └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Trust Model (Two-Role Split)
-- **Image Role (Offline):** Signs firmware contents (binary hash, Merkle root, SBOM digest). The network-facing OTA server never possesses this key.
-- **Director Role (Online):** Issues vehicle-specific installation instructions. A compromised Director server cannot author new firmware without the offline Image key.
+### Why PQ/T Hybrid 2FA?
+Rather than replacing classical algorithms entirely, AutoQrypt stacks them as a two-factor cryptographic lock:
+- **Classical Safety Net**: If a mathematical shortcut is discovered in lattice cryptography, classical `Ed25519` prevents unauthorized code execution.
+- **Quantum Future-Proofing**: If a quantum adversary compromises classical keys via Shor’s algorithm, `ML-DSA-44` protects the vehicle.
+- **Both signatures must validate independently.** A single cryptographic failure halts execution immediately.
 
 ---
 
-## Features & Security Controls
+## Cryptographic Specifications
 
-| Control | Implementation | Attack Mitigated |
+| Layer | Primitive | Standard / Source | Key / Signature Footprint | Rationale / Automotive Benefit |
+| :--- | :--- | :--- | :--- | :--- |
+| **Entropy** | Quantum Superposition | `QpiAI Quantum SDK` | 256-bit root seed | True quantum entropy (Hadamard circuit) seeded into HSM |
+| **Image (PQC)** | `ML-DSA-44` (Dilithium2) | NIST FIPS 204 | PubKey: 1,312 B<br>Sig: 2,420 B | Offline binary signature; lattice-based primary quantum defense |
+| **Image (Classical)** | `Ed25519` | RFC 8032 | PubKey: 32 B<br>Sig: 64 B | Offline classical backup; proven 128-bit security floor |
+| **Director (Online)** | `Falcon-512` | NIST Round 3 | PubKey: 897 B<br>Sig: ~666 B | Ultra-compact signature; fits into 11 CAN-FD frames with zero bus flood |
+| **Confidentiality** | `AES-256-GCM` | NIST SP 800-38D | 256-bit Key, 96-bit IV | Encrypts proprietary vehicle calibration and code; HW accelerated |
+| **Integrity & Hashing** | `SHA3-256` / `SHAKE256` | NIST FIPS 202 | 256-bit Digest | Grover-resistant preimage and collision resistance |
+
+---
+
+## End-to-End Workflow
+
+```
+   [1. Quantum Seed]          [2. Offline Image Sign]         [3. Online Director]
+  QpiAI Quantum SDK          SHA3-256 Digest of Binary       Package Vehicle Target
+          │                               │                            │
+   Hadamard Circuit                Dual Signature:             Sign Manifest with
+  (Superposition QRNG)          ML-DSA-44 + Ed25519             Falcon-512 Key
+          │                               │                            │
+ 256-bit Root Seed               AES-256 Encryption                    │
+          └───────────────────────────────┴────────────────────────────┤
+                                                                       ▼
+                                                          OTA Transmission Chunks
+                                                                       │
+   [6. Atomic Swap / Recovery]       [5. Telemetry Sync]               ▼
+  PASS: Boot Slot B (Active)       uxTaskGetStackHighWaterMark   [4. ECU Verification]
+  FAIL: Wipe Slot B, Boot Slot A   Clock Cycle Latency Probing   Stream to Flash Slot B
+  Zero Downtime Fail-Safe       ◄── Real-time Dashboard Sync  ◄── Decrypt & Verify All
+```
+
+1. **Quantum Entropy Seeding**: `qpiai-quantum` builds an 8-qubit Hadamard superposition circuit ($H^{\otimes 8} |0\rangle^{\otimes 8}$) executed via `QpiAI-QSV-Local` or `qcloud.qpiai.tech`. The measured entropy is collapsed into a certified 256-bit root seed.
+2. **Offline Binary Signing (Image Role)**: The compiled binary is hashed via `SHA3-256`, signed with both `ML-DSA-44` and `Ed25519`, and encrypted with `AES-256-GCM`. The Image key remains strictly air-gapped from network infrastructure.
+3. **Online Manifest Dispatch (Director Role)**: The online OTA server generates installation manifests containing target ECU IDs, security versions, and image signatures, signed with `Falcon-512` for compact transit.
+4. **ECU Ingestion & Decryption**: The ECU surrogate (ESP32) writes streamed chunks directly into flash partition Slot B to preserve internal SRAM, then invokes hardware AES-256-GCM decryption in place.
+5. **Multi-Stage Verification**:
+   - Manifest verified against pinned `Falcon-512` public key.
+   - Firmware image verified against `ML-DSA-44` and `Ed25519` public keys.
+   - Non-Volatile Storage (NVS) check verifies that `monotonic_security_version` strictly exceeds the active counter.
+6. **Telemetry & Atomic Swap**:
+   - Stack watermark and latency telemetry are captured and broadcast to the telemetry server.
+   - On full pass: Bootloader switches active partition pointer to Slot B.
+   - On fail / bitflip: Slot B is cleared; system reboots into Slot A with zero operational downtime.
+
+---
+
+## Hardware Telemetry & HIL Testbed
+
+Automotive qualification requires hard mathematical proof that post-quantum algorithms execute safely within embedded memory envelopes without stack collisions or heap exhaustion.
+
+```
+                           ESP32-LX6 SILICON CONSTRAINTS
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │ Available SRAM: 520 KB  │  Internal Flash: 4 MB  │  Clock: 240 MHz     │
+    └────────────────────────────────────────────────────────────────────────┘
+```
+
+AutoQrypt profiles silicon behavior directly during execution:
+- **Stack High-Water Mark (`uxTaskGetStackHighWaterMark`)**: Verifies that ML-DSA polynomial arithmetic stays strictly inside task boundaries.
+- **Cycle-Accurate Latency Counters**: Benchmarks decryption and signature verification durations per algorithm.
+- **Monotonic NVS Anti-Rollback**: Hardware flash counter prevents rollback attacks even if an older, validly-signed firmware image is replayed.
+- **Fail-Safe Negative Testing**: Validates recovery from mid-flash power cuts, corrupted chunks, and tampered manifest payloads.
+
+---
+
+## Quantum Integrations
+
+### 1. QpiAI Quantum SDK (`src/sponsors/qpiai_qcloud.py`)
+- **Circuit Generation**: Configures quantum superposition circuits using the `qpiai-quantum` SDK.
+- **Multi-Backend Runtime**: Authenticates against `qcloud.qpiai.tech` with automatic fallback to local statevector simulation (`QpiAI-QSV-Local`).
+- **NIST SP 800-90B Audit**: Evaluates Shannon entropy and min-entropy, producing certified entropy receipts.
+- **Exported Artifacts**:
+  - `dataset/qpiai_qrng_circuit.qasm`: OpenQASM 2.0 quantum circuit ready for QpiAI Cloud.
+  - `dataset/qpiai_qrng_receipt.json`: Cryptographic entropy verification receipt.
+
+### 2. Bloq Platform QUBO Optimizer (`src/sponsors/bloq_platform.py`)
+- **Algorithmic Agility Formulation**: Models ECU hardware profiles (`dataset/ecu_hardware_profiles.json`) into a Quadratic Unconstrained Binary Optimization (QUBO) Hamiltonian balancing RAM, latency, and CAN frame limits:
+  $$\min \sum_{e,a} \left[ w_1 \frac{\text{RAM}_{e,a}}{\text{RAM}_e^{\max}} + w_2 \frac{\text{Frames}_{e,a}}{\text{Bandwidth}_e} + w_3 \frac{\text{Latency}_{e,a}}{\text{Deadline}_e} \right] x_{e,a} + \lambda \sum_e \left(1 - \sum_a x_{e,a}\right)^2$$
+- **Exported Artifacts**:
+  - `bloq_workspace/ecu_pqc_benchmark_dataset.csv`: Uploadable dataset for `platform.bloq.in`.
+  - `bloq_workspace/qubo_matrix.json`: 15x15 QUBO coefficient matrix.
+  - `notebooks/bloq_pqc_ota_optimizer.ipynb`: Self-contained Bloq Maya / Editor workflow.
+
+---
+
+## Attack & Defense Scenarios
+
+AutoQrypt includes 8 automated test scenarios demonstrating attack mitigation:
+
+| Script | Scenario Tested | Security Defense Validated |
 | :--- | :--- | :--- |
-| **Two-Role Signing** | Ed25519 (Image + Director HSM separation) | Compromised distribution server |
-| **Anti-Rollback** | Monotonic build counter vs persisted state | Manifest replay / freeze attacks |
-| **Chunk Integrity** | HMAC-SHA256 leaf digests & root verification | In-flight payload tampering & bitflips |
-| **Selective Retransmission** | Per-chunk state machine with exponential backoff | Bus noise & transient frame drops |
-| **Resume on Disconnect** | Persisted chunk verification cache | Network drops during download |
-| **Supply Chain Audit** | SBOM parsing against CVE database | Vulnerable third-party dependencies |
-| **Functional Safety** | Pre-flash vehicle state validation | Flashing during active vehicle operation |
+| `demo_1_normal.py` | Baseline clean OTA update | Full PQ/T hybrid pipeline & A/B partition swap |
+| `demo_2_tampered.py` | In-flight payload bitflip | Leaf digest mismatch & instant chunk rejection |
+| `demo_3_retransmit.py` | Transient bus packet loss | State-machine selective chunk retransmission |
+| `demo_4_resume.py` | Network connection severance | Resumption from persisted verification state |
+| `demo_5_rogue_hsm.py` | Untrusted root signing attempt | Public key pinning failure; immediate rejection |
+| `demo_6_sbom_cve.py` | Vulnerable dependency injection | Supply-chain SBOM audit against CVE database |
+| `demo_7_rollback.py` | Replay of valid older release | Monotonic NVS counter rollback defense |
+| `demo_8_compromised_director.py`| Attacker captures Director key | Image Role offline key isolation prevents forged payload |
 
 ---
 
-## Project Structure
+## Repository Structure
 
 ```
 AutoQrypt/
-├── main.py                 # Orchestrator (Server & Vehicle runtime)
-├── requirements.txt        # Dependencies (FastAPI, Cryptography, Pydantic, qpiai-quantum)
-├── qcloud.env.example      # QpiAI QCloud & Bloq API environment template
-├── dataset/                # Automotive ECU profiles, QASM circuit & QRNG receipt
-├── bloq_workspace/         # Uploadable Bloq artifacts (CSV dataset, QUBO text & JSON)
-├── notebooks/              # Bloq Platform Jupyter optimization workflows
-├── src/sponsors/           # QpiAI QRNG entropy engine & Bloq QUBO optimizer
-├── tests/                  # Verification test suites (test_sponsors.py)
-├── build_pipeline/         # Firmware release assembly & Image signing
-├── server/                 # Cloud OTA distribution service (Director role)
-├── vehicle/                # Gateway ECU, chunk manager, and installer
-├── signing/                # Cryptographic signing authorities & digest binding
-├── key_management/         # Hardware Security Module (HSM) with PQC/QRNG support
-├── merkle/                 # HMAC leaf hashing and root reconstruction
-├── sbom/                   # SBOM generator & local CVE database
-├── attacker/               # MITM adversary simulation (bitflip, truncation, replay)
-├── dashboard/              # Fleet telemetry backend and live web console
-└── scripts/                # Pre-configured demo scenarios (Demos 1–8)
+├── images/                 # Architecture diagrams, headers, and schematics
+├── cloud/                  # OEM microservices & key generation
+│   ├── build_pipeline/     # Firmware assembly & dual-signing pipeline
+│   ├── server/             # FastAPI online Director service
+│   ├── key_management/     # HSM interface with PQC & QRNG support
+│   └── signing/            # Signing authority implementations
+├── vehicle/                # Target ECU runtime & HIL surrogate
+│   ├── gateway_ecu.py      # Verification state machine & A/B manager
+│   ├── chunk_manager.py    # Chunk reassembly & selective retransmission
+│   └── installer.py        # Rollback check & atomic partition activator
+├── src/sponsors/           # Quantum platform connectors
+│   ├── qpiai_qcloud.py     # QpiAI QRNG entropy engine
+│   └── bloq_platform.py    # Bloq QUBO crypto-agility optimizer
+├── dashboard/              # Real-time telemetry web console
+├── dataset/                # ECU hardware profiles, QASM circuit, QRNG receipt
+├── bloq_workspace/         # Bloq platform uploadable datasets & QUBO matrices
+├── scripts/                # Automated attack & defense demo suites (1–8)
+└── tests/                  # Sponsor integration test suite
 ```
 
 ---
@@ -80,94 +214,53 @@ AutoQrypt/
 
 ### Prerequisites
 - Python 3.10+
-- Virtual environment tool (`venv`)
+- Optional: ESP-IDF v5.1+ for flashing physical ESP32 target silicon
 
-### Installation
-
+### 1. Environment Setup
 ```bash
 git clone https://github.com/imnottaken/AutoQrypt.git
 cd AutoQrypt
 
 python3 -m venv venv
-source venv/bin/activate    # On Windows: venv\Scripts\activate
+source venv/bin/activate    # Windows: venv\Scripts\activate
 
 pip install -r requirements.txt
 ```
 
----
-
-## Running the Demos
-
-### Option A: Web Dashboard (Recommended)
-
-1. Start the server node (OTA Director & Dashboard):
-   ```bash
-   python main.py --server
-   ```
-2. Open `http://127.0.0.1:7001` in your browser.
-3. Select any demo scenario from the UI to observe live telemetry, chunk states, and security events.
-
-### Option B: Standalone CLI Demos
-
-Each scenario can be executed independently:
-
-```bash
-# Demo 1: Clean end-to-end OTA update
-python scripts/demo_1_normal.py
-
-# Demo 2: Persistent chunk tampering (bitflip) detection
-python scripts/demo_2_tampered.py
-
-# Demo 3: Transient corruption with selective retransmission
-python scripts/demo_3_retransmit.py
-
-# Demo 4: Network drop and secure state resumption
-python scripts/demo_4_resume.py
-
-# Demo 5: Signature rejection with untrusted (rogue) HSM key
-python scripts/demo_5_rogue_hsm.py
-
-# Demo 6: Supply chain CVE detection and policy quarantine
-python scripts/demo_6_sbom_cve.py
-
-# Demo 7: Anti-rollback rejection of replayed valid old manifest
-python scripts/demo_7_rollback.py
-
-# Demo 8: Compromised Director defense via two-role trust split
-python scripts/demo_8_compromised_director.py
-```
-
----
-
-## Quantum Integrations (QpiAI QCloud & Bloq Platform)
-
-AutoQrypt integrates sponsor technologies across quantum entropy generation and algorithmic agility optimization:
-
-### 1. QpiAI QCloud Quantum Entropy Engine (`src/sponsors/qpiai_qcloud.py`)
-- **Quantum Circuit:** Executes an 8-qubit Hadamard superposition circuit ($H^{\otimes 8} |0\rangle^{\otimes 8}$) with measurement collapse (`PQC02_Automotive_QRNG_Seed`).
-- **Execution Target:** Supports remote authentication via `QpiAIQuantumAuth` against `qcloud.qpiai.tech` and falls back automatically to local `QpiAI-QSV-Local` (StatevectorSimulator) for offline determinism.
-- **Entropy Health Tests:** Evaluates Shannon entropy and NIST SP 800-90B min-entropy thresholds, returning a structured `QpiAIEntropyReceipt`.
-- **PQC Key Seeding:** Feeds the certified 32-byte quantum entropy directly into NIST FIPS 204 (`ML-DSA-44` / Dilithium2) keypair derivation in `key_management/hsm.py`.
-- **Exported Uploadable Artifacts (`dataset/`):**
-  - `dataset/qpiai_qrng_circuit.qasm`: OpenQASM 2.0 representation ready to drag-and-drop into `qcloud.qpiai.tech` **Circuits** tab.
-  - `dataset/qpiai_qrng_receipt.json`: Signed quantum entropy provenance receipt for **Datasets** tab.
-
-### 2. Bloq Quantum Crypto-Agility Optimizer (`src/sponsors/bloq_platform.py`)
-- **QUBO / QAOA Cost Hamiltonian:** Solves constrained algorithm assignment over automotive ECU hardware profiles (`dataset/ecu_hardware_profiles.json`):
-  $$\min \sum_{e,a} \left[ w_1 \frac{\text{RAM}_{e,a}}{\text{RAM}_e^{\max}} + w_2 \frac{\text{Frames}_{e,a}}{\text{Bandwidth}_e} + w_3 \frac{\text{Latency}_{e,a}}{\text{Deadline}_e} \right] x_{e,a} + \lambda \sum_e \left(1 - \sum_a x_{e,a}\right)^2$$
-- **Assignment Results:**
-  - `ECU-01-BRAKE` (64KB RAM, CAN-FD, ASIL-D) $\rightarrow$ **Falcon-512** (666-byte signature, 11 CAN-FD frames, 0.94ms latency) + 32-byte OTP eFuse hash pinning.
-  - `ECU-02-BMS` (128KB RAM, CAN-FD) $\rightarrow$ **ML-DSA-44** (NIST FIPS 204 primary standard, integer-only lattice arithmetic).
-  - `ECU-03-ADAS` (512KB RAM, 100Mbps Ethernet) $\rightarrow$ **ML-DSA-44 + SPHINCS+-128s** (Hybrid lattice + stateless hash root anchor for 20-year platform longevity).
-- **Exported Uploadable Artifacts (`bloq_workspace/` & `notebooks/`):**
-  - `bloq_workspace/ecu_pqc_benchmark_dataset.csv`: Clean tabular dataset ready for `platform.bloq.in` **Datasets** tab.
-  - `bloq_workspace/qubo_cost_function.txt`: Objective function & Python callable for **Experiments -> Custom Cost Functions** or Bloq Maya.
-  - `bloq_workspace/qubo_matrix.json`: Full 15x15 upper-triangular QUBO coefficient matrix.
-  - `notebooks/bloq_pqc_ota_optimizer.ipynb`: 100% self-contained Jupyter notebook for Bloq **Editor**.
-
-### Running Verification Suite
+### 2. Verify Quantum Integrations
 ```bash
 python3 tests/test_sponsors.py
 ```
 
+### 3. Launch Live Telemetry Server & Dashboard
+```bash
+python main.py --server
+```
+Navigate to `http://127.0.0.1:7001` in your browser to view the real-time ECU telemetry console.
 
+### 4. Execute a Demonstration Scenario
+In a separate terminal:
+```bash
+# Clean baseline update with dual PQ/T verification
+python scripts/demo_1_normal.py
+
+# Or test rollback mitigation:
+python scripts/demo_7_rollback.py
+```
+
+---
+
+## Standards & Compliance
+
+AutoQrypt implements specifications defined by:
+- **NIST FIPS 204**: Module-Lattice-Based Digital Signature Standard (`ML-DSA`).
+- **NIST FIPS 202**: SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions.
+- **Uptane (IEEE-ISTO 6100)**: Security design for automotive firmware updates.
+- **ISO/SAE 21434**: Road vehicles — Cybersecurity engineering.
+- **ISO 26262**: Road vehicles — Functional safety (pre-flash safety interlocks).
+
+---
+
+## License
+
+Apache 2.0 License. See [LICENSE](LICENSE) for details.

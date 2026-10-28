@@ -52,11 +52,17 @@ def run_server_node():
     # a port bound from a previous run.
     for port in [OTA_SERVER_PORT, DASHBOARD_PORT]:
         try:
-            subprocess.run(
-                ["powershell", "-Command", 
-                 f"(Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue).OwningProcess | ForEach-Object {{ Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }}"],
-                capture_output=True, timeout=5
-            )
+            if sys.platform == "win32":
+                subprocess.run(
+                    ["powershell", "-Command", 
+                     f"(Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue).OwningProcess | ForEach-Object {{ Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }}"],
+                    capture_output=True, timeout=5
+                )
+            else:
+                subprocess.run(
+                    f"lsof -ti :{port} | xargs kill -9",
+                    shell=True, capture_output=True, timeout=5
+                )
         except Exception:
             pass
     time.sleep(1)

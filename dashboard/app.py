@@ -73,7 +73,7 @@ async def ingest_log(request: Request):
     try:
         with open(AUDIT_FILE, "r") as f:
             disk_logs = json.load(f)
-    except:
+    except Exception:
         disk_logs = []
         
     if not disk_logs or data.get("event_type") == "ota_start":

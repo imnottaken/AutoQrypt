@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoQrypt ECU Demo</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #16191d; --muted: #5d6673; --line: #e2e5ea;
+    --ok: #157f3b; --ok-bg: #e6f4ea; --bad: #b42318; --bad-bg: #fdecea; --accent: #1f4fd1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1216; --card: #171b21; --text: #e8eaed; --muted: #9aa3ae; --line: #2a3038;
+      --ok: #4ade80; --ok-bg: #12301d; --bad: #f87171; --bad-bg: #3a1514; --accent: #7aa2ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 28px 16px 48px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 22px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+  .ecu { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-bottom: 18px; }
+  .ecu div { min-width: 120px; }
+  .ecu b { display: block; font-size: 20px; }
+  .ecu span { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+  .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+  button { font: inherit; font-size: 20px; font-weight: 650; padding: 26px 16px; border-radius: 14px;
+           border: 2px solid transparent; cursor: pointer; color: #fff; }
+  button small { display: block; font-size: 14px; font-weight: 450; opacity: .9; margin-top: 4px; }
+  #update { background: #157f3b; }
+  #attack { background: #b42318; }
+  button:disabled { opacity: .45; cursor: progress; }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .result { margin-bottom: 18px; min-height: 120px; }
+  .verdict { font-size: 24px; font-weight: 700; margin: 0 0 6px; }
+  .verdict.ok { color: var(--ok); } .verdict.bad { color: var(--bad); }
+  .reason { font-family: ui-monospace, Consolas, monospace; font-size: 14px; padding: 2px 8px;
+            border-radius: 6px; background: var(--bad-bg); color: var(--bad); }
+  .reason.ok { background: var(--ok-bg); color: var(--ok); }
+  .led { color: var(--muted); margin: 10px 0 0; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 15px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 550; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .pass { color: var(--ok); font-weight: 600; } .fail { color: var(--bad); font-weight: 600; }
+  .busy { color: var(--muted); font-size: 18px; }
+  h2 { font-size: 16px; margin: 0 0 4px; }
+  .legend { color: var(--muted); font-size: 14px; margin-top: 14px; }
+  @media (max-width: 560px) { .buttons { grid-template-columns: 1fr; } button { padding: 20px 14px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>AutoQrypt: post-quantum OTA gate on a real ESP32</h1>
+  <p class="sub">Every package is checked on the board itself: Falcon-512 (Director), Ed25519 + ML-DSA-44 (OEM image), anti-rollback counter and SHA3-256 image digest.</p>
+
+  <div class="card ecu" id="ecu">Connecting to the ECU ...</div>
+
+  <div class="buttons">
+    <button id="update">Send genuine update<small>LED blinks 4 times, then solid</small></button>
+    <button id="attack">Launch attack<small>LED alarm: fast blink for 10 s</small></button>
+  </div>
+
+  <div class="card result" id="result"><p class="busy">Press a button to send a package to the ECU.</p></div>
+
+  <div class="card">
+    <h2>History</h2>
+    <table>
+      <thead><tr><th>Time</th><th>Package</th><th>Decision</th><th>Reason</th></tr></thead>
+      <tbody id="history"></tbody>
+    </table>
+    <p class="legend">Blue LED: solid = running normally, 4 blinks = update installed and confirmed, fast blinking = package rejected.</p>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function renderEcu(e) {
+  if (!e) return;
+  $("ecu").innerHTML =
+    `<div><span>Firmware build</span><b>${esc(e.app_version)}</b></div>` +
+    `<div><span>Security version</span><b>${esc(e.installed_security_version)}</b></div>` +
+    `<div><span>Boot slot</span><b>${esc(e.running_slot)}</b></div>` +
+    `<div><span>Target</span><b>ESP32-ECU-GW / VEH-1</b></div>`;
+}
+
+function renderHistory(items) {
+  $("history").innerHTML = items.slice().reverse().map((h) => {
+    const ok = h.decision === "ACCEPT";
+    return `<tr><td class="num">${esc(h.time)}</td><td>${esc(h.title)}</td>` +
+           `<td class="${ok ? "pass" : "fail"}">${ok ? "Accepted" : "Rejected"}</td>` +
+           `<td><code>${esc(h.reason)}</code></td></tr>`;
+  }).join("");
+}
+
+function renderResult(r) {
+  const ok = r.decision === "ACCEPT";
+  const expected = (r.kind === "update") === ok;
+  const rows = r.verifiers.map((v) =>
+    `<tr><td>${esc(v.label)}</td><td class="${v.ok ? "pass" : "fail"}">${v.ok ? "valid" : "INVALID"}</td>` +
+    `<td class="num">${v.ms.toFixed(1)} ms</td><td class="num">${v.stack_bytes.toLocaleString()} B</td></tr>`).join("");
+  const sha = r.sha3_ms != null ? `<tr><td>SHA3-256 over image</td><td></td><td class="num">${r.sha3_ms.toFixed(1)} ms</td><td></td></tr>` : "";
+  $("result").innerHTML =
+    `<p class="verdict ${ok ? "ok" : "bad"}">${ok ? "Update installed" : "Package rejected"}: ${esc(r.title)}</p>` +
+    `<p>${esc(r.explanation)}</p>` +
+    `<p>ECU decision: <span class="reason ${ok ? "ok" : ""}">${esc(r.reason)}</span>` +
+    (expected ? "" : ` <b class="fail">(unexpected)</b>`) + `</p>` +
+    (rows || sha ? `<table><thead><tr><th>Check on the ESP32</th><th>Result</th><th>Time</th><th>Peak stack</th></tr></thead><tbody>${rows}${sha}</tbody></table>` : "") +
+    `<p class="led">${ok ? `Now running ${esc(r.ecu_after?.app_version)} at security version ${esc(r.ecu_after?.installed_security_version)}. LED: 4 blinks, then solid.`
+                         : `The ECU kept running its current firmware. LED: fast blinking for 10 s.`} (${r.elapsed_s} s)</p>`;
+}
+
+async function send(kind) {
+  $("update").disabled = $("attack").disabled = true;
+  $("result").innerHTML = `<p class="busy">${kind === "update" ? "Signing and sending a genuine update ..." : "Sending a tampered package ..."}</p>`;
+  try {
+    const res = await fetch(`/api/${kind}`, { method: "POST", headers: { "X-AutoQrypt": "1" } });
+    const r = await res.json();
+    renderResult(r);
+    renderEcu(r.ecu_after);
+    await refresh();
+  } catch (err) {
+    $("result").innerHTML = `<p class="fail">Could not reach the demo server: ${esc(err)}</p>`;
+  } finally {
+    $("update").disabled = $("attack").disabled = false;
+  }
+}
+
+async function refresh() {
+  const s = await (await fetch("/api/status")).json();
+  renderEcu(s.ecu);
+  renderHistory(s.history);
+}
+
+$("update").onclick = () => send("update");
+$("attack").onclick = () => send("attack");
+refresh().catch(() => { $("ecu").textContent = "Demo server not reachable."; });
+</script>
+</body>
+</html>

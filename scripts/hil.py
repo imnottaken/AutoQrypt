@@ -14,8 +14,10 @@ AutoQrypt: ESP32 Hardware-in-the-Loop signer, test runner and live demo.
   python scripts/hil.py run COM7 [--dashboard URL]
       Runs the test matrix on a freshly flashed v1 board; results in measurements/hil_results.json.
 
-  python scripts/hil.py demo COM7 [--dashboard URL]
-      Interactive menu for a live demo: valid update, attacks, rollback, benchmark.
+  python scripts/hil.py demo COM7 [--dashboard URL] [--http-port 8080]
+      Two-button demo page at http://127.0.0.1:8080: "Update" sends a genuine release
+      (LED blinks 4 times, then solid), "Attack" sends the next tampered package (LED
+      blinks fast for 10 s). Each package targets the next security version.
 
 Firmware images (build each once, see firmware/README.md):
   v1 firmware/build     factory image (LED solid on)
@@ -25,7 +27,7 @@ Firmware images (build each once, see firmware/README.md):
 Wire format (must match firmware/main/main.c):
   frame    = "AQPK" | manifest(108) | falcon512_sig(666) | ed25519_sig(64) | mldsa44_sig(2420)
              then, only after the ECU answers "AQ:SEND", the image in 4096-byte chunks,
-             each acknowledged with "AQ:ACK <bytes>".
+             each acknowledged with "AQ:ACK <total bytes received>" before the next is sent.
   "AQBM" | header  repeats the three verifiers on the device (benchmark, installs nothing).
   "AQLD"           asks the idle ECU to repeat the current package's decision line.
   manifest = "AQM1" | u16 format=1 | u8 hash=1 (SHA3-256) | u8 flags=0
@@ -43,6 +45,7 @@ import math
 import os
 import struct
 import sys
+import threading
 import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -223,34 +226,59 @@ def load_images():
     return images
 
 
-def packages(images, keys):
-    """Named packages: (header, image, transfer mode)."""
+PACKAGE_NAMES = ("v2", "v3_faulty", "v1_downgrade", "bad_magic", "truncated", "wrong_target", "rogue_key_id",
+                 "forged_mldsa", "bad_falcon", "other_vehicle", "bad_ed25519", "bad_mldsa", "bad_both",
+                 "tampered_manifest", "flipped_byte", "interrupted")
+
+
+def package(name, images, keys, sv=2):
+    """Builds one named package: (header, image, transfer mode).
+
+    `sv` is the security version of the genuine release the attack is based on; it must be
+    above the ECU's counter so each attack fails on its own defect, not on anti-rollback.
+    """
     v1, v2, v3 = images[1], images[2], images[3]
-    valid = sign_header(make_manifest(v2, keys), keys)
-    rogue = SimulatedHSM(seed=b"attacker_rogue_mldsa_key", algorithm="ML-DSA-44")
-    tampered = bytearray(valid)
-    tampered[40:44] = struct.pack("<I", 99)  # bump security_version without re-signing
-    bad_image = bytearray(v2)
-    bad_image[len(v2) // 2] ^= 0x01
-    return {
-        "v2": (valid, v2, "full"),
-        "v3_faulty": (sign_header(make_manifest(v3, keys, version="v3.0.0", security_version=3), keys), v3, "full"),
-        "v1_downgrade": (sign_header(make_manifest(v1, keys, version="v1.0.0", security_version=1), keys), v1, "full"),
-        "bad_magic": (sign_header(make_manifest(v2, keys, magic=b"XXXX"), keys), v2, "full"),
-        "truncated": (valid[:500], v2, "truncate_header"),
-        "wrong_target": (sign_header(make_manifest(v2, keys, target="ESP32-ECU-BRK"), keys), v2, "full"),
-        "rogue_key_id": (sign_header(make_manifest(v2, keys, mldsa_pk=rogue.get_public_key_bytes()), keys,
-                                     mldsa_hsm=rogue), v2, "full"),
-        "forged_mldsa": (sign_header(make_manifest(v2, keys), keys, mldsa_hsm=rogue), v2, "full"),
-        "bad_falcon": (flip(valid, FALCON_OFF + 300), v2, "full"),
-        "other_vehicle": (sign_header(make_manifest(v2, keys), keys, vehicle="VEH-2"), v2, "full"),
-        "bad_ed25519": (flip(valid, ED_OFF + 10), v2, "full"),
-        "bad_mldsa": (flip(valid, MLDSA_OFF + 1000), v2, "full"),
-        "bad_both": (flip(flip(valid, ED_OFF + 10), MLDSA_OFF + 1000), v2, "full"),
-        "tampered_manifest": (tampered, v2, "full"),
-        "flipped_byte": (valid, bytes(bad_image), "full"),
-        "interrupted": (valid, v2, "interrupt"),
-    }
+    version = f"v2.0.{max(sv - 2, 0)}"  # security version 2 is v2.0.0, 3 is v2.0.1, ...
+    m = lambda **kw: make_manifest(kw.pop("image", v2), keys, version=kw.pop("version", version),
+                                   security_version=kw.pop("security_version", sv), **kw)
+    if name == "v3_faulty":
+        return sign_header(m(image=v3, version="v3.0.0", security_version=max(sv, 3)), keys), v3, "full"
+    if name == "v1_downgrade":
+        return sign_header(m(image=v1, version="v1.0.0", security_version=1), keys), v1, "full"
+    if name == "bad_magic":
+        return sign_header(m(magic=b"XXXX"), keys), v2, "full"
+    if name == "wrong_target":
+        return sign_header(m(target="ESP32-ECU-BRK"), keys), v2, "full"
+    if name in ("rogue_key_id", "forged_mldsa"):
+        rogue = SimulatedHSM(seed=b"attacker_rogue_mldsa_key", algorithm="ML-DSA-44")
+        manifest = m(mldsa_pk=rogue.get_public_key_bytes()) if name == "rogue_key_id" else m()
+        return sign_header(manifest, keys, mldsa_hsm=rogue), v2, "full"
+    if name == "other_vehicle":
+        return sign_header(m(), keys, vehicle="VEH-2"), v2, "full"
+
+    valid = sign_header(m(), keys)
+    if name == "v2":
+        return valid, v2, "full"
+    if name == "truncated":
+        return valid[:500], v2, "truncate_header"
+    if name == "interrupted":
+        return valid, v2, "interrupt"
+    if name == "flipped_byte":
+        bad_image = bytearray(v2)
+        bad_image[len(v2) // 2] ^= 0x01
+        return valid, bytes(bad_image), "full"
+    if name == "tampered_manifest":
+        valid[40:44] = struct.pack("<I", sv + 97)  # raise security_version without re-signing
+        return valid, v2, "full"
+    offsets = {"bad_falcon": [FALCON_OFF + 300], "bad_ed25519": [ED_OFF + 10],
+               "bad_mldsa": [MLDSA_OFF + 1000], "bad_both": [ED_OFF + 10, MLDSA_OFF + 1000]}[name]
+    for off in offsets:
+        valid = flip(valid, off)
+    return valid, v2, "full"
+
+
+def packages(images, keys):
+    return {name: package(name, images, keys) for name in PACKAGE_NAMES}
 
 
 # (id, description, package, expected decision, expected reason) -- run on a v1 board
@@ -374,14 +402,20 @@ class ECU:
         item = self.wait_for(lambda x: x == "AQ:SEND" or is_decision(x) or is_garbled(x), 60)
         if item != "AQ:SEND":
             return item if is_decision(item) else self.resend_decision()
+        # One chunk at a time: the ESP32 can't service the UART while it writes flash, so
+        # bytes sent during a write are lost.
+        is_ack = lambda x: isinstance(x, str) and x.startswith("AQ:ACK")
         limit = 64 * 1024 if mode == "interrupt" else len(image)
         for off in range(0, limit, CHUNK):
             self.ser.write(image[off:off + CHUNK])
-            item = self.wait_for(lambda x: (isinstance(x, str) and x.startswith("AQ:ACK")) or is_decision(x)
-                                 or is_garbled(x), 15)
+            item = self.wait_for(lambda x: is_ack(x) or is_decision(x) or is_garbled(x), 15)
+            if is_garbled(item):
+                # The ACK may be inside the garbled line. The ECU acks within milliseconds,
+                # so no clean ACK within 1 s means that line was it.
+                item = self.wait_for(lambda x: is_ack(x) or is_decision(x), 1) or "AQ:ACK"
             if is_decision(item):
                 return item
-            if item is None or is_garbled(item):
+            if item is None:
                 return self.resend_decision()
             if progress:
                 done = min(off + CHUNK, len(image))
@@ -496,87 +530,118 @@ def cmd_run(args):
     sys.exit(0 if n_pass == len(results) and rejected_inactive else 1)
 
 
-# ------------------------------------------------------------------ live demo
+# ------------------------------------------------------------------ live demo (web page)
 
-DEMO_MENU = [
-    ("1", "Install v2.0.0 update (valid OEM + Director signatures)", "v2"),
-    ("2", "Attack: flip one byte of the firmware after signing", "flipped_byte"),
-    ("3", "Attack: forged ML-DSA-44 signature (attacker's key)", "forged_mldsa"),
-    ("4", "Attack: replay old v1.0.0 (downgrade)", "v1_downgrade"),
-    ("5", "Attack: package addressed to another vehicle (VEH-2)", "other_vehicle"),
-    ("6", "Attack: manifest version bumped after signing", "tampered_manifest"),
-    ("7", "Attack: corrupted Falcon-512 director signature", "bad_falcon"),
-    ("8", "Install v3.0.0 that crashes on first boot (watch the rollback)", "v3_faulty"),
+DEMO_HTML = os.path.join(ROOT, "scripts", "hil_demo.html")
+DEMO_ATTACKS = [
+    ("flipped_byte", "Tampered firmware", "One byte of the firmware was changed after the OEM signed it."),
+    ("forged_mldsa", "Forged ML-DSA-44 signature", "The attacker signed with their own ML-DSA key, not the OEM's."),
+    ("v1_downgrade", "Downgrade replay", "A genuine, correctly signed old v1.0.0 release is sent again."),
+    ("other_vehicle", "Wrong vehicle", "A genuine Director authorisation, but for vehicle VEH-2."),
+    ("tampered_manifest", "Edited manifest", "The security version in the manifest was raised after signing."),
+    ("bad_falcon", "Forged Director signature", "The Falcon-512 Director signature was corrupted in transit."),
 ]
 
 
-def show_decision(ev):
-    if not ev:
-        print("\n  !! No decision received (timeout)")
-        return
-    banner = "ACCEPTED" if ev["decision"] == "ACCEPT" else "REJECTED"
-    print(f"\n  >>> {banner}: {ev['reason']}")
-    for key, label in VERIFIERS:
-        if key in ev:
-            v = ev[key]
-            print(f"      {label:30s} {'valid' if v['ok'] else 'INVALID':8s} {v['us'] / 1000:6.1f} ms   stack {v['stack_peak_bytes']:,} B")
-    if "image_sha3_us" in ev:
-        print(f"      {'SHA3-256 over image':30s} {'':8s} {ev['image_sha3_us'] / 1000:6.1f} ms")
-    print(f"      ECU still running {ev['running_slot']} at security version {ev['installed_security_version']}"
-          if ev["decision"] == "REJECT" else "      Switching boot slot and rebooting ...")
+class Demo:
+    """Holds the serial link; one package at a time."""
 
+    def __init__(self, port, dashboard):
+        self.images, self.keys = load_images(), load_keys()
+        self.ecu = ECU(port, dashboard, echo=True)
+        self.lock = threading.Lock()
+        self.attack_index = 0
+        self.history = []
+        self.ecu.reset()
+        self.state = self.ecu.boot()
+        if not self.state:
+            sys.exit("[!] ECU did not boot. Is the AutoQrypt firmware flashed?")
 
-def show_boot(b):
-    if not b:
-        print("  !! ECU did not report after reboot")
-        return
-    print(f"\n  ECU running {b['app_version']} from {b['running_slot']}, security version {b['installed_security_version']}"
-          + (" (confirmed on this boot)" if b["confirmed_on_this_boot"] else ""))
-    if b.get("last_invalid_version"):
-        print(f"  Bootloader rolled back: {b['last_invalid_version']} in {b['last_invalid_slot']} never confirmed itself")
+    def status(self):
+        return {"ecu": self.state, "history": self.history[-12:]}
+
+    def send(self, kind, name, title, explanation):
+        with self.lock:
+            # Each package targets the next security version, so a genuine update is always
+            # newer than what is installed and each attack fails on its own defect.
+            sv = self.state["installed_security_version"] + 1
+            header, image, mode = package(name, self.images, self.keys, sv)
+            t0 = time.time()
+            ev = self.ecu.send_package(header, image, mode, progress=False) or {}
+            entry = {
+                "kind": kind, "title": title, "explanation": explanation,
+                "time": datetime.datetime.now().strftime("%H:%M:%S"),
+                "decision": ev.get("decision", "TIMEOUT"), "reason": ev.get("reason", "TIMEOUT"),
+                "release": ev.get("firmware_version"), "security_version": ev.get("security_version"),
+                "verifiers": [{"label": label, "ok": ev[k]["ok"], "ms": round(ev[k]["us"] / 1000, 1),
+                               "stack_bytes": ev[k]["stack_peak_bytes"]} for k, label in VERIFIERS if k in ev],
+                "sha3_ms": round(ev["image_sha3_us"] / 1000, 1) if "image_sha3_us" in ev else None,
+            }
+            if entry["decision"] == "ACCEPT":
+                self.state = self.ecu.boot(60) or self.state
+            else:
+                self.ecu.wait_for(lambda x: x == "AQ:READY", 15)
+                if ev:
+                    self.state = {**self.state, "running_slot": ev["running_slot"],
+                                  "installed_security_version": ev["installed_security_version"]}
+            entry["elapsed_s"] = round(time.time() - t0, 1)
+            entry["ecu_after"] = self.state
+            self.history.append(entry)
+            return entry
+
+    def update(self):
+        return self.send("update", "v2", "Genuine OEM update",
+                         "Signed by the OEM image keys (Ed25519 + ML-DSA-44), authorised by the Director (Falcon-512).")
+
+    def attack(self):
+        name, title, explanation = DEMO_ATTACKS[self.attack_index % len(DEMO_ATTACKS)]
+        self.attack_index += 1
+        return self.send("attack", name, title, explanation)
 
 
 def cmd_demo(args):
-    images = load_images()
-    keys = load_keys()
-    pkgs = packages(images, keys)
-    ecu = ECU(args.port, args.dashboard, echo=True)
-    ecu.reset()
-    show_boot(ecu.boot())
-    while True:
-        print("\n" + "=" * 66 + "\n  AutoQrypt live demo -- ESP32 ECU on " + args.port + "\n" + "=" * 66)
-        for key, label, _ in DEMO_MENU:
-            print(f"   {key}  {label}")
-        print("   b  Benchmark the three verifiers on the ESP32 (10 runs each)")
-        print("   w  Watch the ECU application output for 10 s")
-        print("   r  Reset the ECU and show its status")
-        print("   q  Quit")
-        choice = input("\n  > ").strip().lower()
-        if choice == "q":
-            break
-        if choice == "w":
-            ecu.wait_for(lambda x: False, 10)
-        elif choice == "r":
-            ecu.reset()
-            show_boot(ecu.boot())
-        elif choice == "b":
-            bench = ecu.send_bench(pkgs["v2"][0])
-            if bench:
-                for k, label in VERIFIERS:
-                    b = bench[k]
-                    print(f"      {label:30s} median {b['median_us'] / 1000:6.1f} ms  (min {b['min_us'] / 1000:.1f}, "
-                          f"max {b['max_us'] / 1000:.1f})  stack {b['stack_peak_bytes']:,} B")
-        else:
-            entry = next((e for e in DEMO_MENU if e[0] == choice), None)
-            if not entry:
-                continue
-            header, img, mode = pkgs[entry[2]]
-            ev = ecu.send_package(header, img, mode)
-            show_decision(ev)
-            if ev and ev["decision"] == "ACCEPT":
-                show_boot(ecu.boot(60))
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    demo = Demo(args.port, args.dashboard)
+    with open(DEMO_HTML, "rb") as f:
+        page = f.read()
+
+    class Handler(BaseHTTPRequestHandler):
+        def reply(self, body, ctype="application/json", code=200):
+            self.send_response(code)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_GET(self):
+            if self.path == "/":
+                self.reply(page, "text/html; charset=utf-8")
+            elif self.path == "/api/status":
+                self.reply(json.dumps(demo.status()).encode())
             else:
-                ecu.wait_for(lambda x: x == "AQ:READY", 15)
+                self.reply(b"{}", code=404)
+
+        def do_POST(self):
+            # A custom header can't be sent cross-site without CORS, so other web pages
+            # open in the browser can't trigger packages.
+            if self.headers.get("X-AutoQrypt") != "1":
+                return self.reply(b"{}", code=403)
+            action = {"/api/update": demo.update, "/api/attack": demo.attack}.get(self.path)
+            if not action:
+                return self.reply(b"{}", code=404)
+            self.reply(json.dumps(action()).encode())
+
+        def log_message(self, *_):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", args.http_port), Handler)
+    print(f"[*] ECU on {args.port}: {demo.state['app_version']}, security version "
+          f"{demo.state['installed_security_version']}")
+    print(f"[*] Demo page: http://127.0.0.1:{args.http_port}   (Ctrl+C to stop)")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
 
 
 def main():
@@ -587,10 +652,12 @@ def main():
     pr.add_argument("--no-qcloud", action="store_true", help="use os.urandom only")
     pr.add_argument("--force", action="store_true", help="replace existing keys")
     sub.add_parser("keys", help="write firmware/main/trusted_keys.h")
-    for name, helptext in (("run", "run the HIL test matrix on a fresh v1 board"), ("demo", "interactive live demo")):
+    for name, helptext in (("run", "run the HIL test matrix on a fresh v1 board"), ("demo", "two-button live demo web page")):
         r = sub.add_parser(name, help=helptext)
         r.add_argument("port")
         r.add_argument("--dashboard", help="forward device JSON to this /ingest URL")
+        if name == "demo":
+            r.add_argument("--http-port", type=int, default=8080)
     args = p.parse_args()
     {"provision": cmd_provision, "keys": cmd_keys, "run": cmd_run, "demo": cmd_demo}[args.cmd](args)
 

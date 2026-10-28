@@ -17,11 +17,14 @@ Wire format and test cases: [`scripts/hil.py`](../scripts/hil.py). Vendored cryp
 
 | Build dir | Release | What you see |
 |---|---|---|
-| `build` | v1.0.0 factory | LED (GPIO 2) solid on, battery temperature log |
-| `build_v2` | v2.0.0 update | LED blinks, adds a sustained over-temperature warning |
+| `build` | v1.0.0 factory | battery temperature log |
+| `build_v2` | v2.0.0 update | adds a sustained over-temperature warning |
 | `build_v3` | v3.0.0 faulty | Validly signed, crashes before confirming itself -> automatic rollback to v2 |
 
 The battery temperature is simulated; the ESP32 has no battery sensor.
+
+Blue LED (GPIO 2): **solid** = running normally, **4 blinks** = update installed and confirmed,
+**fast blinking for 10 s** = package rejected.
 
 ## Build, flash, test
 
@@ -44,9 +47,15 @@ cd ..
 # 4a. Automated test matrix (17 cases) -> measurements/hil_results.json
 python scripts/hil.py run COM7
 
-# 4b. Or the interactive judge demo
-python scripts/hil.py demo COM7 --dashboard http://127.0.0.1:7001/ingest
+# 4b. Or the two-button judge demo at http://127.0.0.1:8080
+python scripts/hil.py demo COM7
 ```
+
+The demo page has two buttons. **Send genuine update** signs a fresh release with the next
+security version (v2.0.0, v2.0.1, ...), so it can be clicked repeatedly. **Launch attack** sends
+the next tampered package in turn: flipped firmware byte, forged ML-DSA-44 signature, v1
+downgrade replay, wrong vehicle, edited manifest, corrupted Falcon-512 signature. Each result
+shows the ECU's decision, the reason and the on-device verify times.
 
 `--dashboard` forwards the ECU's JSON events (decisions, `perf_report`) to the dashboard.
 After `provision` (or on a new machine without the keystore), rebuild all three images and reflash.

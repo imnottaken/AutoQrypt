@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-29T00:41:17",
+  "generated": "2026-10-29T01:33:52",
   "measurement_type": "physical hardware (ESP32 over USB-UART)",
   "port": "COM7",
   "baud": 921600,
@@ -15,8 +15,8 @@
     "mldsa44_sig": 2420,
     "header_total": 3262,
     "images": {
-      "v1": 273872,
-      "v2": 273984,
+      "v1": 274048,
+      "v2": 274176,
       "v3": 176528
     }
   },
@@ -32,7 +32,7 @@
     "confirmed_on_this_boot": false,
     "last_invalid_slot": "",
     "last_invalid_version": "",
-    "free_heap_bytes": 279484
+    "free_heap_bytes": 271276
   },
   "rejected_packages_left_running_slot_unchanged": true,
   "bench": {
@@ -44,26 +44,26 @@
     "runs": 10,
     "falcon512_director": {
       "all_ok": true,
-      "min_us": 4904,
-      "median_us": 4908,
-      "max_us": 6140,
-      "stack_peak_bytes": 5096
+      "min_us": 4919,
+      "median_us": 4923,
+      "max_us": 6148,
+      "stack_peak_bytes": 4912
     },
     "ed25519_image": {
       "all_ok": true,
-      "min_us": 34302,
-      "median_us": 34307,
-      "max_us": 36273,
-      "stack_peak_bytes": 2392
+      "min_us": 33999,
+      "median_us": 34003,
+      "max_us": 35946,
+      "stack_peak_bytes": 2296
     },
     "mldsa44_image": {
       "all_ok": true,
-      "min_us": 17630,
-      "median_us": 17634,
-      "max_us": 18736,
+      "min_us": 17645,
+      "median_us": 17649,
+      "max_us": 18735,
       "stack_peak_bytes": 36496
     },
-    "min_free_heap_bytes": 144040
+    "min_free_heap_bytes": 135832
   },
   "tests": [
     {
@@ -79,7 +79,7 @@
         "reason": "MALFORMED_MANIFEST_MAGIC"
       },
       "pass": true,
-      "wall_time_s": 0.05,
+      "wall_time_s": 0.06,
       "device_event": {
         "device_id": "VEH-1",
         "event_type": "ota_decision",
@@ -90,13 +90,13 @@
         "reason": "MALFORMED_MANIFEST_MAGIC",
         "running_slot": "ota_0",
         "installed_security_version": 1,
-        "free_heap_bytes": 276052,
-        "min_free_heap_bytes": 276052,
-        "largest_free_block_bytes": 147456
+        "free_heap_bytes": 267844,
+        "min_free_heap_bytes": 267844,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "68bc9b9d9b65b190b37f95b8f3341637bd4665b18ae5562394ac3d9e3c748400",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
+      "header_sha3_256": "0a8cca8bf14398490aa22d8a51d2b0953dc8b509a5e33e968795b849480ed5eb",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
     },
     {
       "id": "T09b",
@@ -122,13 +122,13 @@
         "reason": "TRUNCATED_HEADER",
         "running_slot": "ota_0",
         "installed_security_version": 1,
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 275832,
-        "largest_free_block_bytes": 147456
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 267624,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "c3b4bc4576fd70ce40443833f61eeae353de396c9e11e90d52c5b2cd07c2425b",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
+      "header_sha3_256": "cf9a23ae09a6d3c25e9be9ba65c3c1d44864156b75eacb4a78be57f0a9f6597a",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
     },
     {
       "id": "T06",
@@ -157,14 +157,14 @@
         "target_id": "ESP32-ECU-BRK",
         "firmware_version": "v2.0.0",
         "security_version": 2,
-        "image_size": 273984,
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 275832,
-        "largest_free_block_bytes": 147456
+        "image_size": 274176,
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 267624,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "8abf44a5ac81ea5c98c5723d61830b511012108a5daf87430cb5f1bd389a0cf9",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
+      "header_sha3_256": "3ea53c300861afa9e89ea0ae59726c08d4174d8d572abc82b5d82df9704ec234",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
     },
     {
       "id": "T07",
@@ -179,7 +179,7 @@
         "reason": "ROLLBACK_ATTACK_DETECTED"
       },
       "pass": true,
-      "wall_time_s": 0.05,
+      "wall_time_s": 0.06,
       "device_event": {
         "device_id": "VEH-1",
         "event_type": "ota_decision",
@@ -193,14 +193,14 @@
         "target_id": "ESP32-ECU-GW",
         "firmware_version": "v1.0.0",
         "security_version": 1,
-        "image_size": 273872,
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 275832,
-        "largest_free_block_bytes": 147456
+        "image_size": 274048,
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 267624,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "9918524bdbb97817e698bff3db9eb51a20de766e59cf90505bf15b159ae26f6a",
-      "image_sha3_256": "e70b235db9139ad1e96a4ffec03eebb637ea0af42f1a7adbabaa6e032108e1dd"
+      "header_sha3_256": "9c04c5e11c38230136c53354b7f920a3aaa377c94fd0641e68b74a14ce7b40f9",
+      "image_sha3_256": "cac03a36d70d18c17e2f9054bb732eb3032e4fb517d21e5801b41987abf24aab"
     },
     {
       "id": "T08a",
@@ -215,7 +215,7 @@
         "reason": "UNTRUSTED_MLDSA44_KEY_ID"
       },
       "pass": true,
-      "wall_time_s": 0.05,
+      "wall_time_s": 0.06,
       "device_event": {
         "device_id": "VEH-1",
         "event_type": "ota_decision",
@@ -229,19 +229,205 @@
         "target_id": "ESP32-ECU-GW",
         "firmware_version": "v2.0.0",
         "security_version": 2,
-        "image_size": 273984,
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 275832,
-        "largest_free_block_bytes": 147456
+        "image_size": 274176,
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 267624,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "b85e49eafd8440bb8d53dc09e8db6e370497a4fec4d11cae3724229f3c89933a",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
+      "header_sha3_256": "a46840c041f3003ca84fea1c5230dce2ba78ea7bae372be79892ea2bcd2b0563",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
     },
     {
       "id": "T08b",
       "description": "Rogue ML-DSA signature claiming the trusted key id",
       "package": "forged_mldsa",
+      "expected": {
+        "decision": "REJECT",
+        "reason": "IMAGE_MLDSA44_SIGNATURE_INVALID"
+      },
+      "actual": {
+        "decision": "REJECT",
+        "reason": "IMAGE_MLDSA44_SIGNATURE_INVALID"
+      },
+      "pass": true,
+      "wall_time_s": 0.14,
+      "device_event": {
+        "device_id": "VEH-1",
+        "event_type": "ota_decision",
+        "level": "ERROR",
+        "logger": "esp32_ecu_VEH-1",
+        "message": "REJECT: IMAGE_MLDSA44_SIGNATURE_INVALID",
+        "decision": "REJECT",
+        "reason": "IMAGE_MLDSA44_SIGNATURE_INVALID",
+        "running_slot": "ota_0",
+        "installed_security_version": 1,
+        "target_id": "ESP32-ECU-GW",
+        "firmware_version": "v2.0.0",
+        "security_version": 2,
+        "image_size": 274176,
+        "falcon512_director": {
+          "ok": true,
+          "us": 6144,
+          "cycles": 1475466,
+          "stack_peak_bytes": 4904
+        },
+        "ed25519_image": {
+          "ok": true,
+          "us": 35945,
+          "cycles": 8627879,
+          "stack_peak_bytes": 2208
+        },
+        "mldsa44_image": {
+          "ok": false,
+          "us": 18734,
+          "cycles": 4496329,
+          "stack_peak_bytes": 36488
+        },
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 135832,
+        "largest_free_block_bytes": 139264
+      },
+      "decision_resends": 0,
+      "header_sha3_256": "d0f0c80fcc92cde6a374d306c2c8d1f51cf64339730a15984b1f2c41d16d603d",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
+    },
+    {
+      "id": "T13a",
+      "description": "Corrupted Falcon-512 director signature",
+      "package": "bad_falcon",
+      "expected": {
+        "decision": "REJECT",
+        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID"
+      },
+      "actual": {
+        "decision": "REJECT",
+        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID"
+      },
+      "pass": true,
+      "wall_time_s": 0.07,
+      "device_event": {
+        "device_id": "VEH-1",
+        "event_type": "ota_decision",
+        "level": "ERROR",
+        "logger": "esp32_ecu_VEH-1",
+        "message": "REJECT: DIRECTOR_FALCON512_SIGNATURE_INVALID",
+        "decision": "REJECT",
+        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID",
+        "running_slot": "ota_0",
+        "installed_security_version": 1,
+        "target_id": "ESP32-ECU-GW",
+        "firmware_version": "v2.0.0",
+        "security_version": 2,
+        "image_size": 274176,
+        "falcon512_director": {
+          "ok": false,
+          "us": 5428,
+          "cycles": 1302902,
+          "stack_peak_bytes": 4904
+        },
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 135832,
+        "largest_free_block_bytes": 139264
+      },
+      "decision_resends": 0,
+      "header_sha3_256": "c6ee9be9b9fa198c30f4dd068478f619811959a9c6183c31c315345a0a678686",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
+    },
+    {
+      "id": "T13b",
+      "description": "Director-signed for a different vehicle (VEH-2)",
+      "package": "other_vehicle",
+      "expected": {
+        "decision": "REJECT",
+        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID"
+      },
+      "actual": {
+        "decision": "REJECT",
+        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID"
+      },
+      "pass": true,
+      "wall_time_s": 0.08,
+      "device_event": {
+        "device_id": "VEH-1",
+        "event_type": "ota_decision",
+        "level": "ERROR",
+        "logger": "esp32_ecu_VEH-1",
+        "message": "REJECT: DIRECTOR_FALCON512_SIGNATURE_INVALID",
+        "decision": "REJECT",
+        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID",
+        "running_slot": "ota_0",
+        "installed_security_version": 1,
+        "target_id": "ESP32-ECU-GW",
+        "firmware_version": "v2.0.0",
+        "security_version": 2,
+        "image_size": 274176,
+        "falcon512_director": {
+          "ok": false,
+          "us": 4907,
+          "cycles": 1177937,
+          "stack_peak_bytes": 4904
+        },
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 135832,
+        "largest_free_block_bytes": 139264
+      },
+      "decision_resends": 0,
+      "header_sha3_256": "c1ac0d7353210a48fb79c446e9023ed2b61d70a56c2bfd44cb040e64178f224e",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
+    },
+    {
+      "id": "T03",
+      "description": "Corrupted Ed25519 signature only",
+      "package": "bad_ed25519",
+      "expected": {
+        "decision": "REJECT",
+        "reason": "IMAGE_ED25519_SIGNATURE_INVALID"
+      },
+      "actual": {
+        "decision": "REJECT",
+        "reason": "IMAGE_ED25519_SIGNATURE_INVALID"
+      },
+      "pass": true,
+      "wall_time_s": 0.12,
+      "device_event": {
+        "device_id": "VEH-1",
+        "event_type": "ota_decision",
+        "level": "ERROR",
+        "logger": "esp32_ecu_VEH-1",
+        "message": "REJECT: IMAGE_ED25519_SIGNATURE_INVALID",
+        "decision": "REJECT",
+        "reason": "IMAGE_ED25519_SIGNATURE_INVALID",
+        "running_slot": "ota_0",
+        "installed_security_version": 1,
+        "target_id": "ESP32-ECU-GW",
+        "firmware_version": "v2.0.0",
+        "security_version": 2,
+        "image_size": 274176,
+        "falcon512_director": {
+          "ok": true,
+          "us": 4905,
+          "cycles": 1177289,
+          "stack_peak_bytes": 4904
+        },
+        "ed25519_image": {
+          "ok": false,
+          "us": 34589,
+          "cycles": 8302345,
+          "stack_peak_bytes": 2288
+        },
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 135832,
+        "largest_free_block_bytes": 139264
+      },
+      "decision_resends": 0,
+      "header_sha3_256": "56fc9b8588fdf21538fe405251f3e943d616fcbd985d54411c37451e1da2f543",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
+    },
+    {
+      "id": "T04",
+      "description": "Corrupted ML-DSA-44 signature only",
+      "package": "bad_mldsa",
       "expected": {
         "decision": "REJECT",
         "reason": "IMAGE_MLDSA44_SIGNATURE_INVALID"
@@ -265,218 +451,32 @@
         "target_id": "ESP32-ECU-GW",
         "firmware_version": "v2.0.0",
         "security_version": 2,
-        "image_size": 273984,
+        "image_size": 274176,
         "falcon512_director": {
           "ok": true,
-          "us": 6137,
-          "cycles": 1473744,
+          "us": 5548,
+          "cycles": 1331672,
           "stack_peak_bytes": 5096
         },
         "ed25519_image": {
           "ok": true,
-          "us": 36277,
-          "cycles": 8707483,
-          "stack_peak_bytes": 2288
-        },
-        "mldsa44_image": {
-          "ok": false,
-          "us": 18738,
-          "cycles": 4497409,
-          "stack_peak_bytes": 36536
-        },
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 144040,
-        "largest_free_block_bytes": 147456
-      },
-      "decision_resends": 0,
-      "header_sha3_256": "c45e9430969cfef7abf85369a369c430890edb1e1f3f5e2af4571f6fd2858936",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
-    },
-    {
-      "id": "T13a",
-      "description": "Corrupted Falcon-512 director signature",
-      "package": "bad_falcon",
-      "expected": {
-        "decision": "REJECT",
-        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID"
-      },
-      "actual": {
-        "decision": "REJECT",
-        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID"
-      },
-      "pass": true,
-      "wall_time_s": 0.06,
-      "device_event": {
-        "device_id": "VEH-1",
-        "event_type": "ota_decision",
-        "level": "ERROR",
-        "logger": "esp32_ecu_VEH-1",
-        "message": "REJECT: DIRECTOR_FALCON512_SIGNATURE_INVALID",
-        "decision": "REJECT",
-        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID",
-        "running_slot": "ota_0",
-        "installed_security_version": 1,
-        "target_id": "ESP32-ECU-GW",
-        "firmware_version": "v2.0.0",
-        "security_version": 2,
-        "image_size": 273984,
-        "falcon512_director": {
-          "ok": false,
-          "us": 5414,
-          "cycles": 1299418,
-          "stack_peak_bytes": 4904
-        },
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 144040,
-        "largest_free_block_bytes": 147456
-      },
-      "decision_resends": 0,
-      "header_sha3_256": "81434e10caa8956fa3259eea4fcaeeb1f55aa89bc8c59ae60896dddfa1918cc8",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
-    },
-    {
-      "id": "T13b",
-      "description": "Director-signed for a different vehicle (VEH-2)",
-      "package": "other_vehicle",
-      "expected": {
-        "decision": "REJECT",
-        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID"
-      },
-      "actual": {
-        "decision": "REJECT",
-        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID"
-      },
-      "pass": true,
-      "wall_time_s": 0.06,
-      "device_event": {
-        "device_id": "VEH-1",
-        "event_type": "ota_decision",
-        "level": "ERROR",
-        "logger": "esp32_ecu_VEH-1",
-        "message": "REJECT: DIRECTOR_FALCON512_SIGNATURE_INVALID",
-        "decision": "REJECT",
-        "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID",
-        "running_slot": "ota_0",
-        "installed_security_version": 1,
-        "target_id": "ESP32-ECU-GW",
-        "firmware_version": "v2.0.0",
-        "security_version": 2,
-        "image_size": 273984,
-        "falcon512_director": {
-          "ok": false,
-          "us": 4898,
-          "cycles": 1175815,
-          "stack_peak_bytes": 5096
-        },
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 144040,
-        "largest_free_block_bytes": 147456
-      },
-      "decision_resends": 0,
-      "header_sha3_256": "ec15626d88d8192b854acc8f448e898ea393d0df92472cd9bdc3e91af85c316f",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
-    },
-    {
-      "id": "T03",
-      "description": "Corrupted Ed25519 signature only",
-      "package": "bad_ed25519",
-      "expected": {
-        "decision": "REJECT",
-        "reason": "IMAGE_ED25519_SIGNATURE_INVALID"
-      },
-      "actual": {
-        "decision": "REJECT",
-        "reason": "IMAGE_ED25519_SIGNATURE_INVALID"
-      },
-      "pass": true,
-      "wall_time_s": 0.07,
-      "device_event": {
-        "device_id": "VEH-1",
-        "event_type": "ota_decision",
-        "level": "ERROR",
-        "logger": "esp32_ecu_VEH-1",
-        "message": "REJECT: IMAGE_ED25519_SIGNATURE_INVALID",
-        "decision": "REJECT",
-        "reason": "IMAGE_ED25519_SIGNATURE_INVALID",
-        "running_slot": "ota_0",
-        "installed_security_version": 1,
-        "target_id": "ESP32-ECU-GW",
-        "firmware_version": "v2.0.0",
-        "security_version": 2,
-        "image_size": 273984,
-        "falcon512_director": {
-          "ok": true,
-          "us": 4892,
-          "cycles": 1174306,
-          "stack_peak_bytes": 4904
-        },
-        "ed25519_image": {
-          "ok": false,
-          "us": 4591,
-          "cycles": 1102834,
-          "stack_peak_bytes": 2088
-        },
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 144040,
-        "largest_free_block_bytes": 147456
-      },
-      "decision_resends": 0,
-      "header_sha3_256": "ee3fbd0e6ea11a9f62899ca7107414e1c1c110a6ef5bdad71a69ddd013783d02",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
-    },
-    {
-      "id": "T04",
-      "description": "Corrupted ML-DSA-44 signature only",
-      "package": "bad_mldsa",
-      "expected": {
-        "decision": "REJECT",
-        "reason": "IMAGE_MLDSA44_SIGNATURE_INVALID"
-      },
-      "actual": {
-        "decision": "REJECT",
-        "reason": "IMAGE_MLDSA44_SIGNATURE_INVALID"
-      },
-      "pass": true,
-      "wall_time_s": 0.12,
-      "device_event": {
-        "device_id": "VEH-1",
-        "event_type": "ota_decision",
-        "level": "ERROR",
-        "logger": "esp32_ecu_VEH-1",
-        "message": "REJECT: IMAGE_MLDSA44_SIGNATURE_INVALID",
-        "decision": "REJECT",
-        "reason": "IMAGE_MLDSA44_SIGNATURE_INVALID",
-        "running_slot": "ota_0",
-        "installed_security_version": 1,
-        "target_id": "ESP32-ECU-GW",
-        "firmware_version": "v2.0.0",
-        "security_version": 2,
-        "image_size": 273984,
-        "falcon512_director": {
-          "ok": true,
-          "us": 5323,
-          "cycles": 1277785,
-          "stack_peak_bytes": 4904
-        },
-        "ed25519_image": {
-          "ok": true,
-          "us": 34710,
-          "cycles": 8331491,
+          "us": 34358,
+          "cycles": 8247074,
           "stack_peak_bytes": 2208
         },
         "mldsa44_image": {
           "ok": false,
-          "us": 18246,
-          "cycles": 4379280,
-          "stack_peak_bytes": 36488
+          "us": 18248,
+          "cycles": 4379854,
+          "stack_peak_bytes": 36344
         },
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 144040,
-        "largest_free_block_bytes": 147456
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 135832,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "1089ec0968906c484829a3872842bc479acbf33cc4d259d3f7891d2dc84fd88c",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
+      "header_sha3_256": "92f24511a13202961966e843ca50b88ca34a4055439e7e6347b8339bfffe3c0e",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
     },
     {
       "id": "T05",
@@ -491,7 +491,7 @@
         "reason": "IMAGE_ED25519_SIGNATURE_INVALID"
       },
       "pass": true,
-      "wall_time_s": 0.07,
+      "wall_time_s": 0.11,
       "device_event": {
         "device_id": "VEH-1",
         "event_type": "ota_decision",
@@ -505,26 +505,26 @@
         "target_id": "ESP32-ECU-GW",
         "firmware_version": "v2.0.0",
         "security_version": 2,
-        "image_size": 273984,
+        "image_size": 274176,
         "falcon512_director": {
           "ok": true,
-          "us": 5417,
-          "cycles": 1300411,
+          "us": 5421,
+          "cycles": 1301126,
           "stack_peak_bytes": 4904
         },
         "ed25519_image": {
           "ok": false,
-          "us": 4587,
-          "cycles": 1101891,
-          "stack_peak_bytes": 2000
+          "us": 34588,
+          "cycles": 8302301,
+          "stack_peak_bytes": 2208
         },
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 144040,
-        "largest_free_block_bytes": 147456
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 135832,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "b32653b265d94653308dda257f1b89fbab5fcf82821d72df818ebb8f49b22649",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
+      "header_sha3_256": "d50805a4271a30d39e98b0595d003e69f680a2bf35b29f4df8d14094d5151acf",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
     },
     {
       "id": "T06b",
@@ -539,7 +539,7 @@
         "reason": "DIRECTOR_FALCON512_SIGNATURE_INVALID"
       },
       "pass": true,
-      "wall_time_s": 0.06,
+      "wall_time_s": 0.07,
       "device_event": {
         "device_id": "VEH-1",
         "event_type": "ota_decision",
@@ -553,20 +553,20 @@
         "target_id": "ESP32-ECU-GW",
         "firmware_version": "v2.0.0",
         "security_version": 99,
-        "image_size": 273984,
+        "image_size": 274176,
         "falcon512_director": {
           "ok": false,
-          "us": 5328,
-          "cycles": 1278727,
-          "stack_peak_bytes": 4904
+          "us": 5547,
+          "cycles": 1331393,
+          "stack_peak_bytes": 4920
         },
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 144040,
-        "largest_free_block_bytes": 147456
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 135832,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "2fc7cd51739f4b28a2e748f1e4dba66e26149a5518e742c117a8032d7d045d7a",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
+      "header_sha3_256": "ce7aa3a8098e7a1f5cddd59580eccb557accf12d2b3ddfbe9ed22b40134e66e8",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
     },
     {
       "id": "T02",
@@ -581,7 +581,7 @@
         "reason": "IMAGE_DIGEST_MISMATCH"
       },
       "pass": true,
-      "wall_time_s": 4.62,
+      "wall_time_s": 5.36,
       "device_event": {
         "device_id": "VEH-1",
         "event_type": "ota_decision",
@@ -595,33 +595,33 @@
         "target_id": "ESP32-ECU-GW",
         "firmware_version": "v2.0.0",
         "security_version": 2,
-        "image_size": 273984,
+        "image_size": 274176,
         "falcon512_director": {
           "ok": true,
-          "us": 4892,
-          "cycles": 1174306,
+          "us": 4922,
+          "cycles": 1181213,
           "stack_peak_bytes": 4904
         },
         "ed25519_image": {
           "ok": true,
-          "us": 34710,
-          "cycles": 8331328,
-          "stack_peak_bytes": 2200
+          "us": 34359,
+          "cycles": 8247074,
+          "stack_peak_bytes": 2208
         },
         "mldsa44_image": {
           "ok": true,
-          "us": 18248,
-          "cycles": 4379656,
-          "stack_peak_bytes": 36496
+          "us": 18251,
+          "cycles": 4380349,
+          "stack_peak_bytes": 36344
         },
-        "image_sha3_us": 217760,
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 144040,
-        "largest_free_block_bytes": 147456
+        "image_sha3_us": 217302,
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 135832,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "9e706a6cc30c1b5d10330505a039b4812b6e46c8ffb88025a913fbeba36cb84f",
-      "image_sha3_256": "3ca5f7e364019b138dac3bd86df6f939af4d1cd83a25554a9d35999bb30499d1"
+      "header_sha3_256": "ff9a11e580a895055e1813fab6247d746312140527ff102dc92e40d51d4982b0",
+      "image_sha3_256": "526f68e95f81713a94976d71aabc972d54234e8a6c0a1b4e62c3ed7c300dbe94"
     },
     {
       "id": "T10",
@@ -636,7 +636,7 @@
         "reason": "TRANSFER_INTERRUPTED"
       },
       "pass": true,
-      "wall_time_s": 6.94,
+      "wall_time_s": 6.95,
       "device_event": {
         "device_id": "VEH-1",
         "event_type": "ota_decision",
@@ -650,32 +650,32 @@
         "target_id": "ESP32-ECU-GW",
         "firmware_version": "v2.0.0",
         "security_version": 2,
-        "image_size": 273984,
+        "image_size": 274176,
         "falcon512_director": {
           "ok": true,
-          "us": 6132,
-          "cycles": 1472718,
+          "us": 6144,
+          "cycles": 1475604,
           "stack_peak_bytes": 4904
         },
         "ed25519_image": {
           "ok": true,
-          "us": 36273,
-          "cycles": 8706507,
+          "us": 35947,
+          "cycles": 8628253,
           "stack_peak_bytes": 2208
         },
         "mldsa44_image": {
           "ok": true,
-          "us": 18739,
-          "cycles": 4497658,
-          "stack_peak_bytes": 36488
+          "us": 18731,
+          "cycles": 4495684,
+          "stack_peak_bytes": 36344
         },
-        "free_heap_bytes": 275832,
-        "min_free_heap_bytes": 144040,
-        "largest_free_block_bytes": 147456
+        "free_heap_bytes": 267624,
+        "min_free_heap_bytes": 135832,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "9e706a6cc30c1b5d10330505a039b4812b6e46c8ffb88025a913fbeba36cb84f",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
+      "header_sha3_256": "3e18ce093fa5c2d9d4954e1c358132a0c12ad50129246cef1f675ddd715ebb29",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
     },
     {
       "id": "T01",
@@ -690,7 +690,7 @@
         "reason": "ALL_CHECKS_PASSED"
       },
       "pass": true,
-      "wall_time_s": 4.86,
+      "wall_time_s": 4.99,
       "device_event": {
         "device_id": "VEH-1",
         "event_type": "ota_decision",
@@ -704,33 +704,33 @@
         "target_id": "ESP32-ECU-GW",
         "firmware_version": "v2.0.0",
         "security_version": 2,
-        "image_size": 273984,
+        "image_size": 274176,
         "falcon512_director": {
           "ok": true,
-          "us": 5414,
-          "cycles": 1299423,
+          "us": 5417,
+          "cycles": 1300237,
           "stack_peak_bytes": 4904
         },
         "ed25519_image": {
           "ok": true,
-          "us": 34923,
-          "cycles": 8382563,
+          "us": 34608,
+          "cycles": 8306886,
           "stack_peak_bytes": 2208
         },
         "mldsa44_image": {
           "ok": true,
-          "us": 18249,
-          "cycles": 4379700,
+          "us": 18251,
+          "cycles": 4380347,
           "stack_peak_bytes": 36488
         },
-        "image_sha3_us": 217815,
-        "free_heap_bytes": 275744,
-        "min_free_heap_bytes": 144040,
-        "largest_free_block_bytes": 147456
+        "image_sha3_us": 217346,
+        "free_heap_bytes": 267536,
+        "min_free_heap_bytes": 135832,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "9e706a6cc30c1b5d10330505a039b4812b6e46c8ffb88025a913fbeba36cb84f",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1",
+      "header_sha3_256": "90157e8aae9ace13ec1339dd604fe52d8c51a0dc54ba066a0125f3679a369b6e",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243",
       "post_reboot": {
         "device_id": "VEH-1",
         "event_type": "boot_report",
@@ -743,7 +743,7 @@
         "confirmed_on_this_boot": true,
         "last_invalid_slot": "",
         "last_invalid_version": "",
-        "free_heap_bytes": 279484
+        "free_heap_bytes": 271276
       }
     },
     {
@@ -759,7 +759,7 @@
         "reason": "ROLLBACK_ATTACK_DETECTED"
       },
       "pass": true,
-      "wall_time_s": 0.05,
+      "wall_time_s": 0.06,
       "device_event": {
         "device_id": "VEH-1",
         "event_type": "ota_decision",
@@ -773,14 +773,14 @@
         "target_id": "ESP32-ECU-GW",
         "firmware_version": "v2.0.0",
         "security_version": 2,
-        "image_size": 273984,
-        "free_heap_bytes": 276052,
-        "min_free_heap_bytes": 276052,
-        "largest_free_block_bytes": 147456
+        "image_size": 274176,
+        "free_heap_bytes": 267844,
+        "min_free_heap_bytes": 267844,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "9e706a6cc30c1b5d10330505a039b4812b6e46c8ffb88025a913fbeba36cb84f",
-      "image_sha3_256": "abe7cf478efd6ff542c83d097575ccb952c03a46bb29e2519f3525f8fcc40fd1"
+      "header_sha3_256": "90157e8aae9ace13ec1339dd604fe52d8c51a0dc54ba066a0125f3679a369b6e",
+      "image_sha3_256": "cac05b02d283ae936e6b6417878808c3f87a2b910dea6ad3d1e6d4a926b8e243"
     },
     {
       "id": "T12",
@@ -795,7 +795,7 @@
         "reason": "ALL_CHECKS_PASSED"
       },
       "pass": true,
-      "wall_time_s": 3.83,
+      "wall_time_s": 3.91,
       "device_event": {
         "device_id": "VEH-1",
         "event_type": "ota_decision",
@@ -812,30 +812,30 @@
         "image_size": 176528,
         "falcon512_director": {
           "ok": true,
-          "us": 6137,
-          "cycles": 1473896,
-          "stack_peak_bytes": 5100
+          "us": 6140,
+          "cycles": 1474811,
+          "stack_peak_bytes": 4904
         },
         "ed25519_image": {
           "ok": true,
-          "us": 35687,
-          "cycles": 8566179,
-          "stack_peak_bytes": 2292
+          "us": 36198,
+          "cycles": 8688663,
+          "stack_peak_bytes": 2288
         },
         "mldsa44_image": {
           "ok": true,
-          "us": 18740,
-          "cycles": 4497817,
-          "stack_peak_bytes": 36348
+          "us": 18723,
+          "cycles": 4493791,
+          "stack_peak_bytes": 36488
         },
-        "image_sha3_us": 140788,
-        "free_heap_bytes": 275744,
-        "min_free_heap_bytes": 144260,
-        "largest_free_block_bytes": 147456
+        "image_sha3_us": 139828,
+        "free_heap_bytes": 267536,
+        "min_free_heap_bytes": 135832,
+        "largest_free_block_bytes": 139264
       },
       "decision_resends": 0,
-      "header_sha3_256": "58bddeaea31ec4598c42d5bf99bdd52b01c2e3a220b709c8437aa3e6218ddc97",
-      "image_sha3_256": "322483e4ed1a7080fc787b52803bed7b414f5feddc9b62c45542a285f7285da1",
+      "header_sha3_256": "ff4ceee1c23f66a709e07517f965c4b8130b821ad4b56dd00b9f583b3a13ce21",
+      "image_sha3_256": "590030fc67d1483a131aaebaecab8fb7e8540e73c5fae006ee332f0fa42a5d45",
       "post_reboot": {
         "device_id": "VEH-1",
         "event_type": "boot_report",
@@ -848,12 +848,12 @@
         "confirmed_on_this_boot": false,
         "last_invalid_slot": "ota_0",
         "last_invalid_version": "v3.0.0",
-        "free_heap_bytes": 279396
+        "free_heap_bytes": 271188
       }
     }
   ],
   "serial_log": [
-    "\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000I (27) boot: ESP-IDF v5.5.6 2nd stage bootloader",
+    "\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000I (27) boot: ESP-IDF v5.5.6 2nd stage bootloader",
     "I (27) boot: compile time Oct 29 2026 00:24:15",
     "I (28) boot: chip revision: v3.1",
     "I (28) boot.esp32: SPI Speed      : 40MHz",
@@ -868,10 +868,10 @@
     "I (33) boot:  4 ota_1            OTA app          00 11 00190000 00180000",
     "I (34) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=0ea08h ( 59912) map",
     "I (56) esp_image: segment 1: paddr=0001ea30 vaddr=3ffb0000 size=015e8h (  5608) load",
-    "I (58) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=23130h (143664) map",
-    "I (107) esp_image: segment 3: paddr=00043158 vaddr=3ffb15e8 size=01354h (  4948) load",
-    "I (110) esp_image: segment 4: paddr=000444b4 vaddr=40080000 size=0e8c4h ( 59588) load",
-    "I (133) esp_image: segment 5: paddr=00052d80 vaddr=50000000 size=00020h (    32) load",
+    "I (58) esp_image: segment 2: paddr=00020020 vaddr=400d0020 size=231ech (143852) map",
+    "I (107) esp_image: segment 3: paddr=00043214 vaddr=3ffb15e8 size=01354h (  4948) load",
+    "I (110) esp_image: segment 4: paddr=00044570 vaddr=40080000 size=0e8c4h ( 59588) load",
+    "I (133) esp_image: segment 5: paddr=00052e3c vaddr=50000000 size=00020h (    32) load",
     "I (141) boot: Loaded app from partition at offset 0x10000",
     "I (142) cpu_start: Multicore app",
     "I (151) cpu_start: GPIO 3 and 1 are used as console UART I/O pins",
@@ -881,14 +881,14 @@
     "I (151) app_init: Project name:     autoqrypt-ecu-surrogate",
     "I (152) app_init: App version:      v1.0.0",
     "I (153) app_init: Compile time:     Oct 29 2026 00:25:20",
-    "I (153) app_init: ELF file SHA256:  dbb934a15...",
+    "I (153) app_init: ELF file SHA256:  9dc6f45dd...",
     "I (154) app_init: ESP-IDF:          v5.5.6",
     "I (154) efuse_init: Min chip rev:     v0.0",
     "I (155) efuse_init: Max chip rev:     v3.99",
     "I (155) efuse_init: Chip rev:         v3.1",
     "I (156) heap_init: Initializing. RAM available for dynamic allocation:",
     "I (157) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM",
-    "I (157) heap_init: At 3FFB5428 len 0002ABD8 (170 KiB): DRAM",
+    "I (157) heap_init: At 3FFB5438 len 0002ABC8 (170 KiB): DRAM",
     "I (158) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM",
     "I (158) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM",
     "I (159) heap_init: At 4008E8C4 len 0001173C (69 KiB): IRAM",
@@ -904,36 +904,36 @@
     "[ECU-HW] Target ID:        ESP32-ECU-GW (vehicle VEH-1)",
     "[ECU-HW] Running slot:     ota_0 @ 0x00010000",
     "[ECU-HW] Security version: 1 (NVS monotonic counter)",
-    "[ECU-HW] Free heap:        279484 bytes",
+    "[ECU-HW] Free heap:        271276 bytes",
     "-----------------------------------------------------------------",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"boot_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"ECU booted v1.0.0\",\"app_version\":\"v1.0.0\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"confirmed_on_this_boot\":false,\"last_invalid_slot\":\"\",\"last_invalid_version\":\"\",\"free_heap_bytes\":279484}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"boot_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"ECU booted v1.0.0\",\"app_version\":\"v1.0.0\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"confirmed_on_this_boot\":false,\"last_invalid_slot\":\"\",\"last_invalid_version\":\"\",\"free_heap_bytes\":271276}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: MALFORMED_MANIFEST_MAGIC\",\"decision\":\"REJECT\",\"reason\":\"MALFORMED_MANIFEST_MAGIC\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"free_heap_bytes\":276052,\"min_free_heap_bytes\":276052,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: MALFORMED_MANIFEST_MAGIC\",\"decision\":\"REJECT\",\"reason\":\"MALFORMED_MANIFEST_MAGIC\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"free_heap_bytes\":267844,\"min_free_heap_bytes\":267844,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "[APP v1.0.0] battery temp 38.7 C (simulated sensor)",
-    "[APP v1.0.0] battery temp 39.8 C (simulated sensor)",
-    "[APP v1.0.0] battery temp 42.5 C (simulated sensor)",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: TRUNCATED_HEADER\",\"decision\":\"REJECT\",\"reason\":\"TRUNCATED_HEADER\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"free_heap_bytes\":275832,\"min_free_heap_bytes\":275832,\"largest_free_block_bytes\":147456}",
+    "[APP v1.0.0] battery temp 42.1 C (simulated sensor)",
+    "[APP v1.0.0] battery temp 40.6 C (simulated sensor)",
+    "[APP v1.0.0] battery temp 40.9 C (simulated sensor)",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: TRUNCATED_HEADER\",\"decision\":\"REJECT\",\"reason\":\"TRUNCATED_HEADER\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"free_heap_bytes\":267624,\"min_free_heap_bytes\":267624,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: WRONG_TARGET\",\"decision\":\"REJECT\",\"reason\":\"WRONG_TARGET\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-BRK\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"free_heap_bytes\":275832,\"min_free_heap_bytes\":275832,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: WRONG_TARGET\",\"decision\":\"REJECT\",\"reason\":\"WRONG_TARGET\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-BRK\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"free_heap_bytes\":267624,\"min_free_heap_bytes\":267624,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: ROLLBACK_ATTACK_DETECTED\",\"decision\":\"REJECT\",\"reason\":\"ROLLBACK_ATTACK_DETECTED\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v1.0.0\",\"security_version\":1,\"image_size\":273872,\"free_heap_bytes\":275832,\"min_free_heap_bytes\":275832,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: ROLLBACK_ATTACK_DETECTED\",\"decision\":\"REJECT\",\"reason\":\"ROLLBACK_ATTACK_DETECTED\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v1.0.0\",\"security_version\":1,\"image_size\":274048,\"free_heap_bytes\":267624,\"min_free_heap_bytes\":267624,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: UNTRUSTED_MLDSA44_KEY_ID\",\"decision\":\"REJECT\",\"reason\":\"UNTRUSTED_MLDSA44_KEY_ID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"free_heap_bytes\":275832,\"min_free_heap_bytes\":275832,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: UNTRUSTED_MLDSA44_KEY_ID\",\"decision\":\"REJECT\",\"reason\":\"UNTRUSTED_MLDSA44_KEY_ID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"free_heap_bytes\":267624,\"min_free_heap_bytes\":267624,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: IMAGE_MLDSA44_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"IMAGE_MLDSA44_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"falcon512_director\":{\"ok\":true,\"us\":6137,\"cycles\":1473744,\"stack_peak_bytes\":5096},\"ed25519_image\":{\"ok\":true,\"us\":36277,\"cycles\":8707483,\"stack_peak_bytes\":2288},\"mldsa44_image\":{\"ok\":false,\"us\":18738,\"cycles\":4497409,\"stack_peak_bytes\":36536},\"free_heap_bytes\":275832,\"min_free_heap_bytes\":144040,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: IMAGE_MLDSA44_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"IMAGE_MLDSA44_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"falcon512_director\":{\"ok\":true,\"us\":6144,\"cycles\":1475466,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":true,\"us\":35945,\"cycles\":8627879,\"stack_peak_bytes\":2208},\"mldsa44_image\":{\"ok\":false,\"us\":18734,\"cycles\":4496329,\"stack_peak_bytes\":36488},\"free_heap_bytes\":267624,\"min_free_heap_bytes\":135832,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"falcon512_director\":{\"ok\":false,\"us\":5414,\"cycles\":1299418,\"stack_peak_bytes\":4904},\"free_heap_bytes\":275832,\"min_free_heap_bytes\":144040,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"falcon512_director\":{\"ok\":false,\"us\":5428,\"cycles\":1302902,\"stack_peak_bytes\":4904},\"free_heap_bytes\":267624,\"min_free_heap_bytes\":135832,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"falcon512_director\":{\"ok\":false,\"us\":4898,\"cycles\":1175815,\"stack_peak_bytes\":5096},\"free_heap_bytes\":275832,\"min_free_heap_bytes\":144040,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"falcon512_director\":{\"ok\":false,\"us\":4907,\"cycles\":1177937,\"stack_peak_bytes\":4904},\"free_heap_bytes\":267624,\"min_free_heap_bytes\":135832,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: IMAGE_ED25519_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"IMAGE_ED25519_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"falcon512_director\":{\"ok\":true,\"us\":4892,\"cycles\":1174306,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":false,\"us\":4591,\"cycles\":1102834,\"stack_peak_bytes\":2088},\"free_heap_bytes\":275832,\"min_free_heap_bytes\":144040,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: IMAGE_ED25519_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"IMAGE_ED25519_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"falcon512_director\":{\"ok\":true,\"us\":4905,\"cycles\":1177289,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":false,\"us\":34589,\"cycles\":8302345,\"stack_peak_bytes\":2288},\"free_heap_bytes\":267624,\"min_free_heap_bytes\":135832,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: IMAGE_MLDSA44_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"IMAGE_MLDSA44_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"falcon512_director\":{\"ok\":true,\"us\":5323,\"cycles\":1277785,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":true,\"us\":34710,\"cycles\":8331491,\"stack_peak_bytes\":2208},\"mldsa44_image\":{\"ok\":false,\"us\":18246,\"cycles\":4379280,\"stack_peak_bytes\":36488},\"free_heap_bytes\":275832,\"min_free_heap_bytes\":144040,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: IMAGE_MLDSA44_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"IMAGE_MLDSA44_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"falcon512_director\":{\"ok\":true,\"us\":5548,\"cycles\":1331672,\"stack_peak_bytes\":5096},\"ed25519_image\":{\"ok\":true,\"us\":34358,\"cycles\":8247074,\"stack_peak_bytes\":2208},\"mldsa44_image\":{\"ok\":false,\"us\":18248,\"cycles\":4379854,\"stack_peak_bytes\":36344},\"free_heap_bytes\":267624,\"min_free_heap_bytes\":135832,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: IMAGE_ED25519_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"IMAGE_ED25519_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"falcon512_director\":{\"ok\":true,\"us\":5417,\"cycles\":1300411,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":false,\"us\":4587,\"cycles\":1101891,\"stack_peak_bytes\":2000},\"free_heap_bytes\":275832,\"min_free_heap_bytes\":144040,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: IMAGE_ED25519_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"IMAGE_ED25519_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"falcon512_director\":{\"ok\":true,\"us\":5421,\"cycles\":1301126,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":false,\"us\":34588,\"cycles\":8302301,\"stack_peak_bytes\":2208},\"free_heap_bytes\":267624,\"min_free_heap_bytes\":135832,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":99,\"image_size\":273984,\"falcon512_director\":{\"ok\":false,\"us\":5328,\"cycles\":1278727,\"stack_peak_bytes\":4904},\"free_heap_bytes\":275832,\"min_free_heap_bytes\":144040,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"decision\":\"REJECT\",\"reason\":\"DIRECTOR_FALCON512_SIGNATURE_INVALID\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":99,\"image_size\":274176,\"falcon512_director\":{\"ok\":false,\"us\":5547,\"cycles\":1331393,\"stack_peak_bytes\":4920},\"free_heap_bytes\":267624,\"min_free_heap_bytes\":135832,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
     "AQ:SEND",
     "AQ:ACK 4096",
@@ -943,6 +943,7 @@
     "AQ:ACK 20480",
     "AQ:ACK 24576",
     "AQ:ACK 28672",
+    "[APP v1.0.0] battery temp 39.4 C (simulated sensor)",
     "AQ:ACK 32768",
     "AQ:ACK 36864",
     "AQ:ACK 40960",
@@ -954,7 +955,6 @@
     "AQ:ACK 65536",
     "AQ:ACK 69632",
     "AQ:ACK 73728",
-    "[APP v1.0.0] battery temp 43.8 C (simulated sensor)",
     "AQ:ACK 77824",
     "AQ:ACK 81920",
     "AQ:ACK 86016",
@@ -1003,31 +1003,31 @@
     "AQ:ACK 262144",
     "AQ:ACK 266240",
     "AQ:ACK 270336",
-    "AQ:ACK 273984",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: IMAGE_DIGEST_MISMATCH\",\"decision\":\"REJECT\",\"reason\":\"IMAGE_DIGEST_MISMATCH\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"falcon512_director\":{\"ok\":true,\"us\":4892,\"cycles\":1174306,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":true,\"us\":34710,\"cycles\":8331328,\"stack_peak_bytes\":2200},\"mldsa44_image\":{\"ok\":true,\"us\":18248,\"cycles\":4379656,\"stack_peak_bytes\":36496},\"image_sha3_us\":217760,\"free_heap_bytes\":275832,\"min_free_heap_bytes\":144040,\"largest_free_block_bytes\":147456}",
+    "AQ:ACK 274176",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: IMAGE_DIGEST_MISMATCH\",\"decision\":\"REJECT\",\"reason\":\"IMAGE_DIGEST_MISMATCH\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"falcon512_director\":{\"ok\":true,\"us\":4922,\"cycles\":1181213,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":true,\"us\":34359,\"cycles\":8247074,\"stack_peak_bytes\":2208},\"mldsa44_image\":{\"ok\":true,\"us\":18251,\"cycles\":4380349,\"stack_peak_bytes\":36344},\"image_sha3_us\":217302,\"free_heap_bytes\":267624,\"min_free_heap_bytes\":135832,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
+    "[APP v1.0.0] battery temp 43.6 C (simulated sensor)",
     "AQ:SEND",
     "AQ:ACK 4096",
     "AQ:ACK 8192",
+    "AQ:ACK 12288",
+    "AQ:ACK 16384",
+    "AQ:ACK 20480",
+    "AQ:ACK 24576",
+    "AQ:ACK 28672",
+    "AQ:ACK 32768",
+    "AQ:ACK 36864",
+    "AQ:ACK 40960",
+    "AQ:ACK 45056",
+    "AQ:ACK 49152",
+    "AQ:ACK 53248",
+    "AQ:ACK 57344",
+    "AQ:ACK 61440",
+    "AQ:ACK 65536",
     "[APP v1.0.0] battery temp 41.6 C (simulated sensor)",
-    "AQ:ACK 12288",
-    "AQ:ACK 16384",
-    "AQ:ACK 20480",
-    "AQ:ACK 24576",
-    "AQ:ACK 28672",
-    "AQ:ACK 32768",
-    "AQ:ACK 36864",
-    "AQ:ACK 40960",
-    "AQ:ACK 45056",
-    "AQ:ACK 49152",
-    "AQ:ACK 53248",
-    "AQ:ACK 57344",
-    "AQ:ACK 61440",
-    "AQ:ACK 65536",
-    "[APP v1.0.0] battery temp 42.8 C (simulated sensor)",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: TRANSFER_INTERRUPTED\",\"decision\":\"REJECT\",\"reason\":\"TRANSFER_INTERRUPTED\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"falcon512_director\":{\"ok\":true,\"us\":6132,\"cycles\":1472718,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":true,\"us\":36273,\"cycles\":8706507,\"stack_peak_bytes\":2208},\"mldsa44_image\":{\"ok\":true,\"us\":18739,\"cycles\":4497658,\"stack_peak_bytes\":36488},\"free_heap_bytes\":275832,\"min_free_heap_bytes\":144040,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: TRANSFER_INTERRUPTED\",\"decision\":\"REJECT\",\"reason\":\"TRANSFER_INTERRUPTED\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"falcon512_director\":{\"ok\":true,\"us\":6144,\"cycles\":1475604,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":true,\"us\":35947,\"cycles\":8628253,\"stack_peak_bytes\":2208},\"mldsa44_image\":{\"ok\":true,\"us\":18731,\"cycles\":4495684,\"stack_peak_bytes\":36344},\"free_heap_bytes\":267624,\"min_free_heap_bytes\":135832,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"bench_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"Verifier benchmark, 10 runs each\",\"runs\":10,\"falcon512_director\":{\"all_ok\":true,\"min_us\":4904,\"median_us\":4908,\"max_us\":6140,\"stack_peak_bytes\":5096},\"ed25519_image\":{\"all_ok\":true,\"min_us\":34302,\"median_us\":34307,\"max_us\":36273,\"stack_peak_bytes\":2392},\"mldsa44_image\":{\"all_ok\":true,\"min_us\":17630,\"median_us\":17634,\"max_us\":18736,\"stack_peak_bytes\":36496},\"min_free_heap_bytes\":144040}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"bench_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"Verifier benchmark, 10 runs each\",\"runs\":10,\"falcon512_director\":{\"all_ok\":true,\"min_us\":4919,\"median_us\":4923,\"max_us\":6148,\"stack_peak_bytes\":4912},\"ed25519_image\":{\"all_ok\":true,\"min_us\":33999,\"median_us\":34003,\"max_us\":35946,\"stack_peak_bytes\":2296},\"mldsa44_image\":{\"all_ok\":true,\"min_us\":17645,\"median_us\":17649,\"max_us\":18735,\"stack_peak_bytes\":36496},\"min_free_heap_bytes\":135832}",
     "AQ:READY",
     "AQ:SEND",
     "AQ:ACK 4096",
@@ -1038,6 +1038,7 @@
     "AQ:ACK 24576",
     "AQ:ACK 28672",
     "AQ:ACK 32768",
+    "[APP v1.0.0] battery temp 41.9 C (simulated sensor)",
     "AQ:ACK 36864",
     "AQ:ACK 40960",
     "AQ:ACK 45056",
@@ -1048,7 +1049,6 @@
     "AQ:ACK 65536",
     "AQ:ACK 69632",
     "AQ:ACK 73728",
-    "[APP v1.0.0] battery temp 41.9 C (simulated sensor)",
     "AQ:ACK 77824",
     "AQ:ACK 81920",
     "AQ:ACK 86016",
@@ -1097,22 +1097,23 @@
     "AQ:ACK 262144",
     "AQ:ACK 266240",
     "AQ:ACK 270336",
-    "AQ:ACK 273984",
-    "I (27923) esp_image: segment 0: paddr=00190020 vaddr=3f400020 size=0ea48h ( 59976) map",
-    "I (27943) esp_image: segment 1: paddr=0019ea70 vaddr=3ffb0000 size=015a8h (  5544)",
-    "I (27943) esp_image: segment 2: paddr=001a0020 vaddr=400d0020 size=23168h (143720) map",
-    "I (27983) esp_image: segment 3: paddr=001c3190 vaddr=3ffb15a8 size=01394h (  5012)",
-    "I (27983) esp_image: segment 4: paddr=001c452c vaddr=40080000 size=0e8c4h ( 59588)",
-    "I (28003) esp_image: segment 5: paddr=001d2df8 vaddr=50000000 size=00020h (    32)",
-    "I (28013) esp_image: segment 0: paddr=00190020 vaddr=3f400020 size=0ea48h ( 59976) map",
-    "I (28023) esp_image: segment 1: paddr=0019ea70 vaddr=3ffb0000 size=015a8h (  5544)",
-    "I (28033) esp_image: segment 2: paddr=001a0020 vaddr=400d0020 size=23168h (143720) map",
-    "I (28063) esp_image: segment 3: paddr=001c3190 vaddr=3ffb15a8 size=01394h (  5012)",
-    "I (28073) esp_image: segment 4: paddr=001c452c vaddr=40080000 size=0e8c4h ( 59588)",
-    "I (28083) esp_image: segment 5: paddr=001d2df8 vaddr=50000000 size=00020h (    32)",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"ACCEPT: ALL_CHECKS_PASSED\",\"decision\":\"ACCEPT\",\"reason\":\"ALL_CHECKS_PASSED\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"falcon512_director\":{\"ok\":true,\"us\":5414,\"cycles\":1299423,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":true,\"us\":34923,\"cycles\":8382563,\"stack_peak_bytes\":2208},\"mldsa44_image\":{\"ok\":true,\"us\":18249,\"cycles\":4379700,\"stack_peak_bytes\":36488},\"image_sha3_us\":217815,\"free_heap_bytes\":275744,\"min_free_heap_bytes\":144040,\"largest_free_block_bytes\":147456}",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"perf_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"Measured on physical ESP32\",\"perf_data\":{\"stack_high_water_mark_bytes\":36488,\"sram_utilization_pct\":\"6.85% of 520 KB\",\"cpu_cycles\":14061686,\"latency_ms\":58.59,\"min_free_heap_bytes\":144040,\"active_partition_slot\":\"ota_1\",\"pqt_hybrid_status\":\"Falcon-512 + Ed25519 + ML-DSA-44 verified on silicon\"}}",
-    "I (28113) AUTOQRYPT_ECU: Rebooting into ota_1 (pending first-boot confirmation)",
+    "AQ:ACK 274176",
+    "I (29023) esp_image: segment 0: paddr=00190020 vaddr=3f400020 size=0ea48h ( 59976) map",
+    "I (29043) esp_image: segment 1: paddr=0019ea70 vaddr=3ffb0000 size=015a8h (  5544)",
+    "I (29043) esp_image: segment 2: paddr=001a0020 vaddr=400d0020 size=23224h (143908) map",
+    "I (29083) esp_image: segment 3: paddr=001c324c vaddr=3ffb15a8 size=01394h (  5012)",
+    "I (29083) esp_image: segment 4: paddr=001c45e8 vaddr=40080000 size=0e8c4h ( 59588)",
+    "I (29103) esp_image: segment 5: paddr=001d2eb4 vaddr=50000000 size=00020h (    32)",
+    "[APP v1.0.0] battery temp 38.0 C (simulated sensor)",
+    "I (29113) esp_image: segment 0: paddr=00190020 vaddr=3f400020 size=0ea48h ( 59976) map",
+    "I (29123) esp_image: segment 1: paddr=0019ea70 vaddr=3ffb0000 size=015a8h (  5544)",
+    "I (29133) esp_image: segment 2: paddr=001a0020 vaddr=400d0020 size=23224h (143908) map",
+    "I (29173) esp_image: segment 3: paddr=001c324c vaddr=3ffb15a8 size=01394h (  5012)",
+    "I (29173) esp_image: segment 4: paddr=001c45e8 vaddr=40080000 size=0e8c4h ( 59588)",
+    "I (29193) esp_image: segment 5: paddr=001d2eb4 vaddr=50000000 size=00020h (    32)",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"ACCEPT: ALL_CHECKS_PASSED\",\"decision\":\"ACCEPT\",\"reason\":\"ALL_CHECKS_PASSED\",\"running_slot\":\"ota_0\",\"installed_security_version\":1,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"falcon512_director\":{\"ok\":true,\"us\":5417,\"cycles\":1300237,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":true,\"us\":34608,\"cycles\":8306886,\"stack_peak_bytes\":2208},\"mldsa44_image\":{\"ok\":true,\"us\":18251,\"cycles\":4380347,\"stack_peak_bytes\":36488},\"image_sha3_us\":217346,\"free_heap_bytes\":267536,\"min_free_heap_bytes\":135832,\"largest_free_block_bytes\":139264}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"perf_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"Measured on physical ESP32\",\"perf_data\":{\"stack_high_water_mark_bytes\":36488,\"sram_utilization_pct\":\"6.85% of 520 KB\",\"cpu_cycles\":13987470,\"latency_ms\":58.28,\"min_free_heap_bytes\":135832,\"active_partition_slot\":\"ota_1\",\"pqt_hybrid_status\":\"Falcon-512 + Ed25519 + ML-DSA-44 verified on silicon\"}}",
+    "I (29213) AUTOQRYPT_ECU: Rebooting into ota_1 (pending first-boot confirmation)",
     "\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000I (27) boot: ESP-IDF v5.5.6 2nd stage bootloader",
     "I (27) boot: compile time Oct 29 2026 00:24:15",
     "I (27) boot: chip revision: v3.1",
@@ -1126,38 +1127,38 @@
     "I (31) boot:  2 phy_init         RF data          01 01 0000f000 00001000",
     "I (32) boot:  3 ota_0            OTA app          00 10 00010000 00180000",
     "I (33) boot:  4 ota_1            OTA app          00 11 00190000 00180000",
-    "I (62) esp_image: segment 0: paddr=00190020 vaddr=3f400020 size=0ea48h ( 59976) map",
-    "I (83) esp_image: segment 1: paddr=0019ea70 vaddr=3ffb0000 size=015a8h (  5544) load",
-    "I (85) esp_image: segment 2: paddr=001a0020 vaddr=400d0020 size=23168h (143720) map",
-    "I (134) esp_image: segment 3: paddr=001c3190 vaddr=3ffb15a8 size=01394h (  5012) load",
-    "I (137) esp_image: segment 4: paddr=001c452c vaddr=40080000 size=0e8c4h ( 59588) load",
-    "I (160) esp_image: segment 5: paddr=001d2df8 vaddr=50000000 size=00020h (    32) load",
-    "I (168) boot: Loaded app from partition at offset 0x190000",
-    "I (169) cpu_start: Multicore app",
-    "I (178) cpu_start: GPIO 3 and 1 are used as console UART I/O pins",
-    "I (178) cpu_start: Pro cpu start user code",
-    "I (178) cpu_start: cpu freq: 240000000 Hz",
-    "I (178) app_init: Application information:",
-    "I (178) app_init: Project name:     autoqrypt-ecu-surrogate",
-    "I (179) app_init: App version:      v2.0.0",
-    "I (180) app_init: Compile time:     Oct 29 2026 00:32:21",
-    "I (180) app_init: ELF file SHA256:  c63aca05f...",
-    "I (181) app_init: ESP-IDF:          v5.5.6",
-    "I (181) efuse_init: Min chip rev:     v0.0",
-    "I (182) efuse_init: Max chip rev:     v3.99",
-    "I (182) efuse_init: Chip rev:         v3.1",
-    "I (183) heap_init: Initializing. RAM available for dynamic allocation:",
-    "I (184) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM",
-    "I (184) heap_init: At 3FFB5428 len 0002ABD8 (170 KiB): DRAM",
-    "I (185) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM",
-    "I (185) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM",
-    "I (186) heap_init: At 4008E8C4 len 0001173C (69 KiB): IRAM",
-    "W (188) spi_flash: Detected boya flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_BOYA_CHIP` in menuconfig",
-    "I (189) spi_flash: detected chip: generic",
-    "I (189) spi_flash: flash io: dio",
-    "I (190) main_task: Started on CPU0",
-    "I (190) main_task: Calling app_main()",
-    "I (250) AUTOQRYPT_ECU: Committed monotonic security version 2 for ota_1",
+    "I (60) esp_image: segment 0: paddr=00190020 vaddr=3f400020 size=0ea48h ( 59976) map",
+    "I (80) esp_image: segment 1: paddr=0019ea70 vaddr=3ffb0000 size=015a8h (  5544) load",
+    "I (83) esp_image: segment 2: paddr=001a0020 vaddr=400d0020 size=23224h (143908) map",
+    "I (132) esp_image: segment 3: paddr=001c324c vaddr=3ffb15a8 size=01394h (  5012) load",
+    "I (134) esp_image: segment 4: paddr=001c45e8 vaddr=40080000 size=0e8c4h ( 59588) load",
+    "I (158) esp_image: segment 5: paddr=001d2eb4 vaddr=50000000 size=00020h (    32) load",
+    "I (166) boot: Loaded app from partition at offset 0x190000",
+    "I (167) cpu_start: Multicore app",
+    "I (175) cpu_start: GPIO 3 and 1 are used as console UART I/O pins",
+    "I (176) cpu_start: Pro cpu start user code",
+    "I (176) cpu_start: cpu freq: 240000000 Hz",
+    "I (176) app_init: Application information:",
+    "I (176) app_init: Project name:     autoqrypt-ecu-surrogate",
+    "I (177) app_init: App version:      v2.0.0",
+    "I (177) app_init: Compile time:     Oct 29 2026 00:32:21",
+    "I (178) app_init: ELF file SHA256:  1e99ebcc1...",
+    "I (179) app_init: ESP-IDF:          v5.5.6",
+    "I (179) efuse_init: Min chip rev:     v0.0",
+    "I (179) efuse_init: Max chip rev:     v3.99",
+    "I (180) efuse_init: Chip rev:         v3.1",
+    "I (181) heap_init: Initializing. RAM available for dynamic allocation:",
+    "I (181) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM",
+    "I (182) heap_init: At 3FFB5438 len 0002ABC8 (170 KiB): DRAM",
+    "I (183) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM",
+    "I (183) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM",
+    "I (184) heap_init: At 4008E8C4 len 0001173C (69 KiB): IRAM",
+    "W (186) spi_flash: Detected boya flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_BOYA_CHIP` in menuconfig",
+    "I (186) spi_flash: detected chip: generic",
+    "I (187) spi_flash: flash io: dio",
+    "I (188) main_task: Started on CPU0",
+    "I (188) main_task: Calling app_main()",
+    "I (248) AUTOQRYPT_ECU: Committed monotonic security version 2 for ota_1",
     "=================================================================",
     "AutoQrypt: ESP32 Hardware-in-the-Loop ECU Surrogate",
     "=================================================================",
@@ -1165,13 +1166,13 @@
     "[ECU-HW] Target ID:        ESP32-ECU-GW (vehicle VEH-1)",
     "[ECU-HW] Running slot:     ota_1 @ 0x00190000",
     "[ECU-HW] Security version: 2 (NVS monotonic counter)",
-    "[ECU-HW] Free heap:        279484 bytes",
+    "[ECU-HW] Free heap:        271276 bytes",
     "-----------------------------------------------------------------",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"boot_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"ECU booted v2.0.0\",\"app_version\":\"v2.0.0\",\"running_slot\":\"ota_1\",\"installed_security_version\":2,\"confirmed_on_this_boot\":true,\"last_invalid_slot\":\"\",\"last_invalid_version\":\"\",\"free_heap_bytes\":279484}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"boot_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"ECU booted v2.0.0\",\"app_version\":\"v2.0.0\",\"running_slot\":\"ota_1\",\"installed_security_version\":2,\"confirmed_on_this_boot\":true,\"last_invalid_slot\":\"\",\"last_invalid_version\":\"\",\"free_heap_bytes\":271276}",
     "AQ:READY",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: ROLLBACK_ATTACK_DETECTED\",\"decision\":\"REJECT\",\"reason\":\"ROLLBACK_ATTACK_DETECTED\",\"running_slot\":\"ota_1\",\"installed_security_version\":2,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":273984,\"free_heap_bytes\":276052,\"min_free_heap_bytes\":276052,\"largest_free_block_bytes\":147456}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"ERROR\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"REJECT: ROLLBACK_ATTACK_DETECTED\",\"decision\":\"REJECT\",\"reason\":\"ROLLBACK_ATTACK_DETECTED\",\"running_slot\":\"ota_1\",\"installed_security_version\":2,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v2.0.0\",\"security_version\":2,\"image_size\":274176,\"free_heap_bytes\":267844,\"min_free_heap_bytes\":267844,\"largest_free_block_bytes\":139264}",
     "AQ:READY",
-    "[APP v2.0.0] battery temp 42.0 C (simulated sensor)",
+    "[APP v2.0.0] battery temp 39.7 C (simulated sensor)",
     "AQ:SEND",
     "AQ:ACK 4096",
     "AQ:ACK 8192",
@@ -1217,22 +1218,22 @@
     "AQ:ACK 172032",
     "AQ:ACK 176128",
     "AQ:ACK 176528",
-    "I (4000) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=094b0h ( 38064) map",
-    "I (4010) esp_image: segment 1: paddr=000194d8 vaddr=3ffb0000 size=028ech ( 10476)",
-    "I (4020) esp_image: segment 2: paddr=0001bdcc vaddr=40080000 size=0424ch ( 16972)",
-    "I (4020) esp_image: segment 3: paddr=00020020 vaddr=400d0020 size=11c0ch ( 72716) map",
-    "I (4040) esp_image: segment 4: paddr=00031c34 vaddr=4008424c size=09504h ( 38148)",
-    "I (4050) esp_image: segment 5: paddr=0003b140 vaddr=50000000 size=00020h (    32)",
-    "I (4070) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=094b0h ( 38064) map",
-    "I (4080) esp_image: segment 1: paddr=000194d8 vaddr=3ffb0000 size=028ech ( 10476)",
-    "I (4080) esp_image: segment 2: paddr=0001bdcc vaddr=40080000 size=0424ch ( 16972)",
-    "I (4090) esp_image: segment 3: paddr=00020020 vaddr=400d0020 size=11c0ch ( 72716) map",
-    "I (4110) esp_image: segment 4: paddr=00031c34 vaddr=4008424c size=09504h ( 38148)",
-    "I (4120) esp_image: segment 5: paddr=0003b140 vaddr=50000000 size=00020h (    32)",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"ACCEPT: ALL_CHECKS_PASSED\",\"decision\":\"ACCEPT\",\"reason\":\"ALL_CHECKS_PASSED\",\"running_slot\":\"ota_1\",\"installed_security_version\":2,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v3.0.0\",\"security_version\":3,\"image_size\":176528,\"falcon512_director\":{\"ok\":true,\"us\":6137,\"cycles\":1473896,\"stack_peak_bytes\":5100},\"ed25519_image\":{\"ok\":true,\"us\":35687,\"cycles\":8566179,\"stack_peak_bytes\":2292},\"mldsa44_image\":{\"ok\":true,\"us\":18740,\"cycles\":4497817,\"stack_peak_bytes\":36348},\"image_sha3_us\":140788,\"free_heap_bytes\":275744,\"min_free_heap_bytes\":144260,\"largest_free_block_bytes\":147456}",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"perf_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"Measured on physical ESP32\",\"perf_data\":{\"stack_high_water_mark_bytes\":36348,\"sram_utilization_pct\":\"6.83% of 520 KB\",\"cpu_cycles\":14537892,\"latency_ms\":60.56,\"min_free_heap_bytes\":144260,\"active_partition_slot\":\"ota_0\",\"pqt_hybrid_status\":\"Falcon-512 + Ed25519 + ML-DSA-44 verified on silicon\"}}",
-    "I (4140) AUTOQRYPT_ECU: Rebooting into ota_0 (pending first-boot confirmation)",
-    "\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000I (27) boot: ESP-IDF v5.5.6 2nd stage bootloader",
+    "I (4098) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=094b0h ( 38064) map",
+    "I (4108) esp_image: segment 1: paddr=000194d8 vaddr=3ffb0000 size=028ech ( 10476)",
+    "I (4108) esp_image: segment 2: paddr=0001bdcc vaddr=40080000 size=0424ch ( 16972)",
+    "I (4118) esp_image: segment 3: paddr=00020020 vaddr=400d0020 size=11c0ch ( 72716) map",
+    "I (4138) esp_image: segment 4: paddr=00031c34 vaddr=4008424c size=09504h ( 38148)",
+    "I (4148) esp_image: segment 5: paddr=0003b140 vaddr=50000000 size=00020h (    32)",
+    "I (4158) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=094b0h ( 38064) map",
+    "I (4168) esp_image: segment 1: paddr=000194d8 vaddr=3ffb0000 size=028ech ( 10476)",
+    "I (4168) esp_image: segment 2: paddr=0001bdcc vaddr=40080000 size=0424ch ( 16972)",
+    "I (4178) esp_image: segment 3: paddr=00020020 vaddr=400d0020 size=11c0ch ( 72716) map",
+    "I (4198) esp_image: segment 4: paddr=00031c34 vaddr=4008424c size=09504h ( 38148)",
+    "I (4208) esp_image: segment 5: paddr=0003b140 vaddr=50000000 size=00020h (    32)",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"ota_decision\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"ACCEPT: ALL_CHECKS_PASSED\",\"decision\":\"ACCEPT\",\"reason\":\"ALL_CHECKS_PASSED\",\"running_slot\":\"ota_1\",\"installed_security_version\":2,\"target_id\":\"ESP32-ECU-GW\",\"firmware_version\":\"v3.0.0\",\"security_version\":3,\"image_size\":176528,\"falcon512_director\":{\"ok\":true,\"us\":6140,\"cycles\":1474811,\"stack_peak_bytes\":4904},\"ed25519_image\":{\"ok\":true,\"us\":36198,\"cycles\":8688663,\"stack_peak_bytes\":2288},\"mldsa44_image\":{\"ok\":true,\"us\":18723,\"cycles\":4493791,\"stack_peak_bytes\":36488},\"image_sha3_us\":139828,\"free_heap_bytes\":267536,\"min_free_heap_bytes\":135832,\"largest_free_block_bytes\":139264}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"perf_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"Measured on physical ESP32\",\"perf_data\":{\"stack_high_water_mark_bytes\":36488,\"sram_utilization_pct\":\"6.85% of 520 KB\",\"cpu_cycles\":14657265,\"latency_ms\":61.06,\"min_free_heap_bytes\":135832,\"active_partition_slot\":\"ota_0\",\"pqt_hybrid_status\":\"Falcon-512 + Ed25519 + ML-DSA-44 verified on silicon\"}}",
+    "I (4228) AUTOQRYPT_ECU: Rebooting into ota_0 (pending first-boot confirmation)",
+    "\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000I (27) boot: ESP-IDF v5.5.6 2nd stage bootloader",
     "I (27) boot: compile time Oct 29 2026 00:24:15",
     "I (27) boot: chip revision: v3.1",
     "I (27) boot.esp32: SPI Speed      : 40MHz",
@@ -1245,43 +1246,43 @@
     "I (31) boot:  2 phy_init         RF data          01 01 0000f000 00001000",
     "I (32) boot:  3 ota_0            OTA app          00 10 00010000 00180000",
     "I (33) boot:  4 ota_1            OTA app          00 11 00190000 00180000",
-    "I (64) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=094b0h ( 38064) map",
-    "I (78) esp_image: segment 1: paddr=000194d8 vaddr=3ffb0000 size=028ech ( 10476) load",
-    "I (82) esp_image: segment 2: paddr=0001bdcc vaddr=40080000 size=0424ch ( 16972) load",
-    "I (89) esp_image: segment 3: paddr=00020020 vaddr=400d0020 size=11c0ch ( 72716) map",
-    "I (114) esp_image: segment 4: paddr=00031c34 vaddr=4008424c size=09504h ( 38148) load",
-    "I (129) esp_image: segment 5: paddr=0003b140 vaddr=50000000 size=00020h (    32) load",
-    "I (136) boot: Loaded app from partition at offset 0x10000",
-    "I (138) cpu_start: Multicore app",
-    "I (146) cpu_start: GPIO 3 and 1 are used as console UART I/O pins",
-    "I (146) cpu_start: Pro cpu start user code",
-    "I (146) cpu_start: cpu freq: 240000000 Hz",
-    "I (147) app_init: Application information:",
-    "I (147) app_init: Project name:     autoqrypt-ecu-surrogate",
-    "I (148) app_init: App version:      v3.0.0",
-    "I (148) app_init: Compile time:     Oct 29 2026 00:37:19",
-    "I (149) app_init: ELF file SHA256:  d20efeb49...",
-    "I (149) app_init: ESP-IDF:          v5.5.6",
-    "I (150) efuse_init: Min chip rev:     v0.0",
-    "I (150) efuse_init: Max chip rev:     v3.99",
-    "I (151) efuse_init: Chip rev:         v3.1",
-    "I (151) heap_init: Initializing. RAM available for dynamic allocation:",
-    "I (152) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM",
-    "I (153) heap_init: At 3FFB31E8 len 0002CE18 (179 KiB): DRAM",
-    "I (153) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM",
-    "I (154) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM",
-    "I (155) heap_init: At 4008D750 len 000128B0 (74 KiB): IRAM",
-    "W (156) spi_flash: Detected boya flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_BOYA_CHIP` in menuconfig",
-    "I (157) spi_flash: detected chip: generic",
-    "I (157) spi_flash: flash io: dio",
-    "I (158) main_task: Started on CPU0",
-    "I (158) main_task: Calling app_main()",
+    "I (71) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=094b0h ( 38064) map",
+    "I (85) esp_image: segment 1: paddr=000194d8 vaddr=3ffb0000 size=028ech ( 10476) load",
+    "I (89) esp_image: segment 2: paddr=0001bdcc vaddr=40080000 size=0424ch ( 16972) load",
+    "I (96) esp_image: segment 3: paddr=00020020 vaddr=400d0020 size=11c0ch ( 72716) map",
+    "I (121) esp_image: segment 4: paddr=00031c34 vaddr=4008424c size=09504h ( 38148) load",
+    "I (136) esp_image: segment 5: paddr=0003b140 vaddr=50000000 size=00020h (    32) load",
+    "I (143) boot: Loaded app from partition at offset 0x10000",
+    "I (145) cpu_start: Multicore app",
+    "I (153) cpu_start: GPIO 3 and 1 are used as console UART I/O pins",
+    "I (153) cpu_start: Pro cpu start user code",
+    "I (153) cpu_start: cpu freq: 240000000 Hz",
+    "I (153) app_init: Application information:",
+    "I (154) app_init: Project name:     autoqrypt-ecu-surrogate",
+    "I (154) app_init: App version:      v3.0.0",
+    "I (155) app_init: Compile time:     Oct 29 2026 00:37:19",
+    "I (155) app_init: ELF file SHA256:  f57fd5152...",
+    "I (156) app_init: ESP-IDF:          v5.5.6",
+    "I (156) efuse_init: Min chip rev:     v0.0",
+    "I (157) efuse_init: Max chip rev:     v3.99",
+    "I (157) efuse_init: Chip rev:         v3.1",
+    "I (158) heap_init: Initializing. RAM available for dynamic allocation:",
+    "I (159) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM",
+    "I (159) heap_init: At 3FFB31E8 len 0002CE18 (179 KiB): DRAM",
+    "I (160) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM",
+    "I (161) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM",
+    "I (161) heap_init: At 4008D750 len 000128B0 (74 KiB): IRAM",
+    "W (163) spi_flash: Detected boya flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_BOYA_CHIP` in menuconfig",
+    "I (164) spi_flash: detected chip: generic",
+    "I (164) spi_flash: flash io: dio",
+    "I (165) main_task: Started on CPU0",
+    "I (165) main_task: Calling app_main()",
     "[APP v3.0.0] FAULT INJECTED: crashing before first-boot confirmation",
     "abort() was called at PC 0x400d6701 on core 0",
     "Backtrace: 0x40085249:0x3ffb5610 0x40085211:0x3ffb5630 0x4008b1e9:0x3ffb5650 0x400d6701:0x3ffb56c0 0x400e1588:0x3ffb56e0 0x40085c19:0x3ffb5710",
-    "ELF file SHA256: d20efeb49",
+    "ELF file SHA256: f57fd5152",
     "Rebooting...",
-    "\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000I (27) boot: ESP-IDF v5.5.6 2nd stage bootloader",
+    "\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\ufffd\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\u0000\ufffd\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\ufffd\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\u0000\ufffd\u0000\ufffd\ufffd\u0000\u0000\ufffd\u0000I (27) boot: ESP-IDF v5.5.6 2nd stage bootloader",
     "I (27) boot: compile time Oct 29 2026 00:24:15",
     "I (27) boot: chip revision: v3.1",
     "I (27) boot.esp32: SPI Speed      : 40MHz",
@@ -1294,37 +1295,37 @@
     "I (31) boot:  2 phy_init         RF data          01 01 0000f000 00001000",
     "I (32) boot:  3 ota_0            OTA app          00 10 00010000 00180000",
     "I (33) boot:  4 ota_1            OTA app          00 11 00190000 00180000",
-    "I (71) esp_image: segment 0: paddr=00190020 vaddr=3f400020 size=0ea48h ( 59976) map",
-    "I (92) esp_image: segment 1: paddr=0019ea70 vaddr=3ffb0000 size=015a8h (  5544) load",
-    "I (94) esp_image: segment 2: paddr=001a0020 vaddr=400d0020 size=23168h (143720) map",
-    "I (144) esp_image: segment 3: paddr=001c3190 vaddr=3ffb15a8 size=01394h (  5012) load",
-    "I (146) esp_image: segment 4: paddr=001c452c vaddr=40080000 size=0e8c4h ( 59588) load",
-    "I (170) esp_image: segment 5: paddr=001d2df8 vaddr=50000000 size=00020h (    32) load",
-    "I (177) boot: Loaded app from partition at offset 0x190000",
-    "I (179) cpu_start: Multicore app",
-    "I (187) cpu_start: GPIO 3 and 1 are used as console UART I/O pins",
-    "I (187) cpu_start: Pro cpu start user code",
-    "I (187) cpu_start: cpu freq: 240000000 Hz",
-    "I (187) app_init: Application information:",
-    "I (188) app_init: Project name:     autoqrypt-ecu-surrogate",
-    "I (188) app_init: App version:      v2.0.0",
-    "I (189) app_init: Compile time:     Oct 29 2026 00:32:21",
-    "I (190) app_init: ELF file SHA256:  c63aca05f...",
-    "I (190) app_init: ESP-IDF:          v5.5.6",
-    "I (191) efuse_init: Min chip rev:     v0.0",
-    "I (191) efuse_init: Max chip rev:     v3.99",
-    "I (192) efuse_init: Chip rev:         v3.1",
-    "I (192) heap_init: Initializing. RAM available for dynamic allocation:",
-    "I (193) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM",
-    "I (193) heap_init: At 3FFB5428 len 0002ABD8 (170 KiB): DRAM",
-    "I (194) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM",
-    "I (195) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM",
-    "I (195) heap_init: At 4008E8C4 len 0001173C (69 KiB): IRAM",
-    "W (197) spi_flash: Detected boya flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_BOYA_CHIP` in menuconfig",
-    "I (198) spi_flash: detected chip: generic",
-    "I (198) spi_flash: flash io: dio",
-    "I (199) main_task: Started on CPU0",
-    "I (199) main_task: Calling app_main()",
+    "I (62) esp_image: segment 0: paddr=00190020 vaddr=3f400020 size=0ea48h ( 59976) map",
+    "I (82) esp_image: segment 1: paddr=0019ea70 vaddr=3ffb0000 size=015a8h (  5544) load",
+    "I (85) esp_image: segment 2: paddr=001a0020 vaddr=400d0020 size=23224h (143908) map",
+    "I (134) esp_image: segment 3: paddr=001c324c vaddr=3ffb15a8 size=01394h (  5012) load",
+    "I (136) esp_image: segment 4: paddr=001c45e8 vaddr=40080000 size=0e8c4h ( 59588) load",
+    "I (160) esp_image: segment 5: paddr=001d2eb4 vaddr=50000000 size=00020h (    32) load",
+    "I (168) boot: Loaded app from partition at offset 0x190000",
+    "I (169) cpu_start: Multicore app",
+    "I (177) cpu_start: GPIO 3 and 1 are used as console UART I/O pins",
+    "I (178) cpu_start: Pro cpu start user code",
+    "I (178) cpu_start: cpu freq: 240000000 Hz",
+    "I (178) app_init: Application information:",
+    "I (178) app_init: Project name:     autoqrypt-ecu-surrogate",
+    "I (179) app_init: App version:      v2.0.0",
+    "I (179) app_init: Compile time:     Oct 29 2026 00:32:21",
+    "I (180) app_init: ELF file SHA256:  1e99ebcc1...",
+    "I (181) app_init: ESP-IDF:          v5.5.6",
+    "I (181) efuse_init: Min chip rev:     v0.0",
+    "I (181) efuse_init: Max chip rev:     v3.99",
+    "I (182) efuse_init: Chip rev:         v3.1",
+    "I (183) heap_init: Initializing. RAM available for dynamic allocation:",
+    "I (183) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM",
+    "I (184) heap_init: At 3FFB5438 len 0002ABC8 (170 KiB): DRAM",
+    "I (185) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM",
+    "I (185) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM",
+    "I (186) heap_init: At 4008E8C4 len 0001173C (69 KiB): IRAM",
+    "W (188) spi_flash: Detected boya flash chip but using generic driver. For optimal functionality, enable `SPI_FLASH_SUPPORT_BOYA_CHIP` in menuconfig",
+    "I (188) spi_flash: detected chip: generic",
+    "I (189) spi_flash: flash io: dio",
+    "I (190) main_task: Started on CPU0",
+    "I (190) main_task: Calling app_main()",
     "=================================================================",
     "AutoQrypt: ESP32 Hardware-in-the-Loop ECU Surrogate",
     "=================================================================",
@@ -1333,9 +1334,9 @@
     "[ECU-HW] Running slot:     ota_1 @ 0x00190000",
     "[ECU-HW] Security version: 2 (NVS monotonic counter)",
     "[ECU-HW] Rolled back:      v3.0.0 in ota_0 never confirmed itself",
-    "[ECU-HW] Free heap:        279396 bytes",
+    "[ECU-HW] Free heap:        271188 bytes",
     "-----------------------------------------------------------------",
-    "{\"device_id\":\"VEH-1\",\"event_type\":\"boot_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"ECU booted v2.0.0\",\"app_version\":\"v2.0.0\",\"running_slot\":\"ota_1\",\"installed_security_version\":2,\"confirmed_on_this_boot\":false,\"last_invalid_slot\":\"ota_0\",\"last_invalid_version\":\"v3.0.0\",\"free_heap_bytes\":279396}",
+    "{\"device_id\":\"VEH-1\",\"event_type\":\"boot_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_VEH-1\",\"message\":\"ECU booted v2.0.0\",\"app_version\":\"v2.0.0\",\"running_slot\":\"ota_1\",\"installed_security_version\":2,\"confirmed_on_this_boot\":false,\"last_invalid_slot\":\"ota_0\",\"last_invalid_version\":\"v3.0.0\",\"free_heap_bytes\":271188}",
     "AQ:READY"
   ]
 }

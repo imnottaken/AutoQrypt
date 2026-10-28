@@ -11,8 +11,9 @@
  *   - Activation:     A/B boot switch only after every check passes; the new image is
  *                     confirmed on first boot (bootloader rollback is enabled)
  *   - Telemetry:      per-verifier latency (us + CPU cycles), task stack peak, heap watermarks
- *   - Application:    LED blink + battery-temperature feature that differs per release
- *                     (APP_FW_VERSION, set at build time), so an installed update is visible
+ *   - Application:    battery-temperature feature that differs per release
+ *                     (APP_FW_VERSION, set at build time); LED solid = idle, 4 blinks = update
+ *                     installed, 10 s fast blink = package rejected
  *
  * Every check is mandatory. A failure, error or timeout rejects the package; there is no
  * fallback to fewer signatures.
@@ -46,8 +47,8 @@
 static const char *TAG = "AUTOQRYPT_ECU";
 
 #define UART_PORT             UART_NUM_0
-#define UART_RX_BUF           8192
-#define CHUNK_SIZE            4096   // host waits for "AQ:ACK" after each chunk
+#define UART_RX_BUF           16384
+#define CHUNK_SIZE            4096   // each chunk is acked with the cumulative byte count
 #define RX_TIMEOUT_MS         5000   // silence longer than this aborts the transfer
 #define VERIFY_TASK_STACK     65536  // each verifier runs in a fresh task of this size
 #define BENCH_RUNS            10
@@ -91,6 +92,13 @@ static uint8_t s_chunk[CHUNK_SIZE];
 static uint8_t s_image_msg[sizeof(IMAGE_DOMAIN) - 1 + MANIFEST_LEN];
 static uint8_t s_director_msg[sizeof(DIRECTOR_DOMAIN) - 1 + ID_FIELD_LEN + MANIFEST_LEN];
 static uint32_t s_security_version = FACTORY_SECURITY_VER;
+
+// LED signalling (read by app_task)
+#define LED_TICK_MS       100
+#define ALARM_US          (10 * 1000 * 1000)
+#define OK_PATTERN_TICKS  24
+static volatile int64_t s_alarm_until_us;
+static volatile int s_ok_ticks;
 
 static const char *running_slot(void) {
     const esp_partition_t *p = esp_ota_get_running_partition();
@@ -300,6 +308,10 @@ static void emit_decision(const char *decision, const char *reason, const manife
          (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
     fputs(s_last_decision, stdout);
     fflush(stdout);
+    if (strcmp(decision, "ACCEPT") != 0) {
+        s_ok_ticks = 0;
+        s_alarm_until_us = esp_timer_get_time() + ALARM_US;
+    }
 }
 
 /** Dashboard "Measured" modal format (dashboard/app.py reads perf_data). */
@@ -459,20 +471,28 @@ static void handle_bench(void) {
 }
 
 /**
- * The ECU's actual application. v1 reads the battery temperature with the LED solid on;
- * v2 adds a sustained over-temperature warning and blinks the LED, so an installed update
- * is visible. The temperature is simulated: the ESP32 has no battery sensor.
+ * The ECU's actual application: battery temperature monitoring (v2 adds a sustained
+ * over-temperature warning). The temperature is simulated: the ESP32 has no battery sensor.
+ *
+ * LED: solid on while idle; 4 blinks after an update has installed and confirmed itself;
+ * fast blinking for 10 s after a package is rejected.
  */
 static void app_task(void *arg) {
     const char *ver = esp_app_get_description()->version;
     gpio_reset_pin(APP_LED_GPIO);
     gpio_set_direction(APP_LED_GPIO, GPIO_MODE_OUTPUT);
-    const int period_ms = 250;
     int over_temp_reads = 0;
     for (int tick = 0;; tick++) {
-        gpio_set_level(APP_LED_GPIO, APP_FW_VERSION >= 2 ? (tick & 1) : 1);
-        vTaskDelay(pdMS_TO_TICKS(period_ms));
-        if (tick % (4000 / period_ms) != 0) continue;
+        int level = 1;
+        if (esp_timer_get_time() < s_alarm_until_us) {
+            level = tick & 1;                                 // 5 Hz alarm
+        } else if (s_ok_ticks > 0) {
+            int k = OK_PATTERN_TICKS - s_ok_ticks--;          // off/on 300 ms, 4 times
+            level = (k / 3) % 2;
+        }
+        gpio_set_level(APP_LED_GPIO, level);
+        vTaskDelay(pdMS_TO_TICKS(LED_TICK_MS));
+        if (tick % (4000 / LED_TICK_MS) != 0) continue;
         float temp = 38.0f + (float)(esp_random() % 60) / 10.0f;
         printf("[APP %s] battery temp %.1f C (simulated sensor)\n", ver, temp);
 #if APP_FW_VERSION >= 2
@@ -509,6 +529,7 @@ void app_main(void) {
     bool confirmed_now = false;
     if (state == ESP_OTA_IMG_PENDING_VERIFY) {
         confirmed_now = esp_ota_mark_app_valid_cancel_rollback() == ESP_OK;
+        if (confirmed_now) s_ok_ticks = OK_PATTERN_TICKS;  // update installed: 4 blinks
     }
     load_security_version(state != ESP_OTA_IMG_PENDING_VERIFY || confirmed_now);
 

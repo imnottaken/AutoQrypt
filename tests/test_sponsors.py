@@ -32,8 +32,11 @@ def test_qpiai_qcloud():
     
     # Credential & backend status
     if engine.is_cloud_authenticated:
-        print("[✓] QpiAI QCloud Authentication: ACTIVE (qcloud.qpiai.tech)")
-        print(f"[*] Target Backend: {engine.requested_backend}")
+        print("[✓] QpiAI QCloud API Key: Configured & Authenticated (qcloud.qpiai.tech)")
+        print(f"[*] API Key Fingerprint:   {engine.get_masked_api_key()}")
+        if engine.cloud_user_info:
+            print(f"[*] Cloud User Account:    {engine.cloud_user_info.get('name')} <{engine.cloud_user_info.get('email')}>")
+        print(f"[*] Cloud Compute Device:  {engine.requested_backend} (Execution Target)")
     else:
         print("[*] QpiAI QCloud API Key: Not configured / Offline mode")
         print("[✓] Execution Engine: Real qpiai-quantum StatevectorSimulator (QpiAI-QSV-Local)")
@@ -66,6 +69,16 @@ def test_qpiai_qcloud():
     is_valid = Dilithium2.verify(pk, manifest_payload, signature)
     print(f"    - Manifest Signature:   {len(signature)} bytes (Exact NIST specification: 2,420 B)")
     print(f"    - Signature Verified:   {'SUCCESS [AUTHENTIC]' if is_valid else 'FAILED'}")
+
+    # Verify exported artifacts
+    qasm_file = os.path.join("dataset", "qpiai_qrng_circuit.qasm")
+    receipt_file = os.path.join("dataset", "qpiai_qrng_receipt.json")
+    assert os.path.exists(qasm_file), f"Missing {qasm_file}!"
+    assert os.path.exists(receipt_file), f"Missing {receipt_file}!"
+
+    print(f"\n[✓] QpiAI QCloud Artifacts Generated:")
+    print(f"    - OpenQASM 2.0 Circuit: {qasm_file} (Ready for 'Circuits' UI tab)")
+    print(f"    - Verified Receipt:     {receipt_file} (Ready for 'Datasets' UI tab)")
 
     assert receipt.entropy_health_pass, "QpiAI Entropy health check failed!"
     assert len(pk) == 1312, f"Unexpected ML-DSA-44 pk length: {len(pk)}"
@@ -113,12 +126,23 @@ def test_bloq_platform():
         print(f"    - Hardware Pinning: {a.pinning_strategy}")
         print(f"    - Optimization Rationale: {a.justification}")
 
+    # Export Bloq Workspace Uploadable Artifacts
+    bloq_files = optimizer.export_bloq_workspace_artifacts()
+    print("\n[✓] Bloq Platform Uploadable Workspace Artifacts Exported:")
+    print(f"    - Tabular CSV:          {bloq_files['csv_dataset']} (Ready for 'Datasets' tab)")
+    print(f"    - QAOA Cost Function:   {bloq_files['qubo_cost_function']} (Ready for 'Experiments' module)")
+    print(f"    - QUBO Matrix JSON:     {bloq_files['qubo_matrix_json']} (Ready for Bloq Maya)")
+
     # Export Notebook
     nb_path = optimizer.export_bloq_notebook()
-    print(f"\n[✓] Bloq Platform Artifact Exported: {nb_path}")
-    print("    Ready to upload into Bloq Editor / Experiments UI at platform.bloq.in")
+    print(f"    - Self-Contained .ipynb: {nb_path} (Ready for 'Editor')")
 
     # Verify requirements
+    assert os.path.exists(bloq_files["csv_dataset"]), "Missing CSV dataset!"
+    assert os.path.exists(bloq_files["qubo_cost_function"]), "Missing QUBO cost function text!"
+    assert os.path.exists(bloq_files["qubo_matrix_json"]), "Missing QUBO matrix JSON!"
+    assert os.path.exists(nb_path), "Missing exported notebook!"
+
     assert assignments["ECU-01-BRAKE"].selected_algorithm == "Falcon-512", "ECU-01-BRAKE must select Falcon-512!"
     assert assignments["ECU-02-BMS"].selected_algorithm == "ML-DSA-44", "ECU-02-BMS must select ML-DSA-44!"
     assert assignments["ECU-03-ADAS"].selected_algorithm == "ML-DSA-44+SPHINCS+", "ECU-03-ADAS must select Hybrid ML-DSA-44+SPHINCS+!"

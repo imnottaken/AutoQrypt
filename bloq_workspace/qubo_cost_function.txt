@@ -1,0 +1,99 @@
+================================================================================
+BLOQ QUANTUM PLATFORM (platform.bloq.in) — CUSTOM COST FUNCTION
+Experiment: PQC02_Automotive_Optimization
+Module: Experiments -> Custom Cost Functions (QAOA / CVaR-QAOA) / Bloq Maya
+================================================================================
+
+1. MATHEMATICAL FORMULATION:
+   Objective:
+     min_{x in {0,1}^15}  sum_{i=0}^{14} q_i * x_i  +  sum_{i < j} q_{ij} * x_i * x_j
+
+   Where:
+     - x_i in {0, 1} indicates mapping Algorithm a onto Automotive ECU e
+     - Multi-objective cost: Cost = w_ram*(RAM/RAM_max) + w_bw*(Frames/MaxFrames) + w_lat*(Latency/Deadline)
+     - Constraint Penalty: lambda * sum_e (1 - sum_a x_{e,a})^2  (lambda = 50.0)
+
+2. BINARY OPTIMIZATION VARIABLES (Index -> Identifier):
+   [00] x_ECU-01-BRAKE_ECDSA-P256
+   [01] x_ECU-01-BRAKE_Falcon-512
+   [02] x_ECU-01-BRAKE_ML-DSA-44
+   [03] x_ECU-01-BRAKE_SPHINCS+-128s
+   [04] x_ECU-01-BRAKE_ML-DSA-44+SPHINCS+
+   [05] x_ECU-02-BMS_ECDSA-P256
+   [06] x_ECU-02-BMS_Falcon-512
+   [07] x_ECU-02-BMS_ML-DSA-44
+   [08] x_ECU-02-BMS_SPHINCS+-128s
+   [09] x_ECU-02-BMS_ML-DSA-44+SPHINCS+
+   [10] x_ECU-03-ADAS_ECDSA-P256
+   [11] x_ECU-03-ADAS_Falcon-512
+   [12] x_ECU-03-ADAS_ML-DSA-44
+   [13] x_ECU-03-ADAS_SPHINCS+-128s
+   [14] x_ECU-03-ADAS_ML-DSA-44+SPHINCS+
+
+3. LINEAR COEFFICIENTS (q_i):
+   q[00] (x_ECU-01-BRAKE_ECDSA-P256       ) = +450.0747
+   q[01] (x_ECU-01-BRAKE_Falcon-512       ) = -49.7818
+   q[02] (x_ECU-01-BRAKE_ML-DSA-44        ) = -49.0525
+   q[03] (x_ECU-01-BRAKE_SPHINCS+-128s    ) = +152.6249
+   q[04] (x_ECU-01-BRAKE_ML-DSA-44+SPHINCS+) = +153.5725
+   q[05] (x_ECU-02-BMS_ECDSA-P256         ) = +450.0473
+   q[06] (x_ECU-02-BMS_Falcon-512         ) = -49.5438
+   q[07] (x_ECU-02-BMS_ML-DSA-44          ) = -49.7410
+   q[08] (x_ECU-02-BMS_SPHINCS+-128s      ) = +152.2452
+   q[09] (x_ECU-02-BMS_ML-DSA-44+SPHINCS+ ) = +153.0042
+   q[10] (x_ECU-03-ADAS_ECDSA-P256        ) = +450.2508
+   q[11] (x_ECU-03-ADAS_Falcon-512        ) = -49.7343
+   q[12] (x_ECU-03-ADAS_ML-DSA-44         ) = -49.6918
+   q[13] (x_ECU-03-ADAS_SPHINCS+-128s     ) = -49.5242
+   q[14] (x_ECU-03-ADAS_ML-DSA-44+SPHINCS+) = -50.2560
+
+4. QUADRATIC COUPLING TERMS (q_ij):
+   q[00, 01] (x_ECU-01-BRAKE_ECDSA-P256 * x_ECU-01-BRAKE_Falcon-512) = +100.0000
+   q[00, 02] (x_ECU-01-BRAKE_ECDSA-P256 * x_ECU-01-BRAKE_ML-DSA-44) = +100.0000
+   q[00, 03] (x_ECU-01-BRAKE_ECDSA-P256 * x_ECU-01-BRAKE_SPHINCS+-128s) = +100.0000
+   q[00, 04] (x_ECU-01-BRAKE_ECDSA-P256 * x_ECU-01-BRAKE_ML-DSA-44+SPHINCS+) = +100.0000
+   q[01, 02] (x_ECU-01-BRAKE_Falcon-512 * x_ECU-01-BRAKE_ML-DSA-44) = +100.0000
+   q[01, 03] (x_ECU-01-BRAKE_Falcon-512 * x_ECU-01-BRAKE_SPHINCS+-128s) = +100.0000
+   q[01, 04] (x_ECU-01-BRAKE_Falcon-512 * x_ECU-01-BRAKE_ML-DSA-44+SPHINCS+) = +100.0000
+   q[02, 03] (x_ECU-01-BRAKE_ML-DSA-44 * x_ECU-01-BRAKE_SPHINCS+-128s) = +100.0000
+   q[02, 04] (x_ECU-01-BRAKE_ML-DSA-44 * x_ECU-01-BRAKE_ML-DSA-44+SPHINCS+) = +100.0000
+   q[03, 04] (x_ECU-01-BRAKE_SPHINCS+-128s * x_ECU-01-BRAKE_ML-DSA-44+SPHINCS+) = +100.0000
+   q[05, 06] (x_ECU-02-BMS_ECDSA-P256 * x_ECU-02-BMS_Falcon-512) = +100.0000
+   q[05, 07] (x_ECU-02-BMS_ECDSA-P256 * x_ECU-02-BMS_ML-DSA-44) = +100.0000
+   q[05, 08] (x_ECU-02-BMS_ECDSA-P256 * x_ECU-02-BMS_SPHINCS+-128s) = +100.0000
+   q[05, 09] (x_ECU-02-BMS_ECDSA-P256 * x_ECU-02-BMS_ML-DSA-44+SPHINCS+) = +100.0000
+   q[06, 07] (x_ECU-02-BMS_Falcon-512 * x_ECU-02-BMS_ML-DSA-44) = +100.0000
+   q[06, 08] (x_ECU-02-BMS_Falcon-512 * x_ECU-02-BMS_SPHINCS+-128s) = +100.0000
+   q[06, 09] (x_ECU-02-BMS_Falcon-512 * x_ECU-02-BMS_ML-DSA-44+SPHINCS+) = +100.0000
+   q[07, 08] (x_ECU-02-BMS_ML-DSA-44 * x_ECU-02-BMS_SPHINCS+-128s) = +100.0000
+   q[07, 09] (x_ECU-02-BMS_ML-DSA-44 * x_ECU-02-BMS_ML-DSA-44+SPHINCS+) = +100.0000
+   q[08, 09] (x_ECU-02-BMS_SPHINCS+-128s * x_ECU-02-BMS_ML-DSA-44+SPHINCS+) = +100.0000
+   q[10, 11] (x_ECU-03-ADAS_ECDSA-P256 * x_ECU-03-ADAS_Falcon-512) = +100.0000
+   q[10, 12] (x_ECU-03-ADAS_ECDSA-P256 * x_ECU-03-ADAS_ML-DSA-44) = +100.0000
+   q[10, 13] (x_ECU-03-ADAS_ECDSA-P256 * x_ECU-03-ADAS_SPHINCS+-128s) = +100.0000
+   q[10, 14] (x_ECU-03-ADAS_ECDSA-P256 * x_ECU-03-ADAS_ML-DSA-44+SPHINCS+) = +100.0000
+   q[11, 12] (x_ECU-03-ADAS_Falcon-512 * x_ECU-03-ADAS_ML-DSA-44) = +100.0000
+   q[11, 13] (x_ECU-03-ADAS_Falcon-512 * x_ECU-03-ADAS_SPHINCS+-128s) = +100.0000
+   q[11, 14] (x_ECU-03-ADAS_Falcon-512 * x_ECU-03-ADAS_ML-DSA-44+SPHINCS+) = +100.0000
+   q[12, 13] (x_ECU-03-ADAS_ML-DSA-44 * x_ECU-03-ADAS_SPHINCS+-128s) = +100.0000
+   q[12, 14] (x_ECU-03-ADAS_ML-DSA-44 * x_ECU-03-ADAS_ML-DSA-44+SPHINCS+) = +100.0000
+   q[13, 14] (x_ECU-03-ADAS_SPHINCS+-128s * x_ECU-03-ADAS_ML-DSA-44+SPHINCS+) = +100.0000
+
+5. BLOQ QAOA CALLABLE PYTHON SNIPPET:
+```python
+def bloq_pqc_cost_function(bitstring: str) -> float:
+    """
+    Custom Cost Function for Bloq Experiments Studio.
+    bitstring: 15-character binary string representing ECU assignments.
+    """
+    x = [int(b) for b in bitstring]
+    cost = 0.0
+    linear = [450.0747, -49.7818, -49.0525, 152.6249, 153.5725, 450.0473, -49.5438, -49.741, 152.2452, 153.0042, 450.2508, -49.7343, -49.6918, -49.5242, -50.256]
+    for i, c in enumerate(linear):
+        cost += c * x[i]
+    # Penalty for violating 1-algorithm-per-ECU constraint (3 ECUs x 5 algos)
+    for e_idx in range(3):
+        ecu_sum = sum(x[e_idx*5 : (e_idx+1)*5])
+        cost += 50.0 * ((1 - ecu_sum) ** 2)
+    return cost
+```

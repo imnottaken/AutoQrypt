@@ -18,12 +18,10 @@ from pydantic import BaseModel, Field
 # Load optional .env or qcloud.env file if present
 try:
     from dotenv import load_dotenv
-    # Look for qcloud.env first, then .env
     for env_name in ["qcloud.env", ".env"]:
         env_path = os.path.join(os.getcwd(), env_name)
         if os.path.exists(env_path):
-            load_dotenv(env_path)
-            break
+            load_dotenv(env_path, override=True)
 except ImportError:
     pass
 
@@ -63,17 +61,36 @@ class QpiAIEntropyEngine:
         self.api_key = api_key or os.getenv("QPIAI_API_KEY") or os.getenv("API_KEY")
         self.requested_backend = backend or os.getenv("QPIAI_BACKEND", "QpiAI-QSV-Local")
         self.is_cloud_authenticated = False
-        self.cloud_user_info = None
+        self.cloud_user_info: Optional[Dict[str, Any]] = None
+        self.auth_error = None
 
         # Attempt QCloud authentication if API key is provided
         if self.api_key and self.api_key not in ["your_qpiai_qcloud_api_key_here", ""]:
             try:
                 qp.QpiAIQuantumAuth.login(api_key=self.api_key)
                 self.is_cloud_authenticated = True
+                try:
+                    user_info = qp.QpiAIQuantumAuth.me()
+                    if isinstance(user_info, dict):
+                        self.cloud_user_info = {
+                            "name": user_info.get("name"),
+                            "email": user_info.get("email")
+                        }
+                except Exception:
+                    pass
             except Exception as e:
                 # Graceful fallback: live judging offline safety net
                 self.is_cloud_authenticated = False
                 self.auth_error = str(e)
+
+    def get_masked_api_key(self) -> str:
+        """Returns a safe, masked representation of the API key for terminal display."""
+        if not self.api_key:
+            return "None / Not configured"
+        clean_key = self.api_key.strip("'\"")
+        if len(clean_key) <= 8:
+            return "****"
+        return f"{clean_key[:4]}****...{clean_key[-4:]}"
 
     def generate_qrng_seed(
         self,
@@ -142,7 +159,7 @@ class QpiAIEntropyEngine:
                 if p > p_max:
                     p_max = p
 
-        # NIST SP 800-90B Min-Entropy: H_min = -log2(p_max)
+        # NIST SP 800-90B Min-Entropy: H_min = -log2(p_max) if p_max > 0 else 0.0
         nist_min = -math.log2(p_max) if p_max > 0 else 0.0
 
         # Health validation check (NIST SP 800-90B threshold: H_min > 5.0 for 8-qubit uniform)
@@ -150,7 +167,7 @@ class QpiAIEntropyEngine:
 
         seed_fingerprint = hashlib.sha256(conditioned_seed).hexdigest()
 
-        return QpiAIEntropyReceipt(
+        receipt = QpiAIEntropyReceipt(
             job_id=job_id,
             experiment_name=experiment_name,
             device_name=device_name,
@@ -164,6 +181,26 @@ class QpiAIEntropyEngine:
             timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat(),
             backend_mode=backend_mode
         )
+
+        # 5. Export QpiAI QCloud artifacts (.qasm OpenQASM 2.0 circuit and .json receipt)
+        dataset_dir = os.path.join(os.getcwd(), "dataset")
+        os.makedirs(dataset_dir, exist_ok=True)
+        qasm_path = os.path.join(dataset_dir, "qpiai_qrng_circuit.qasm")
+        try:
+            qasm_str = circuit.to_qasm()
+            with open(qasm_path, "w") as f:
+                f.write(qasm_str)
+        except Exception:
+            pass
+
+        receipt_path = os.path.join(dataset_dir, "qpiai_qrng_receipt.json")
+        try:
+            with open(receipt_path, "w") as f:
+                f.write(receipt.model_dump_json(indent=2))
+        except Exception:
+            pass
+
+        return receipt
 
     def generate_pqc_keypair(
         self,

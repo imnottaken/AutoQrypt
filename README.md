@@ -57,7 +57,8 @@ AutoQrypt/
 ├── main.py                 # Orchestrator (Server & Vehicle runtime)
 ├── requirements.txt        # Dependencies (FastAPI, Cryptography, Pydantic, qpiai-quantum)
 ├── qcloud.env.example      # QpiAI QCloud & Bloq API environment template
-├── dataset/                # Automotive ECU hardware profiles & constraints
+├── dataset/                # Automotive ECU profiles, QASM circuit & QRNG receipt
+├── bloq_workspace/         # Uploadable Bloq artifacts (CSV dataset, QUBO text & JSON)
 ├── notebooks/              # Bloq Platform Jupyter optimization workflows
 ├── src/sponsors/           # QpiAI QRNG entropy engine & Bloq QUBO optimizer
 ├── tests/                  # Verification test suites (test_sponsors.py)
@@ -147,6 +148,9 @@ AutoQrypt integrates sponsor technologies across quantum entropy generation and 
 - **Execution Target:** Supports remote authentication via `QpiAIQuantumAuth` against `qcloud.qpiai.tech` and falls back automatically to local `QpiAI-QSV-Local` (StatevectorSimulator) for offline determinism.
 - **Entropy Health Tests:** Evaluates Shannon entropy and NIST SP 800-90B min-entropy thresholds, returning a structured `QpiAIEntropyReceipt`.
 - **PQC Key Seeding:** Feeds the certified 32-byte quantum entropy directly into NIST FIPS 204 (`ML-DSA-44` / Dilithium2) keypair derivation in `key_management/hsm.py`.
+- **Exported Uploadable Artifacts (`dataset/`):**
+  - `dataset/qpiai_qrng_circuit.qasm`: OpenQASM 2.0 representation ready to drag-and-drop into `qcloud.qpiai.tech` **Circuits** tab.
+  - `dataset/qpiai_qrng_receipt.json`: Signed quantum entropy provenance receipt for **Datasets** tab.
 
 ### 2. Bloq Quantum Crypto-Agility Optimizer (`src/sponsors/bloq_platform.py`)
 - **QUBO / QAOA Cost Hamiltonian:** Solves constrained algorithm assignment over automotive ECU hardware profiles (`dataset/ecu_hardware_profiles.json`):
@@ -155,10 +159,15 @@ AutoQrypt integrates sponsor technologies across quantum entropy generation and 
   - `ECU-01-BRAKE` (64KB RAM, CAN-FD, ASIL-D) $\rightarrow$ **Falcon-512** (666-byte signature, 11 CAN-FD frames, 0.94ms latency) + 32-byte OTP eFuse hash pinning.
   - `ECU-02-BMS` (128KB RAM, CAN-FD) $\rightarrow$ **ML-DSA-44** (NIST FIPS 204 primary standard, integer-only lattice arithmetic).
   - `ECU-03-ADAS` (512KB RAM, 100Mbps Ethernet) $\rightarrow$ **ML-DSA-44 + SPHINCS+-128s** (Hybrid lattice + stateless hash root anchor for 20-year platform longevity).
-- **Bloq Notebook Export:** Generates `notebooks/bloq_pqc_ota_optimizer.ipynb` ready for execution in the Bloq Experiments UI at `platform.bloq.in`.
+- **Exported Uploadable Artifacts (`bloq_workspace/` & `notebooks/`):**
+  - `bloq_workspace/ecu_pqc_benchmark_dataset.csv`: Clean tabular dataset ready for `platform.bloq.in` **Datasets** tab.
+  - `bloq_workspace/qubo_cost_function.txt`: Objective function & Python callable for **Experiments -> Custom Cost Functions** or Bloq Maya.
+  - `bloq_workspace/qubo_matrix.json`: Full 15x15 upper-triangular QUBO coefficient matrix.
+  - `notebooks/bloq_pqc_ota_optimizer.ipynb`: 100% self-contained Jupyter notebook for Bloq **Editor**.
 
 ### Running Verification Suite
 ```bash
 python3 tests/test_sponsors.py
 ```
+
 

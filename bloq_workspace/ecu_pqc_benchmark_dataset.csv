@@ -1,0 +1,16 @@
+ecu_id,ecu_name,bus_type,ram_limit_kb,bus_bandwidth_kbps,asil_deadline_ms,algorithm_name,quantum_safe,security_level,peak_ram_kb,ram_utilization_pct,signature_bytes,public_key_bytes,bus_frames_required,verify_latency_ms,latency_margin_ms,cost_score,selected_optimal
+ECU-01-BRAKE,"Braking & Chassis Gateway Controller",CAN-FD,64,2000,5.0,ECDSA-P256,False,"Standard",2.5,3.91,64,64,1,0.82,4.18,500.0747,FALSE
+ECU-01-BRAKE,"Braking & Chassis Gateway Controller",CAN-FD,64,2000,5.0,Falcon-512,True,"Standard",36.8,57.5,666,897,11,0.94,4.06,0.2182,TRUE
+ECU-01-BRAKE,"Braking & Chassis Gateway Controller",CAN-FD,64,2000,5.0,ML-DSA-44,True,"Standard",18.2,28.44,2420,1312,38,1.76,3.24,0.9475,FALSE
+ECU-01-BRAKE,"Braking & Chassis Gateway Controller",CAN-FD,64,2000,5.0,SPHINCS+-128s,True,"Standard",4.1,6.41,7856,32,123,2.85,2.15,202.6249,FALSE
+ECU-01-BRAKE,"Braking & Chassis Gateway Controller",CAN-FD,64,2000,5.0,ML-DSA-44+SPHINCS+,True,"Standard",22.3,34.84,10276,1344,161,4.61,0.39,203.5725,FALSE
+ECU-02-BMS,"High-Voltage Battery Management System",CAN-FD,128,5000,12.0,ECDSA-P256,False,"Standard",2.5,1.95,64,64,1,0.82,11.18,500.0473,FALSE
+ECU-02-BMS,"High-Voltage Battery Management System",CAN-FD,128,5000,12.0,Falcon-512,True,"Standard",36.8,28.75,666,897,11,0.94,11.06,0.4562,FALSE
+ECU-02-BMS,"High-Voltage Battery Management System",CAN-FD,128,5000,12.0,ML-DSA-44,True,"Standard",18.2,14.22,2420,1312,38,1.76,10.24,0.259,TRUE
+ECU-02-BMS,"High-Voltage Battery Management System",CAN-FD,128,5000,12.0,SPHINCS+-128s,True,"Standard",4.1,3.2,7856,32,123,2.85,9.15,202.2452,FALSE
+ECU-02-BMS,"High-Voltage Battery Management System",CAN-FD,128,5000,12.0,ML-DSA-44+SPHINCS+,True,"Standard",22.3,17.42,10276,1344,161,4.61,7.39,203.0042,FALSE
+ECU-03-ADAS,"Autonomous Driving Domain Controller",Automotive Ethernet (1000BASE-T1),512,100000,50.0,ECDSA-P256,False,"Standard",2.5,0.49,64,64,1,0.82,49.18,500.2508,FALSE
+ECU-03-ADAS,"Autonomous Driving Domain Controller",Automotive Ethernet (1000BASE-T1),512,100000,50.0,Falcon-512,True,"Standard",36.8,7.19,666,897,1,0.94,49.06,0.2657,FALSE
+ECU-03-ADAS,"Autonomous Driving Domain Controller",Automotive Ethernet (1000BASE-T1),512,100000,50.0,ML-DSA-44,True,"Standard",18.2,3.55,2420,1312,2,1.76,48.24,0.3082,FALSE
+ECU-03-ADAS,"Autonomous Driving Domain Controller",Automotive Ethernet (1000BASE-T1),512,100000,50.0,SPHINCS+-128s,True,"Standard",4.1,0.8,7856,32,6,2.85,47.15,0.4758,FALSE
+ECU-03-ADAS,"Autonomous Driving Domain Controller",Automotive Ethernet (1000BASE-T1),512,100000,50.0,ML-DSA-44+SPHINCS+,True,"Standard",22.3,4.36,10276,1344,7,4.61,45.39,-0.256,TRUE

@@ -1,0 +1,13 @@
+{
+  "source": "os.urandom(32) only (QCloud not used)",
+  "qcloud_error": "Error during QASM job submission: Bad Request (400) when submitting job. Server response: an active subscription is required to run jobs.",
+  "created": "2026-10-28T23:59:12",
+  "seed_commitment_sha3_256": "5697f2169404c2e1769a7ddd4b402dca4df4e218701a457d4deb9dc54d0d8b54",
+  "key_derivation": "Ed25519 and ML-DSA-44: SHAKE-256(label | seed); Falcon-512: PQClean keygen (OS RNG)",
+  "public_key_ids": {
+    "ed25519": "d838b35720d11bf0",
+    "mldsa44": "fc4bd15ca4de9861",
+    "falcon512": "b0648c6f0e1135b1"
+  },
+  "private_keys": "key_management/.keystore/ (gitignored, never committed)"
+}

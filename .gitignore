@@ -32,6 +32,6 @@ audit/audit_log.json
 key_management/.keystore/
 
 # ESP-IDF build outputs
-firmware/build/
+firmware/build*/
 firmware/sdkconfig
 firmware/sdkconfig.old

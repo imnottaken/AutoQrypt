@@ -11,6 +11,8 @@
  *   - Activation:     A/B boot switch only after every check passes; the new image is
  *                     confirmed on first boot (bootloader rollback is enabled)
  *   - Telemetry:      per-verifier latency (us + CPU cycles), task stack peak, heap watermarks
+ *   - Application:    LED blink + battery-temperature feature that differs per release
+ *                     (APP_FW_VERSION, set at build time), so an installed update is visible
  *
  * Every check is mandatory. A failure, error or timeout rejects the package; there is no
  * fallback to fewer signatures.
@@ -31,6 +33,9 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "driver/uart.h"
+#include "driver/gpio.h"
+#include "esp_app_desc.h"
+#include "esp_random.h"
 
 #include "fips202.h"
 #include "ml-dsa-44/api.h"
@@ -47,6 +52,7 @@ static const char *TAG = "AUTOQRYPT_ECU";
 #define VERIFY_TASK_STACK     65536  // each verifier runs in a fresh task of this size
 #define BENCH_RUNS            10
 #define FACTORY_SECURITY_VER  1      // security version provisioned with the factory image
+#define APP_LED_GPIO          2      // ponytail: onboard LED on most ESP32 DevKits; change for other boards
 
 // ---- Wire format (must match scripts/hil.py) ----
 #define MANIFEST_LEN   108
@@ -429,9 +435,10 @@ static void handle_bench(void) {
     if (reason) { emit_decision("REJECT", reason, &m, jobs, -1); return; }
     build_signed_messages();
 
-    printf("{\"device_id\":\"%s\",\"event_type\":\"bench_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_%s\","
-           "\"message\":\"Verifier benchmark, %d runs each\",\"runs\":%d",
-           DEVICE_VEHICLE_ID, DEVICE_VEHICLE_ID, BENCH_RUNS, BENCH_RUNS);
+    s_last_len = 0;
+    jcat("{\"device_id\":\"%s\",\"event_type\":\"bench_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_%s\","
+         "\"message\":\"Verifier benchmark, %d runs each\",\"runs\":%d",
+         DEVICE_VEHICLE_ID, DEVICE_VEHICLE_ID, BENCH_RUNS, BENCH_RUNS);
     for (int i = 0; i < V_COUNT; i++) {
         int64_t us[BENCH_RUNS];
         uint32_t peak = 0;
@@ -442,12 +449,41 @@ static void handle_bench(void) {
             if (jobs[i].stack_peak_bytes > peak) peak = jobs[i].stack_peak_bytes;
         }
         qsort(us, BENCH_RUNS, sizeof(us[0]), cmp_i64);
-        printf(",\"%s\":{\"all_ok\":%s,\"min_us\":%" PRId64 ",\"median_us\":%" PRId64 ",\"max_us\":%" PRId64
-               ",\"stack_peak_bytes\":%" PRIu32 "}",
-               VERIFIER_NAMES[i], all_ok ? "true" : "false", us[0], us[BENCH_RUNS / 2], us[BENCH_RUNS - 1], peak);
+        jcat(",\"%s\":{\"all_ok\":%s,\"min_us\":%" PRId64 ",\"median_us\":%" PRId64 ",\"max_us\":%" PRId64
+             ",\"stack_peak_bytes\":%" PRIu32 "}",
+             VERIFIER_NAMES[i], all_ok ? "true" : "false", us[0], us[BENCH_RUNS / 2], us[BENCH_RUNS - 1], peak);
     }
-    printf(",\"min_free_heap_bytes\":%u}\n", (unsigned)esp_get_minimum_free_heap_size());
+    jcat(",\"min_free_heap_bytes\":%u}\n", (unsigned)esp_get_minimum_free_heap_size());
+    fputs(s_last_decision, stdout);  // one write, so the app task's prints can't split the line
     fflush(stdout);
+}
+
+/**
+ * The ECU's actual application. v1 reads the battery temperature with the LED solid on;
+ * v2 adds a sustained over-temperature warning and blinks the LED, so an installed update
+ * is visible. The temperature is simulated: the ESP32 has no battery sensor.
+ */
+static void app_task(void *arg) {
+    const char *ver = esp_app_get_description()->version;
+    gpio_reset_pin(APP_LED_GPIO);
+    gpio_set_direction(APP_LED_GPIO, GPIO_MODE_OUTPUT);
+    const int period_ms = 250;
+    int over_temp_reads = 0;
+    for (int tick = 0;; tick++) {
+        gpio_set_level(APP_LED_GPIO, APP_FW_VERSION >= 2 ? (tick & 1) : 1);
+        vTaskDelay(pdMS_TO_TICKS(period_ms));
+        if (tick % (4000 / period_ms) != 0) continue;
+        float temp = 38.0f + (float)(esp_random() % 60) / 10.0f;
+        printf("[APP %s] battery temp %.1f C (simulated sensor)\n", ver, temp);
+#if APP_FW_VERSION >= 2
+        over_temp_reads = temp > 41.0f ? over_temp_reads + 1 : 0;
+        if (over_temp_reads >= 2) {
+            printf("[APP %s] NEW IN v2: sustained over-temperature warning (%d reads > 41.0 C)\n", ver, over_temp_reads);
+        }
+#else
+        (void)over_temp_reads;
+#endif
+    }
 }
 
 void app_main(void) {
@@ -456,6 +492,14 @@ void app_main(void) {
         nvs_flash_erase();
         nvs_flash_init();
     }
+
+#if APP_FW_VERSION == 3
+    // Fault-injected release: dies before confirming itself. The bootloader then marks
+    // this slot invalid and boots the previous confirmed image on the next reset.
+    printf("[APP v3.0.0] FAULT INJECTED: crashing before first-boot confirmation\n");
+    vTaskDelay(pdMS_TO_TICKS(300));
+    abort();
+#endif
 
     // First boot of a freshly activated image: we reached app_main with NVS working,
     // which is this demonstrator's health check. Confirm it so the bootloader keeps it.
@@ -473,16 +517,29 @@ void app_main(void) {
     printf("\n=================================================================\n");
     printf("  AutoQrypt: ESP32 Hardware-in-the-Loop ECU Surrogate\n");
     printf("=================================================================\n");
+    const char *app_version = esp_app_get_description()->version;
+    // Set by the bootloader when it rolled back from an image that never confirmed itself
+    const esp_partition_t *invalid = esp_ota_get_last_invalid_partition();
+    esp_app_desc_t invalid_desc = {0};
+    bool has_invalid = invalid && esp_ota_get_partition_description(invalid, &invalid_desc) == ESP_OK;
+
+    printf("[ECU-HW] Firmware:         %s\n", app_version);
     printf("[ECU-HW] Target ID:        %s (vehicle %s)\n", DEVICE_TARGET_ID, DEVICE_VEHICLE_ID);
     printf("[ECU-HW] Running slot:     %s @ 0x%08" PRIx32 "\n", running->label, running->address);
     printf("[ECU-HW] Security version: %" PRIu32 " (NVS monotonic counter)\n", s_security_version);
+    if (has_invalid) {
+        printf("[ECU-HW] Rolled back:      %s in %s never confirmed itself\n", invalid_desc.version, invalid->label);
+    }
     printf("[ECU-HW] Free heap:        %u bytes\n", (unsigned)esp_get_free_heap_size());
     printf("-----------------------------------------------------------------\n");
     printf("{\"device_id\":\"%s\",\"event_type\":\"boot_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_%s\","
-           "\"message\":\"ECU booted\",\"running_slot\":\"%s\",\"installed_security_version\":%" PRIu32
-           ",\"confirmed_on_this_boot\":%s,\"free_heap_bytes\":%u}\n",
-           DEVICE_VEHICLE_ID, DEVICE_VEHICLE_ID, running->label, s_security_version,
-           confirmed_now ? "true" : "false", (unsigned)esp_get_free_heap_size());
+           "\"message\":\"ECU booted %s\",\"app_version\":\"%s\",\"running_slot\":\"%s\",\"installed_security_version\":%" PRIu32
+           ",\"confirmed_on_this_boot\":%s,\"last_invalid_slot\":\"%s\",\"last_invalid_version\":\"%s\",\"free_heap_bytes\":%u}\n",
+           DEVICE_VEHICLE_ID, DEVICE_VEHICLE_ID, app_version, app_version, running->label, s_security_version,
+           confirmed_now ? "true" : "false", has_invalid ? invalid->label : "", has_invalid ? invalid_desc.version : "",
+           (unsigned)esp_get_free_heap_size());
+
+    xTaskCreatePinnedToCore(app_task, "ecu_app", 3072, NULL, 3, NULL, 0);
 
     for (;;) {
         proto("READY");

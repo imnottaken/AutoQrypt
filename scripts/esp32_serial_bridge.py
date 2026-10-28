@@ -19,7 +19,7 @@ except ImportError:
 
 def main():
     port = sys.argv[1] if len(sys.argv) > 1 else "/dev/ttyUSB0"
-    baud = int(sys.argv[2]) if len(sys.argv) > 2 else 115200
+    baud = int(sys.argv[2]) if len(sys.argv) > 2 else 921600
     dashboard_url = sys.argv[3] if len(sys.argv) > 3 else "http://127.0.0.1:7001/ingest"
 
     print("=================================================================")

@@ -46,7 +46,14 @@ def test_qpiai_qcloud():
     print("    |psi> = H^(otimes 8) |00...0> = (1/sqrt(256)) sum_{x=0}^{255} |x>")
     print("    Experiment Name: 'PQC02_Automotive_QRNG_Seed'")
     
-    receipt = engine.generate_qrng_seed(n_qubits=8, shots=1024)
+    receipt_file = os.path.join("dataset", "qpiai_qrng_receipt.json")
+    prior_receipt = open(receipt_file, "rb").read() if os.path.exists(receipt_file) else None
+    try:
+        receipt = engine.generate_qrng_seed(n_qubits=8, shots=1024)
+    finally:
+        if prior_receipt is not None and ("pytest" in sys.modules or "unittest" in sys.modules):
+            with open(receipt_file, "wb") as f:
+                f.write(prior_receipt)
 
     print(f"\n[+] Execution Completed via {receipt.device_name}:")
     print(f"    - Job ID:               {receipt.job_id}")

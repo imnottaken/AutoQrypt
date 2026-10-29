@@ -12,9 +12,11 @@ def run_demo():
     print("=============================================\n")
     
     env = os.environ.copy()
+    env["SKIP_BAD_BATTERY"] = "true"
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     with demo_server(root_dir, env):
         env_attack = env.copy()
+        env_attack["SKIP_BAD_BATTERY"] = "true"
         env_attack["ATTACK_ENABLED"] = "true"
         env_attack["ATTACK_TARGET"] = "chunk"
         env_attack["ATTACK_CHUNK_INDEX"] = "0"

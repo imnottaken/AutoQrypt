@@ -130,6 +130,36 @@ class SendPackage(unittest.TestCase):
         self.assertEqual(ev["reason"], "TRUNCATED_HEADER")
         self.assertNotIn(b"AQLD", e.ser.writes)
 
+    def test_telegram_notifier_formats_hil_and_simulated_summaries(self):
+        from unittest import mock
+        from common import notifier
+        sent = []
+        with mock.patch.object(notifier, "send_telegram_alert", side_effect=lambda msg, **kw: sent.append(msg)):
+            notifier.notify_hil_result({
+                "decision": "ACCEPT",
+                "reason": "ALL_CHECKS_PASSED",
+                "title": "Genuine OEM update",
+                "ecu_after": {"app_version": "v2.0.0", "running_slot": "ota_1", "installed_security_version": 2},
+                "verifiers": [{"label": "Falcon-512 director signature", "ok": True, "ms": 4.9}],
+                "elapsed_s": 5.1,
+            })
+            notifier.notify_simulated_ota(
+                device_id="VEH-1",
+                target_version="v2.0.0",
+                success=False,
+                reason="ROLLBACK_ATTACK_DETECTED",
+                active_slot="SLOT_B",
+                installed_version="v2.0.0",
+                installed_build=2,
+                hybrid_verified=True,
+                total_ms=12.4,
+            )
+        self.assertEqual(len(sent), 2)
+        self.assertIn("AutoQrypt ESP32: Update Successful", sent[0])
+        self.assertIn("ALL_CHECKS_PASSED", sent[0])
+        self.assertIn("AutoQrypt OTA Blocked (VEH-1)", sent[1])
+        self.assertIn("ROLLBACK_ATTACK_DETECTED", sent[1])
+
 
 if __name__ == "__main__":
     unittest.main()

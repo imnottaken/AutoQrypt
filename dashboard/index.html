@@ -1865,12 +1865,35 @@
       } catch (e) {}
     }
 
+    function setPillStyle(el, state, text) {
+      if (!el) return;
+      el.removeAttribute('style');
+      if (state === 'ok') {
+        el.className = el.id === 'verdict-decision' ? 'reason-pill ok' : (el.id === 'pill-2fa-gate' ? 'combinator-badge' : 'role-badge-status');
+      } else if (state === 'bad') {
+        el.className = el.id === 'verdict-decision' ? 'reason-pill' : (el.id === 'pill-2fa-gate' ? 'combinator-badge invalid' : 'role-badge-status invalid');
+      } else if (state === 'eval') {
+        el.className = el.id === 'verdict-decision' ? 'reason-pill' : (el.id === 'pill-2fa-gate' ? 'combinator-badge' : 'role-badge-status');
+        el.style.background = 'var(--blue-bg)';
+        el.style.borderColor = 'var(--blue-border)';
+        el.style.color = 'var(--blue)';
+      } else {
+        el.className = el.id === 'verdict-decision' ? 'reason-pill' : (el.id === 'pill-2fa-gate' ? 'combinator-badge' : 'role-badge-status');
+        el.style.background = 'var(--bg-subtle)';
+        el.style.borderColor = 'var(--border)';
+        el.style.color = 'var(--text-secondary)';
+      }
+      if (text !== undefined) el.innerText = text;
+    }
+
     function renderHilResult(r) {
       const ok = r.decision === 'ACCEPT';
+      const isRollback = r.decision === 'ROLLBACK';
       const vTitle = $('verdict-title');
       if (vTitle) {
         vTitle.className = `verdict-title ${ok ? 'ok' : 'bad'}`;
-        vTitle.innerText = `${ok ? 'Update installed' : 'Package rejected'}: ${r.title || (ok ? 'Genuine OEM update' : 'Attack Blocked')}`;
+        const prefix = ok ? 'Update installed' : (isRollback ? 'Boot crash rolled back' : 'Package rejected');
+        vTitle.innerText = `${prefix}: ${r.title || (ok ? 'Genuine OEM update' : 'Attack Blocked')}`;
       }
 
       const vDesc = $('verdict-desc');
@@ -1878,17 +1901,15 @@
         vDesc.innerText = r.explanation || (ok ? 'Signed by the OEM image keys (Ed25519 + ML-DSA-44), authorised by the Director (Falcon-512).' : 'Security policy triggered on ESP32 silicon.');
       }
       
-      const vDec = $('verdict-decision');
-      if (vDec) {
-        vDec.className = `reason-pill ${ok ? 'ok' : ''}`;
-        vDec.innerText = r.reason || (ok ? 'ALL_CHECKS_PASSED' : 'REJECTED');
-      }
+      setPillStyle($('verdict-decision'), ok ? 'ok' : 'bad', r.reason || (ok ? 'ALL_CHECKS_PASSED' : 'REJECTED'));
 
       const vLed = $('verdict-led');
       if (vLed) {
         vLed.innerText = ok
           ? `Now running ${r.ecu_after?.app_version || 'v2.0.0'} at security version ${r.ecu_after?.installed_security_version || 3}. LED: 4 blinks, then solid. (${r.elapsed_s || 1.8} s)`
-          : `The ECU kept running its current firmware. LED: fast blinking alarm for 10 s. (${r.elapsed_s || 0.1} s)`;
+          : (isRollback
+              ? `Faulty image crashed on boot; hardware bootloader restored ${r.ecu_after?.app_version || 'v2.0.0'} on ${r.ecu_after?.running_slot || 'ota_1'}. (${r.elapsed_s || 3.9} s)`
+              : `The ECU kept running its current firmware. LED: fast blinking alarm for 10 s. (${r.elapsed_s || 0.1} s)`);
       }
 
       const ledBulb = $('virtual-led-bulb');
@@ -1896,62 +1917,74 @@
         ledBulb.className = ok ? 'virtual-led-bulb pass' : 'virtual-led-bulb alarm';
       }
 
+      ['pill-falcon', 'pill-mldsa', 'pill-ed25519'].forEach(id => setPillStyle($(id), 'neutral', 'SKIPPED'));
+
+      const vMap = {};
       if (r.verifiers && r.verifiers.length) {
         r.verifiers.forEach(v => {
           const lbl = (v.label || '').toLowerCase();
           if (lbl.includes('falcon')) {
-            const pf = $('pill-falcon');
-            if (pf) { pf.className = v.ok ? 'role-badge-status' : 'role-badge-status invalid'; pf.innerText = v.ok ? 'VALID' : 'REJECTED'; }
-            if (v.ms && $('stat-falcon')) $('stat-falcon').innerText = `${v.ms.toFixed(1)} ms`;
-            if (v.stack_bytes && $('stat-falcon-stack')) $('stat-falcon-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
+            vMap.falcon = v;
+            setPillStyle($('pill-falcon'), v.ok ? 'ok' : 'bad', v.ok ? 'VALID' : 'REJECTED');
+            if (v.ms != null && $('stat-falcon')) { $('stat-falcon').removeAttribute('style'); $('stat-falcon').innerText = `${v.ms.toFixed(1)} ms`; }
+            if (v.stack_bytes != null && $('stat-falcon-stack')) $('stat-falcon-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
           } else if (lbl.includes('ml-dsa') || lbl.includes('mldsa')) {
-            const pm = $('pill-mldsa');
-            if (pm) { pm.className = v.ok ? 'role-badge-status' : 'role-badge-status invalid'; pm.innerText = v.ok ? 'VALID' : 'REJECTED'; }
-            if (v.ms && $('stat-mldsa')) $('stat-mldsa').innerText = `${v.ms.toFixed(1)} ms`;
-            if (v.stack_bytes && $('stat-mldsa-stack')) $('stat-mldsa-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
+            vMap.mldsa = v;
+            setPillStyle($('pill-mldsa'), v.ok ? 'ok' : 'bad', v.ok ? 'VALID' : 'REJECTED');
+            if (v.ms != null && $('stat-mldsa')) { $('stat-mldsa').removeAttribute('style'); $('stat-mldsa').innerText = `${v.ms.toFixed(1)} ms`; }
+            if (v.stack_bytes != null && $('stat-mldsa-stack')) $('stat-mldsa-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
           } else if (lbl.includes('ed25519')) {
-            const pe = $('pill-ed25519');
-            if (pe) { pe.className = v.ok ? 'role-badge-status' : 'role-badge-status invalid'; pe.innerText = v.ok ? 'VALID' : 'REJECTED'; }
-            if (v.ms && $('stat-ed25519')) $('stat-ed25519').innerText = `${v.ms.toFixed(1)} ms`;
+            vMap.ed25519 = v;
+            setPillStyle($('pill-ed25519'), v.ok ? 'ok' : 'bad', v.ok ? 'VALID' : 'REJECTED');
+            if (v.ms != null && $('stat-ed25519')) { $('stat-ed25519').removeAttribute('style'); $('stat-ed25519').innerText = `${v.ms.toFixed(1)} ms`; }
           }
         });
       }
 
-      if (r.sha3_ms && $('stat-sha3')) {
+      if (r.sha3_ms != null && $('stat-sha3')) {
         $('stat-sha3').innerText = `${r.sha3_ms.toFixed(1)} ms`;
       }
 
-      const gate = $('pill-2fa-gate');
-      if (gate) {
-        gate.className = ok ? 'combinator-badge' : 'combinator-badge invalid';
-        gate.innerText = ok ? 'DUAL-AUTHORITY INTERLOCK: PASS' : '2FA COMBINATOR: REJECTED';
+      const allSigsValid = Boolean(vMap.falcon?.ok && vMap.ed25519?.ok && vMap.mldsa?.ok);
+      if (ok) {
+        setPillStyle($('pill-2fa-gate'), 'ok', 'DUAL-AUTHORITY INTERLOCK: PASS');
+      } else if (isRollback) {
+        setPillStyle($('pill-2fa-gate'), 'bad', '2FA PASS · BOOTLOADER ROLLED BACK CRASHED IMAGE');
+      } else if (allSigsValid) {
+        setPillStyle($('pill-2fa-gate'), 'bad', '2FA SIGNATURES: PASS · PAYLOAD REJECTED');
+      } else {
+        setPillStyle($('pill-2fa-gate'), 'bad', '2FA COMBINATOR: REJECTED');
       }
 
-      let checkRows = "";
-      if (r.verifiers && r.verifiers.length) {
-        checkRows = r.verifiers.map(v => `
-          <tr>
-            <td>${esc(v.label)}</td>
-            <td class="${v.ok ? 'pass' : 'fail'}">${v.ok ? 'valid' : 'INVALID'}</td>
-            <td class="num">${v.ms != null ? v.ms.toFixed(1) + ' ms' : '—'}</td>
-            <td class="num">${v.stack_bytes != null ? v.stack_bytes.toLocaleString() + ' B' : '—'}</td>
-          </tr>
-        `).join('');
-      } else {
-        const isFalconOk = !String(r.reason || '').includes('FALCON');
-        const isEdOk = !String(r.reason || '').includes('ED25519');
-        const isMldsaOk = !String(r.reason || '').includes('MLDSA');
-        const isSha3Ok = !String(r.reason || '').includes('DIGEST') && !String(r.reason || '').includes('MISMATCH');
-        checkRows = `
-          <tr><td>Falcon-512 director signature</td><td class="${isFalconOk ? 'pass' : 'fail'}">${isFalconOk ? 'valid' : 'INVALID'}</td><td class="num">4.9 ms</td><td class="num">18,640 B</td></tr>
-          <tr><td>Ed25519 image signature</td><td class="${isEdOk ? 'pass' : 'fail'}">${isEdOk ? 'valid' : 'INVALID'}</td><td class="num">34.0 ms</td><td class="num">—</td></tr>
-          <tr><td>ML-DSA-44 image signature</td><td class="${isMldsaOk ? 'pass' : 'fail'}">${isMldsaOk ? 'valid' : 'INVALID'}</td><td class="num">17.7 ms</td><td class="num">36,496 B</td></tr>
-          <tr><td>SHA3-256 over image</td><td class="${isSha3Ok ? 'pass' : 'fail'}">${isSha3Ok ? 'valid' : 'MISMATCH'}</td><td class="num">42.1 ms</td><td class="num">—</td></tr>
-        `;
-      }
-      const shaRow = r.sha3_ms != null ? `<tr><td>SHA3-256 over image</td><td class="${ok ? 'pass' : 'fail'}">${ok ? 'valid' : 'MISMATCH'}</td><td class="num">${r.sha3_ms.toFixed(1)} ms</td><td class="num">—</td></tr>` : '';
+      const rowFor = (label, v) => {
+        if (!v) {
+          return `<tr><td>${esc(label)}</td><td style="color:var(--text-muted); font-family:var(--font-mono);">skipped (halted earlier)</td><td class="num">—</td><td class="num">—</td></tr>`;
+        }
+        return `<tr>
+          <td>${esc(label)}</td>
+          <td class="${v.ok ? 'pass' : 'fail'}">${v.ok ? 'valid' : 'INVALID'}</td>
+          <td class="num">${v.ms != null ? v.ms.toFixed(1) + ' ms' : '—'}</td>
+          <td class="num">${v.stack_bytes != null ? v.stack_bytes.toLocaleString() + ' B' : '—'}</td>
+        </tr>`;
+      };
+
+      const digestMismatch = String(r.reason || '').includes('DIGEST');
+      const interrupted = String(r.reason || '').includes('INTERRUPTED');
+      const shaRow = r.sha3_ms != null
+        ? `<tr><td>SHA3-256 over image</td><td class="${!digestMismatch ? 'pass' : 'fail'}">${!digestMismatch ? 'valid' : 'MISMATCH'}</td><td class="num">${r.sha3_ms.toFixed(1)} ms</td><td class="num">—</td></tr>`
+        : (interrupted
+            ? `<tr><td>SHA3-256 over image</td><td class="fail">INTERRUPTED (64 KB)</td><td class="num">—</td><td class="num">—</td></tr>`
+            : `<tr><td>SHA3-256 over image</td><td style="color:var(--text-muted); font-family:var(--font-mono);">skipped (halted earlier)</td><td class="num">—</td><td class="num">—</td></tr>`);
+
       const tbody = $('dash-verdict-checks-tbody') || $('verdict-checks-tbody');
-      if (tbody) tbody.innerHTML = checkRows + (r.verifiers && r.verifiers.length ? shaRow : '');
+      if (tbody) {
+        tbody.innerHTML = [
+          rowFor('Falcon-512 director signature', vMap.falcon),
+          rowFor('Ed25519 image signature', vMap.ed25519),
+          rowFor('ML-DSA-44 image signature', vMap.mldsa),
+          shaRow
+        ].join('');
+      }
 
       if (r.ecu_after) {
         if ($('ecu-version')) $('ecu-version').innerText = r.ecu_after.app_version || 'v2.0.0';
@@ -1972,47 +2005,61 @@
       }
 
       if (log.event_type === 'director_signature_failure') {
-        const pf = $('pill-falcon');
-        if (pf) { pf.className = 'role-badge-status invalid'; pf.innerText = 'REJECTED'; }
-        const gate = $('pill-2fa-gate');
-        if (gate) { gate.className = 'combinator-badge invalid'; gate.innerText = '2FA FAILED: DIRECTOR REJECTED'; }
+        setPillStyle($('pill-falcon'), 'bad', 'REJECTED');
+        setPillStyle($('pill-mldsa'), 'neutral', 'SKIPPED');
+        setPillStyle($('pill-ed25519'), 'neutral', 'SKIPPED');
+        setPillStyle($('pill-2fa-gate'), 'bad', '2FA FAILED: DIRECTOR REJECTED');
         const vTitle = $('verdict-title');
         if (vTitle) { vTitle.className = 'verdict-title bad'; vTitle.innerText = 'Package rejected: Compromised Director Signature'; }
-        const vDec = $('verdict-decision');
-        if (vDec) { vDec.className = 'reason-pill'; vDec.innerText = 'DIRECTOR_SIGNATURE_INVALID'; }
+        setPillStyle($('verdict-decision'), 'bad', 'DIRECTOR_SIGNATURE_INVALID');
+        if ($('verdict-desc')) $('verdict-desc').innerText = log.message || 'Director Falcon-512 signature check failed.';
         const ledBulb = $('virtual-led-bulb');
         if (ledBulb) ledBulb.className = 'virtual-led-bulb alarm';
       }
       if (log.event_type === 'image_signature_failure') {
-        const pm = $('pill-mldsa');
-        if (pm) { pm.className = 'role-badge-status invalid'; pm.innerText = '2FA FAILED'; }
-        const gate = $('pill-2fa-gate');
-        if (gate) { gate.className = 'combinator-badge invalid'; gate.innerText = '2FA FAILED: OEM ROOT MISMATCH'; }
+        setPillStyle($('pill-mldsa'), 'bad', '2FA FAILED');
+        setPillStyle($('pill-ed25519'), 'bad', '2FA FAILED');
+        setPillStyle($('pill-2fa-gate'), 'bad', '2FA FAILED: OEM ROOT MISMATCH');
         const vTitle = $('verdict-title');
         if (vTitle) { vTitle.className = 'verdict-title bad'; vTitle.innerText = 'Package rejected: Rogue OEM Signature'; }
-        const vDec = $('verdict-decision');
-        if (vDec) { vDec.className = 'reason-pill'; vDec.innerText = 'IMAGE_PQC_SIGNATURE_INVALID'; }
+        setPillStyle($('verdict-decision'), 'bad', 'IMAGE_PQC_SIGNATURE_INVALID');
+        if ($('verdict-desc')) $('verdict-desc').innerText = log.message || 'Offline OEM PQ/T Hybrid 2FA verification failed.';
         const ledBulb = $('virtual-led-bulb');
         if (ledBulb) ledBulb.className = 'virtual-led-bulb alarm';
       }
+      if (log.event_type === 'rollback_attack_blocked') {
+        setPillStyle($('pill-2fa-gate'), 'bad', 'BLOCKED BY MONOTONIC ANTI-ROLLBACK');
+        const vTitle = $('verdict-title');
+        if (vTitle) { vTitle.className = 'verdict-title bad'; vTitle.innerText = 'Package rejected: Rollback / Freeze Attack Blocked'; }
+        setPillStyle($('verdict-decision'), 'bad', 'ROLLBACK_ATTACK_DETECTED');
+        if ($('verdict-desc')) $('verdict-desc').innerText = log.message || 'Old validly-signed manifest blocked by monotonic build counter.';
+      }
+      if (log.event_type === 'sbom_policy_block') {
+        setPillStyle($('pill-2fa-gate'), 'bad', 'BLOCKED BY SUPPLY-CHAIN CVE POLICY');
+        const vTitle = $('verdict-title');
+        if (vTitle) { vTitle.className = 'verdict-title bad'; vTitle.innerText = 'Package rejected: Vulnerable Dependency in SBOM'; }
+        setPillStyle($('verdict-decision'), 'bad', 'SBOM_CVE_BLOCK');
+        if ($('verdict-desc')) $('verdict-desc').innerText = log.message || 'Update halted due to unresolved CVE in supply chain.';
+      }
+      if (log.event_type === 'chunk_retry_exceeded') {
+        setPillStyle($('pill-2fa-gate'), 'bad', '2FA SIGNATURES: PASS · PAYLOAD TAMPERED');
+        const vTitle = $('verdict-title');
+        if (vTitle) { vTitle.className = 'verdict-title bad'; vTitle.innerText = 'Package rejected: Tampered Payload Chunk Blocked'; }
+        setPillStyle($('verdict-decision'), 'bad', 'CHUNK_DIGEST_MISMATCH');
+        if ($('verdict-desc')) $('verdict-desc').innerText = log.message || 'Chunk failed HMAC-SHA256 verification across all retries.';
+      }
       if (log.event_type === 'pqc_hybrid_verified') {
-        const pm = $('pill-mldsa');
-        if (pm) { pm.className = 'role-badge-status'; pm.innerText = 'VALID'; }
-        const pe = $('pill-ed25519');
-        if (pe) { pe.className = 'role-badge-status'; pe.innerText = 'VALID'; }
+        setPillStyle($('pill-mldsa'), 'ok', 'VALID');
+        setPillStyle($('pill-ed25519'), 'ok', 'VALID');
       }
       if (log.event_type === 'director_verified') {
-        const pf = $('pill-falcon');
-        if (pf) { pf.className = 'role-badge-status'; pf.innerText = 'VALID'; }
+        setPillStyle($('pill-falcon'), 'ok', 'VALID');
       }
 
       if (log.event_type === 'rollback' || log.event_type === 'update_abort') {
         const sp = $('slot-a-pill');
         if (sp) { sp.innerText = 'Reverted'; sp.style.color = '#ef4444'; }
-        const vTitle = $('verdict-title');
-        if (vTitle) { vTitle.className = 'verdict-title bad'; vTitle.innerText = 'Package rejected: Rollback / Freeze Attack Blocked'; }
-        const vDec = $('verdict-decision');
-        if (vDec) { vDec.className = 'reason-pill'; vDec.innerText = 'ROLLBACK_ATTACK_DETECTED'; }
+        if ($('verdict-led')) $('verdict-led').innerText = 'The ECU kept running its Golden Image. LED: fast blinking alarm for 10 s.';
         const ledBulb = $('virtual-led-bulb');
         if (ledBulb) ledBulb.className = 'virtual-led-bulb alarm';
       }
@@ -2021,15 +2068,25 @@
         if (sp) { sp.innerText = 'Active'; sp.style.color = 'var(--emerald)'; }
         const vTitle = $('verdict-title');
         if (vTitle) { vTitle.className = 'verdict-title ok'; vTitle.innerText = 'Update installed: Genuine OEM update'; }
-        const vDec = $('verdict-decision');
-        if (vDec) { vDec.className = 'reason-pill ok'; vDec.innerText = 'ALL_CHECKS_PASSED'; }
+        setPillStyle($('verdict-decision'), 'ok', 'ALL_CHECKS_PASSED');
+        setPillStyle($('pill-2fa-gate'), 'ok', 'DUAL-AUTHORITY INTERLOCK: PASS');
+        if ($('verdict-desc')) $('verdict-desc').innerText = 'Co-signed by OEM (ML-DSA-44 + Ed25519) and Director (Falcon-512). All chunks verified and atomic partition swap completed.';
+        if ($('verdict-led')) $('verdict-led').innerText = 'Now running v2.0.0 at security version 2. LED: 4 blinks, then solid.';
         const ledBulb = $('virtual-led-bulb');
         if (ledBulb) ledBulb.className = 'virtual-led-bulb pass';
         setAllChunks(true);
       }
 
-      if (log.perf_data && log.perf_data.crypto_handshake_latency_ms && $('stat-falcon')) {
-        $('stat-falcon').innerText = `${log.perf_data.crypto_handshake_latency_ms} ms`;
+      if (log.perf_data) {
+        const p = log.perf_data;
+        if (p.crypto_handshake_latency_ms && $('stat-falcon')) {
+          $('stat-falcon').removeAttribute('style');
+          $('stat-falcon').innerText = `${p.crypto_handshake_latency_ms} ms`;
+        }
+        if (p.installed_version && $('ecu-version')) $('ecu-version').innerText = p.installed_version;
+        if (p.installed_build && $('ecu-sec-version')) $('ecu-sec-version').innerText = p.installed_build;
+        if (p.active_partition_slot && $('ecu-slot')) $('ecu-slot').innerText = p.active_partition_slot;
+        if (p.installed_build && $('nvs-counter')) $('nvs-counter').innerText = `Version ${p.installed_build} (Enforced)`;
       }
     }
 

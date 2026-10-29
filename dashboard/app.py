@@ -234,10 +234,16 @@ def telegram_open():
 @app.post("/api/telegram/test")
 def telegram_test():
     st = get_telegram_status()
+    op_name = ((st.get("subscribers") or [{}])[0]).get("name") or "Operator"
     ok = send_telegram_alert(
-        "<b>✅ AutoQrypt — Test Alert</b>\n"
-        f"• <b>Connected Phones:</b> <code>{st.get('subscriber_count', 0)}</code>\n"
-        "• <b>Status:</b> Live OTA &amp; security alerts active.",
+        "<b>✅ AutoQrypt — Security Telemetry Link Verified</b>\n"
+        f"<i>Live OTA &amp; threat alerts are connected to {op_name}.</i>\n\n"
+        "<b>🔐 Active Hardware Gates</b>\n"
+        "• <b>Gate 01–02:</b> Key Pinning &amp; NVS Monotonic Anti-Rollback\n"
+        "• <b>Gate 03:</b> Falcon-512 Online Director Auth (<code>666 B</code>)\n"
+        "• <b>Gate 04–05:</b> ML-DSA-44 + Ed25519 Hybrid 2FA &amp; SHA3-256\n\n"
+        "<b>🚗 Current ECU State</b>\n"
+        f"• <b>Active Partition:</b> <code>{latest_perf_data.get('active_partition_slot', 'ota_0')}</code> (<code>{latest_perf_data.get('installed_version', 'v1.0.0')}</code> · NVS <code>SV {latest_perf_data.get('installed_build', 1)}</code>)",
         async_send=False,
         force=True,
         parse_mode="HTML",

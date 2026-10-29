@@ -778,7 +778,6 @@ class Demo:
                     )
                     entry["explanation"] = entry["rollback_detail"]
         elif ev:
-            self.ecu.wait_for(lambda x: x == "AQ:READY", 15)
             if self.state:
                 new_state = dict(self.state)
                 if "running_slot" in ev:
@@ -792,6 +791,12 @@ class Demo:
                     "installed_security_version": ev.get("installed_security_version", 1),
                     "app_version": ev.get("firmware_version", "v1.0.0"),
                 }
+            entry["elapsed_s"] = round(time.time() - t0, 1)
+            entry["ecu_after"] = self.state
+            self.history.append(entry)
+            notify_hil_result(entry)
+            self.ecu.wait_for(lambda x: x == "AQ:READY", 15)
+            return entry
         else:
             # Outcome unknown (it may even have installed): re-read the ECU's real state so the
             # next package targets the right security version instead of being refused as a replay.
@@ -889,6 +894,8 @@ class Demo:
                 raw = b"AQPK" + bytes(header) + img
             with open(os.path.join(DEMO_PACKAGES_DIR, fname), "wb") as f:
                 f.write(raw)
+            if fname == "01_genuine_oem_release_v2.0.aqpk":
+                self._cached_ref_pkg = raw
 
     def list_demo_packages(self):
         if not os.path.exists(DEMO_PACKAGES_DIR):
@@ -913,13 +920,16 @@ class Demo:
                 }
             installed_sv = self.state.get("installed_security_version", 1)
             ref_sv = max(installed_sv + 1, 2)
-            gen_path = os.path.join(DEMO_PACKAGES_DIR, "01_genuine_oem_release_v2.0.aqpk")
-            if os.path.isfile(gen_path):
-                with open(gen_path, "rb") as gf:
-                    ref_pkg = gf.read()
-            else:
-                ref_hdr, ref_img, _ = package("v2", self.images, self.keys, ref_sv)
-                ref_pkg = b"AQPK" + bytes(ref_hdr) + bytes(ref_img)
+            ref_pkg = getattr(self, "_cached_ref_pkg", None)
+            if not ref_pkg:
+                gen_path = os.path.join(DEMO_PACKAGES_DIR, "01_genuine_oem_release_v2.0.aqpk")
+                if os.path.isfile(gen_path):
+                    with open(gen_path, "rb") as gf:
+                        ref_pkg = gf.read()
+                else:
+                    ref_hdr, ref_img, _ = package("v2", self.images, self.keys, ref_sv)
+                    ref_pkg = b"AQPK" + bytes(ref_hdr) + bytes(ref_img)
+                self._cached_ref_pkg = ref_pkg
 
             def calc_entropy(buf):
                 if not buf:
@@ -938,8 +948,10 @@ class Demo:
                 diff_bytes = abs(len(raw_bytes) - len(ref_pkg))
                 diff_bits = diff_bytes * 8
                 first_diff = None
-                for idx in range(min_len):
-                    # Falcon-512 (112..778) uses a randomized 40-byte nonce per signature; skip if Falcon verified OK
+
+                # Fast block-partitioned diffing: compare header regions first, then 4 KB payload slices in C
+                hdr_end = min(3262, min_len)
+                for idx in range(hdr_end):
                     if 112 <= idx < 778 and falcon_passed:
                         continue
                     if 778 <= idx < 842 and ed_passed:
@@ -953,6 +965,19 @@ class Demo:
                             first_diff = idx
                         diff_bytes += 1
                         diff_bits += (b1 ^ b2).bit_count()
+
+                if min_len > 3262 and raw_bytes[3262:min_len] != ref_pkg[3262:min_len]:
+                    for blk_start in range(3262, min_len, 4096):
+                        blk_end = min(blk_start + 4096, min_len)
+                        if raw_bytes[blk_start:blk_end] != ref_pkg[blk_start:blk_end]:
+                            for idx in range(blk_start, blk_end):
+                                b1 = raw_bytes[idx]
+                                b2 = ref_pkg[idx]
+                                if b1 != b2:
+                                    if first_diff is None:
+                                        first_diff = idx
+                                    diff_bytes += 1
+                                    diff_bits += (b1 ^ b2).bit_count()
                 if first_diff is None and len(raw_bytes) != len(ref_pkg):
                     first_diff = min_len
                 if reason == "ALL_CHECKS_PASSED":
@@ -1054,15 +1079,6 @@ class Demo:
                         return False
 
             def reject(reason, title, explanation, verifiers=None, sha3_ms=None, sv_val=None, rel_val=None):
-                # If physical ESP32 hardware is attached over USB-UART, also send a trigger frame so its physical LED blinks the 10s alarm!
-                if ensure_serial():
-                    try:
-                        hdr = raw_bytes[4:3262] if len(raw_bytes) >= 3262 else (b"XXXX" + b"\0" * 3254)
-                        self.ecu.drain()
-                        self.ecu.ser.write(b"AQPK" + bytes(hdr))
-                        self.ecu.wait_for(lambda x: x == "AQ:READY", 3)
-                    except Exception:
-                        pass
                 entry.update({
                     "decision": "REJECT",
                     "reason": reason,
@@ -1077,7 +1093,18 @@ class Demo:
                     "forensics": build_forensics(reason, verifiers, sha3_ms),
                 })
                 self.history.append(entry)
+                # Dispatch Telegram alert immediately (<0.2s) and trigger serial LED alarm asynchronously
                 notify_hil_result(entry)
+                def _bg_reject_led():
+                    if ensure_serial():
+                        try:
+                            hdr = raw_bytes[4:3262] if len(raw_bytes) >= 3262 else (b"XXXX" + b"\0" * 3254)
+                            self.ecu.drain()
+                            self.ecu.ser.write(b"AQPK" + bytes(hdr))
+                            self.ecu.wait_for(lambda x: x == "AQ:READY", 3)
+                        except Exception:
+                            pass
+                threading.Thread(target=_bg_reject_led, daemon=True).start()
                 return entry
 
             # Gate 01: Magic & Header Framing (3,262 bytes)
@@ -1223,13 +1250,6 @@ class Demo:
             # All 5 cryptographic and framing gates passed!
             next_slot = "ota_1" if self.state.get("running_slot") == "ota_0" else "ota_0"
             if version_str.startswith("v3") or "crash" in filename.lower() or "faulty" in filename.lower():
-                if ensure_serial():
-                    try:
-                        self.ecu.drain()
-                        self.ecu.ser.write(b"AQPKXXXX" + b"\0" * 3254)
-                        self.ecu.wait_for(lambda x: x == "AQ:READY", 3)
-                    except Exception:
-                        pass
                 rb_detail = (
                     f"All 3 signatures and SHA3-256 verified; {version_str} staged into {next_slot}, "
                     f"but self-test watchdog failed on first boot. ESP32 bootloader automatically reverted active partition to "
@@ -1251,19 +1271,18 @@ class Demo:
                     "ecu_after": self.state,
                     "forensics": build_forensics(f"BOOTLOADER_ROLLBACK_FROM_{version_str}", verifiers_list, 14.8),
                 })
+                self.history.append(entry)
+                notify_hil_result(entry)
+                def _bg_rb_led():
+                    if ensure_serial():
+                        try:
+                            self.ecu.drain()
+                            self.ecu.ser.write(b"AQPKXXXX" + b"\0" * 3254)
+                            self.ecu.wait_for(lambda x: x == "AQ:READY", 3)
+                        except Exception:
+                            pass
+                threading.Thread(target=_bg_rb_led, daemon=True).start()
             else:
-                # Blink the physical ESP32 LED twice (OFF -> ON -> OFF -> solid ON) on genuine update
-                if ensure_serial():
-                    try:
-                        for i in range(2):
-                            self.ecu.ser.rts = True
-                            time.sleep(0.28)
-                            self.ecu.ser.rts = False
-                            if i == 0:
-                                time.sleep(0.42)
-                        self.ecu.boot(timeout=3)
-                    except Exception:
-                        pass
                 self.state = {
                     **self.state,
                     "app_version": version_str,
@@ -1285,13 +1304,27 @@ class Demo:
                     "ecu_after": self.state,
                     "forensics": build_forensics("ALL_CHECKS_PASSED", verifiers_list, 14.8),
                 })
-                try:
-                    self.write_demo_packages()
-                except Exception:
-                    pass
+                self.history.append(entry)
+                # Send Telegram alert immediately (<0.2s) and run LED blink + package regeneration asynchronously
+                notify_hil_result(entry)
+                def _bg_accept_hw():
+                    if ensure_serial():
+                        try:
+                            for i in range(2):
+                                self.ecu.ser.rts = True
+                                time.sleep(0.28)
+                                self.ecu.ser.rts = False
+                                if i == 0:
+                                    time.sleep(0.42)
+                            self.ecu.boot(timeout=3)
+                        except Exception:
+                            pass
+                    try:
+                        self.write_demo_packages()
+                    except Exception:
+                        pass
+                threading.Thread(target=_bg_accept_hw, daemon=True).start()
 
-            self.history.append(entry)
-            notify_hil_result(entry)
             return entry
 
     def run_case(self, case_id):
@@ -1421,10 +1454,17 @@ def cmd_demo(args):
                     payload = {}
             if self.path == "/api/telegram/test":
                 st = get_telegram_status()
+                op_name = ((st.get("subscribers") or [{}])[0]).get("name") or "Operator"
+                ecu_st = demo.state or {}
                 ok = send_telegram_alert(
-                    "<b>✅ AutoQrypt — Test Alert</b>\n"
-                    f"• <b>Connected Phones:</b> <code>{st.get('subscriber_count', 0)}</code>\n"
-                    "• <b>Status:</b> Live ESP32 hardware alerts active.",
+                    "<b>✅ AutoQrypt — Security Telemetry Link Verified</b>\n"
+                    f"<i>Live OTA &amp; threat alerts are connected to {op_name}.</i>\n\n"
+                    "<b>🔐 Active Hardware Gates</b>\n"
+                    "• <b>Gate 01–02:</b> Key Pinning &amp; NVS Monotonic Anti-Rollback\n"
+                    "• <b>Gate 03:</b> Falcon-512 Online Director Auth (<code>666 B</code>)\n"
+                    "• <b>Gate 04–05:</b> ML-DSA-44 + Ed25519 Hybrid 2FA &amp; SHA3-256\n\n"
+                    "<b>🚗 Current ECU State</b>\n"
+                    f"• <b>Active Partition:</b> <code>{ecu_st.get('running_slot', 'ota_0')}</code> (<code>{ecu_st.get('app_version', 'v1.0.0')}</code> · NVS <code>SV {ecu_st.get('installed_security_version', 1)}</code>)",
                     async_send=False,
                     force=True,
                     parse_mode="HTML",

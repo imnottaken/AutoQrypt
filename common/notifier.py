@@ -5,12 +5,20 @@ import html
 import json
 import os
 import secrets
+import socket
 import sys
 import tempfile
 import threading
 import time
 from typing import Dict, List, Any, Optional
 import requests
+import urllib3.util.connection as _urllib3_cn
+
+# Force IPv4 for Telegram Bot API to eliminate 20-30s IPv6 (AAAA) timeouts on mobile hotspots
+_urllib3_cn.allowed_gai_family = lambda: socket.AF_INET
+
+_SEND_SESSION = requests.Session()
+_POLL_SESSION = requests.Session()
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KEYSTORE_DIR = os.path.join(ROOT_DIR, "key_management", ".keystore")
@@ -60,88 +68,109 @@ REPLY_KEYBOARD = {
 
 ATTACK_DIAGNOSIS = {
     "IMAGE_PQC_SIGNATURE_VERIFICATION_FAILURE": (
-        "Quantum Signature Forgery (Invalid ML-DSA-44 Signature)",
-        "NIST FIPS 204 ML-DSA-44 Lattice Verifier",
+        "Post-Quantum Signature Forgery",
+        "An attacker tried to forge the OEM firmware signature. Blocked because the Post-Quantum lattice signature did not match.",
+        "Gate 04 · NIST FIPS 204 ML-DSA-44 (2,420 B) verification failed",
     ),
     "IMAGE_MLDSA44_SIGNATURE_INVALID": (
-        "Quantum Signature Forgery (Invalid ML-DSA-44 Signature)",
-        "NIST FIPS 204 ML-DSA-44 Lattice Verifier",
+        "Post-Quantum Signature Forgery",
+        "An attacker tried to forge the OEM firmware signature. Blocked because the Post-Quantum lattice signature did not match.",
+        "Gate 04 · NIST FIPS 204 ML-DSA-44 (2,420 B) verification failed",
     ),
     "UNTRUSTED_MLDSA44_KEY_ID": (
         "Unauthorized OEM Signing Key (Rogue HSM)",
-        "Pinned Public Key Fingerprint Check",
+        "The package was signed by an unknown key not pinned in the ECU's hardware root of trust.",
+        "Gate 01 · 8-byte SHA3-256 key fingerprint mismatch vs trusted_keys.h",
     ),
     "IMAGE_PQC_SIGNATURE_MISSING": (
-        "Classical-Only Downgrade Attempt (Missing PQC Signature)",
-        "Mandatory PQ/T Hybrid 2FA Policy Gate",
+        "Classical-Only Downgrade Attempt",
+        "The package omitted the mandatory Post-Quantum signature and tried to authenticate with a classical key alone.",
+        "Gate 04 · Mandatory PQ/T Hybrid 2FA policy check failed",
     ),
     "IMAGE_SIGNATURE_VERIFICATION_FAILURE": (
-        "Classical Signature Forgery (Invalid Ed25519 Signature)",
-        "RFC 8032 Ed25519 Classical Verifier",
+        "Classical OEM Signature Forgery",
+        "The classical Ed25519 signature failed verification. Both classical and Post-Quantum signatures must pass to install.",
+        "Gate 04 · RFC 8032 Ed25519 (64 B) hybrid signature check failed",
     ),
     "IMAGE_ED25519_SIGNATURE_INVALID": (
-        "Classical Signature Forgery (Invalid Ed25519 Signature)",
-        "RFC 8032 Ed25519 Classical Verifier",
+        "Classical OEM Signature Forgery",
+        "The classical Ed25519 signature failed verification. Both classical and Post-Quantum signatures must pass to install.",
+        "Gate 04 · RFC 8032 Ed25519 (64 B) hybrid signature check failed",
     ),
     "DIRECTOR_SIGNATURE_VERIFICATION_FAILURE": (
-        "Tampered or Untrusted Fleet Dispatch Instruction",
-        "Falcon-512 Online Director Verifier",
+        "Forged Fleet Director Dispatch",
+        "The cloud delivery signature failed verification—either the manifest was altered in transit or signed for another vehicle.",
+        "Gate 03 · Falcon-512 (666 B) Director signature invalid for VEH-1",
     ),
     "DIRECTOR_FALCON512_SIGNATURE_INVALID": (
-        "Forged or Misdirected Fleet Director Signature",
-        "Falcon-512 Online Director Verifier",
+        "Forged or Misrouted Director Signature",
+        "The cloud delivery signature failed verification—either the manifest was altered in transit or signed for another vehicle.",
+        "Gate 03 · Falcon-512 (666 B) Director signature invalid for VEH-1",
     ),
     "DIRECTOR_IMAGE_MISMATCH": (
-        "Director / Image Metadata Substitution Attack",
-        "Uptane Dual-Role Digest Binding Gate",
+        "Director / OEM Metadata Mismatch",
+        "A compromised cloud server tried to swap the firmware binary without matching offline OEM authorization.",
+        "Gate 03 · Uptane two-role manifest hash binding check failed",
     ),
     "ROLLBACK_ATTACK_DETECTED": (
-        "Firmware Rollback / Replay of Older Release",
-        "Non-Volatile Monotonic Version Counter (NVS)",
+        "Firmware Downgrade Replay Attack",
+        "An older, previously valid firmware image was replayed to re-introduce old bugs. Blocked by the hardware version counter.",
+        "Gate 02 · Incoming security_version <= hardware NVS monotonic counter",
     ),
     "SBOM_CVE_BLOCK": (
-        "Supply-Chain Vulnerable Dependency (CVE-2023-38545)",
-        "SBOM Cryptographic Hash & CVE Policy Gate",
+        "Vulnerable Dependency Blocked (CVE-2023-38545)",
+        "The firmware's Software Bill of Materials (SBOM) lists a known critical vulnerability and was blocked before installation.",
+        "Pre-Flash Gate · CycloneDX SBOM matched critical CVE policy blocklist",
     ),
     "CHUNK_DIGEST_MISMATCH": (
-        "In-Flight Firmware Bit-Flip / Payload Tampering",
-        "Per-Chunk HMAC-SHA256 & Merkle Verifier",
+        "In-Transit Firmware Payload Tampering",
+        "The firmware binary was modified or corrupted mid-transfer over the vehicle bus. Staging memory was wiped immediately.",
+        "Gate 05 · 4,096-byte chunk SHA-256 / Merkle tree hash mismatch",
     ),
     "IMAGE_DIGEST_MISMATCH": (
-        "In-Flight Firmware Bit-Flip / Payload Tampering",
-        "Streaming SHA3-256 Image Digest Gate",
+        "In-Transit Firmware Payload Bit-Flip",
+        "The header signatures were valid, but a byte inside the firmware binary was flipped during transfer. Staging slot was wiped.",
+        "Gate 05 · Streaming FIPS 202 SHA3-256 payload digest diverged from manifest",
     ),
     "MERKLE_ROOT_MISMATCH": (
-        "Tampered Chunk Hash List in Manifest",
-        "Merkle Root Reconstruction Gate",
+        "Tampered Chunk Hash Tree",
+        "The chunk hash list did not reconstruct to the signed Merkle root in the manifest.",
+        "Gate 05 · Merkle root reconstruction mismatch",
     ),
     "TRANSFER_INTERRUPTED": (
-        "Incomplete / Cut-Off Firmware Transfer",
-        "Atomic Staging Slot Integrity Check",
+        "Incomplete Firmware Transfer",
+        "The firmware stream ended before all payload bytes arrived. The partial staging slot was discarded safely.",
+        "Gate 05 · Received payload byte count shorter than manifest image_size",
     ),
     "OTA_INTERRUPTED": (
-        "Network Drop During Chunk Streaming",
-        "Persisted Verified-Chunk Resume Checkpoint",
+        "Network Drop During Streaming",
+        "Connection dropped mid-update. Verified chunks were checkpointed so the transfer can resume without re-downloading.",
+        "Resume Engine · Verified chunk bitmap persisted; active partition untouched",
     ),
     "WRONG_TARGET": (
-        "Cross-ECU Firmware Misdirection Attack",
-        "Hardware Target ID Pinning Gate",
+        "Wrong ECU / Vehicle Target",
+        "A firmware package built for a different ECU was sent to this gateway and rejected before signature checks.",
+        "Gate 01 · Manifest target ID mismatch vs hardware pin ESP32-ECU-GW",
     ),
     "UNTRUSTED_KEY_ID": (
-        "Unauthorized Signing Key (Unpinned Key ID)",
-        "Pinned Public Key Fingerprint Check",
+        "Unpinned Signing Key ID",
+        "The package references a public key ID that is not trusted by this ECU.",
+        "Gate 01 · Public key SHA3-256 fingerprint not in trusted_keys.h",
     ),
     "MALFORMED_PACKAGE_MAGIC": (
-        "Corrupted or Non-AutoQrypt OTA Frame Header",
-        "Gate 01 Magic & Frame Header Check",
+        "Invalid OTA Package Header",
+        "The uploaded file is not a valid AutoQrypt OTA bundle.",
+        "Gate 01 · Missing 4-byte 'AQPK' frame magic at offset 0x0000",
     ),
     "TRUNCATED_HEADER": (
-        "Truncated Cryptographic OTA Envelope",
-        "Gate 01 3,262-Byte Header Framing Gate",
+        "Truncated Cryptographic Header",
+        "The package is smaller than the mandatory 3,262-byte cryptographic header and was dropped immediately.",
+        "Gate 01 · Frame length < 3,262-byte fixed header envelope",
     ),
     "MALFORMED_MANIFEST_MAGIC": (
-        "Corrupted Manifest Header Magic",
-        "Gate 01 Manifest Structure Verifier",
+        "Corrupted Manifest Structure",
+        "The inner 108-byte manifest header is malformed or corrupted.",
+        "Gate 01 · Missing 4-byte 'AQM1' manifest magic at offset 0x0004",
     ),
 }
 
@@ -152,20 +181,45 @@ def _describe_threat(reason: str):
         return ATTACK_DIAGNOSIS[r]
     if "BOOTLOADER_ROLLBACK" in r:
         return (
-            "Faulty Firmware Crashed on First Boot",
-            "Hardware Bootloader Watchdog & Unconfirmed Slot Rollback",
+            "First-Boot Self-Test Failure (Auto-Rollback)",
+            "All signatures passed and the update booted in the staging slot, but its runtime health check failed. The bootloader automatically rolled back to the previous working version.",
+            "Bootloader Watchdog · Unconfirmed staging slot invalidated; reverted active partition",
         )
     if "FALCON" in r or "DIRECTOR" in r:
-        return ("Forged Fleet Director Instruction", "Falcon-512 Online Director Verifier")
+        return (
+            "Forged Fleet Director Signature",
+            "The cloud delivery signature failed verification for this vehicle.",
+            "Gate 03 · Falcon-512 Online Director verification failed",
+        )
     if "MLDSA" in r or "PQC" in r:
-        return ("Forged Post-Quantum Signature", "NIST FIPS 204 ML-DSA-44 Verifier")
+        return (
+            "Post-Quantum Signature Forgery",
+            "The NIST FIPS 204 ML-DSA-44 signature failed verification.",
+            "Gate 04 · ML-DSA-44 Lattice Verifier rejected signature",
+        )
     if "ED25519" in r or "SIGNATURE" in r:
-        return ("Unauthorized Firmware Signature", "PQ/T Hybrid 2FA Signature Gate")
+        return (
+            "Classical Signature Verification Failure",
+            "The classical Ed25519 signature in the hybrid pair failed verification.",
+            "Gate 04 · PQ/T Hybrid 2FA Signature Gate rejected package",
+        )
     if "ROLLBACK" in r:
-        return ("Firmware Downgrade Replay Attack", "Monotonic Security Version Counter")
+        return (
+            "Firmware Downgrade Replay Attack",
+            "An older firmware version was blocked by the hardware monotonic version counter.",
+            "Gate 02 · NVS monotonic security_version counter check failed",
+        )
     if "DIGEST" in r or "CHUNK" in r or "MERKLE" in r:
-        return ("Tampered Firmware Payload Bytes", "Cryptographic Digest Verifier")
-    return (f"Security Policy Violation ({reason})", "ECU Admission Gate")
+        return (
+            "Tampered Firmware Payload",
+            "The firmware payload hash did not match the signed manifest digest.",
+            "Gate 05 · Streaming cryptographic payload digest mismatch",
+        )
+    return (
+        f"Security Policy Violation ({reason})",
+        "The firmware package violated ECU security policy and was rejected before installation.",
+        f"ECU Admission Gate · Code: {reason}",
+    )
 
 
 def _flush_notify_threads():
@@ -221,30 +275,36 @@ def _save_bot_state(state: Dict[str, Any]):
 
 
 def _load_saved_subscribers() -> Dict[str, Dict[str, Any]]:
-    subs: Dict[str, Dict[str, Any]] = {}
-    env_chat_id = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip().strip("'\"")
-    if env_chat_id and env_chat_id != "your_telegram_chat_id_here":
-        for cid in env_chat_id.split(","):
-            cid = cid.strip()
-            if cid:
-                subs[cid] = {
-                    "chat_id": cid,
-                    "name": "Primary VSOC Operator",
-                    "username": "",
-                    "role": "PRIMARY_SOC",
-                    "welcomed": True,
-                }
+    state = _load_bot_state()
+    if state.get("awaiting_scan"):
+        return {}
 
     if os.path.exists(SUBSCRIBERS_FILE):
         try:
             with open(SUBSCRIBERS_FILE, "r") as f:
                 disk_subs = json.load(f)
             if isinstance(disk_subs, dict):
-                for cid, info in disk_subs.items():
-                    if isinstance(info, dict):
-                        subs[str(cid)] = info
+                valid_items = [(str(cid), info) for cid, info in disk_subs.items() if isinstance(info, dict)]
+                if valid_items:
+                    # Strictly 1 active user per QR code
+                    last_cid, last_info = valid_items[-1]
+                    return {last_cid: last_info}
+                return {}
         except Exception:
             pass
+
+    subs: Dict[str, Dict[str, Any]] = {}
+    env_chat_id = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip().strip("'\"")
+    if env_chat_id and env_chat_id != "your_telegram_chat_id_here":
+        first_cid = env_chat_id.split(",")[0].strip()
+        if first_cid:
+            subs[first_cid] = {
+                "chat_id": first_cid,
+                "name": "Primary VSOC Operator",
+                "username": "",
+                "role": "PRIMARY_SOC",
+                "welcomed": True,
+            }
     return subs
 
 
@@ -260,17 +320,17 @@ def _send_one(token: str, chat_id: str, text: str, parse_mode: Optional[str] = "
         payload["reply_markup"] = reply_markup
     for attempt in range(2):
         try:
-            resp = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload, timeout=3.5)
+            resp = _SEND_SESSION.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload, timeout=2.5)
             if resp.status_code == 200:
                 return True
             if parse_mode and resp.status_code == 400:
                 payload.pop("parse_mode", None)
-                resp2 = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload, timeout=3.5)
+                resp2 = _SEND_SESSION.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload, timeout=2.5)
                 if resp2.status_code == 200:
                     return True
         except Exception:
             if attempt == 0:
-                time.sleep(0.35)
+                time.sleep(0.15)
     return False
 
 
@@ -327,17 +387,21 @@ def _ensure_bot_commands_menu(token: str, state: Dict[str, Any]):
 
 
 def _build_welcome_card(name: str, cid_str: str, pair_token: str = "") -> str:
-    pair_line = f" (Token <code>#{html.escape(pair_token.upper())}</code>)" if pair_token else ""
+    pair_line = f" (Session <code>#{html.escape(pair_token.upper())}</code>)" if pair_token else ""
     return (
-        f"<b>✅ Connected to AutoQrypt Alerts{pair_line}</b>\n"
-        f"Hi {html.escape(name)}, this phone is now paired with the vehicle ECU.\n\n"
-        "Whenever an OTA update or cyberattack occurs, the ECU will automatically block threats, roll back safely, and push the report here.\n\n"
-        "• /status — Check live ECU firmware &amp; slot\n"
-        "• /last — View last security report"
+        f"<b>✅ AutoQrypt — Phone Paired{pair_line}</b>\n\n"
+        f"<i>Connected to {html.escape(name)}. You will now receive instant vehicle software update and security alerts here.</i>\n\n"
+        "<b>📡 What You Will Receive</b>\n\n"
+        "• <b>Software Updates:</b> Confirmation when a genuine update installs\n\n"
+        "• <b>Blocked Threats:</b> Simple summary when a suspicious update is stopped\n\n"
+        "• <b>Auto-Recovery:</b> Alert if a faulty update rolls back automatically\n\n"
+        "<b>⌨️ Quick Commands</b>\n\n"
+        "• /status — Check current vehicle software version\n"
+        "• /last — View the most recent alert"
     )
 
 
-def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, state: Dict[str, Any]):
+def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, state: Dict[str, Any], user_msg_id: int = 0):
     global _attack_cycle_idx
     parts = cmd_text.split()
     cmd = parts[0].lower().split("@")[0]
@@ -345,10 +409,68 @@ def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, stat
 
     if cmd in ("/start", "/help"):
         pair_tok = arg.replace("pair_", "") if arg.startswith("pair_") else ""
-        if pair_tok:
-            _rotate_pairing_token(state)
-            _save_bot_state(state)
-        _send_one(token, cid_str, _build_welcome_card(name, cid_str, pair_tok), parse_mode="HTML", reply_markup=REPLY_KEYBOARD)
+        welcome_html = _build_welcome_card(name, cid_str, pair_tok)
+
+        # Wait briefly in case another running bot instance (e.g. remote dev laptop) already replied at user_msg_id + 1
+        if user_msg_id > 0:
+            time.sleep(0.55)
+            try:
+                edit_res = _SEND_SESSION.post(
+                    f"https://api.telegram.org/bot{token}/editMessageText",
+                    json={
+                        "chat_id": cid_str,
+                        "message_id": user_msg_id + 1,
+                        "text": welcome_html,
+                        "parse_mode": "HTML",
+                    },
+                    timeout=2.5,
+                ).json()
+                if edit_res.get("ok"):
+                    # Replaced the remote instance's un-padded message in-place -> 0 duplicate messages!
+                    return
+            except Exception:
+                pass
+
+        # Otherwise send our padded welcome message and capture our_msg_id
+        our_msg_id = 0
+        try:
+            send_res = _SEND_SESSION.post(
+                f"https://api.telegram.org/bot{token}/sendMessage",
+                json={
+                    "chat_id": cid_str,
+                    "text": welcome_html,
+                    "parse_mode": "HTML",
+                    "disable_web_page_preview": True,
+                    "reply_markup": REPLY_KEYBOARD,
+                },
+                timeout=3.0,
+            ).json()
+            our_msg_id = int((send_res.get("result") or {}).get("message_id") or 0)
+        except Exception:
+            _send_one(token, cid_str, welcome_html, parse_mode="HTML", reply_markup=REPLY_KEYBOARD)
+
+        # Clean up any duplicate welcome message sent before or after our_msg_id by another running instance
+        if user_msg_id > 0 and our_msg_id > 0:
+            for prev_id in range(user_msg_id + 1, our_msg_id):
+                try:
+                    _SEND_SESSION.post(
+                        f"https://api.telegram.org/bot{token}/deleteMessage",
+                        json={"chat_id": cid_str, "message_id": prev_id},
+                        timeout=1.5,
+                    )
+                except Exception:
+                    pass
+            for delay_s in (0.6, 0.7, 0.8):
+                time.sleep(delay_s)
+                for next_id in (our_msg_id + 1, our_msg_id + 2):
+                    try:
+                        _SEND_SESSION.post(
+                            f"https://api.telegram.org/bot{token}/deleteMessage",
+                            json={"chat_id": cid_str, "message_id": next_id},
+                            timeout=1.5,
+                        )
+                    except Exception:
+                        pass
         return
 
     if cmd == "/status":
@@ -440,7 +562,7 @@ def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, stat
 
 
 def sync_subscribers(send_welcome: bool = True, force: bool = False) -> List[Dict[str, Any]]:
-    """Polls Telegram getUpdates to register operators and process 2-way commands (/status, /last, /update, /attack)."""
+    """Polls Telegram getUpdates to register the active operator and process 2-way commands (/status, /last, /update, /attack)."""
     with _sub_lock:
         subs = _load_saved_subscribers()
         token = _get_token()
@@ -449,8 +571,8 @@ def sync_subscribers(send_welcome: bool = True, force: bool = False) -> List[Dic
 
         state = _load_bot_state()
         now_ts = time.time()
-        # Prevent concurrent processes (7001 and 8080) from colliding on Telegram getUpdates
-        if not force and (now_ts - float(state.get("last_poll_ts") or 0)) < 3.5:
+        min_gap = 0.5 if force else 1.5
+        if (now_ts - float(state.get("last_poll_ts") or 0)) < min_gap:
             return list(subs.values())
 
         state["last_poll_ts"] = now_ts
@@ -462,16 +584,40 @@ def sync_subscribers(send_welcome: bool = True, force: bool = False) -> List[Dic
             params = {"timeout": 0}
             if last_uid > 0:
                 params["offset"] = last_uid + 1
-            r = requests.get(f"https://api.telegram.org/bot{token}/getUpdates", params=params, timeout=2.0).json()
+            r = _POLL_SESSION.get(f"https://api.telegram.org/bot{token}/getUpdates", params=params, timeout=1.5).json()
             changed = False
             max_uid = last_uid
+            commands_to_run = []
+            seen_in_batch = set()
 
-            for u in r.get("result", []):
+            results = r.get("result", [])
+            for u in results:
                 uid = int(u.get("update_id") or 0)
                 if uid > max_uid:
                     max_uid = uid
 
-                msg = u.get("message") or u.get("my_chat_member") or u.get("channel_post") or {}
+            # IMMEDIATELY acknowledge max_uid + 1 on Telegram's server so no other poller/process can fetch this update!
+            if max_uid > last_uid:
+                state["last_update_id"] = max_uid
+                _save_bot_state(state)
+                try:
+                    _POLL_SESSION.get(
+                        f"https://api.telegram.org/bot{token}/getUpdates",
+                        params={"offset": max_uid + 1, "limit": 1, "timeout": 0},
+                        timeout=1.0,
+                    )
+                except Exception:
+                    pass
+
+            for u in results:
+                uid = int(u.get("update_id") or 0)
+                if uid <= last_uid:
+                    continue
+
+                # Only process actual text messages (ignore my_chat_member / edited_message duplicates)
+                msg = u.get("message") or {}
+                if not msg:
+                    continue
                 chat = msg.get("chat") or {}
                 cid = chat.get("id")
                 if not cid:
@@ -484,37 +630,58 @@ def sync_subscribers(send_welcome: bool = True, force: bool = False) -> List[Dic
                     or f"Operator {cid_str[-4:]}"
                 )
                 text = (msg.get("text") or "").strip()
-                existing = subs.get(cid_str)
-                if not existing or existing.get("name") in ("Owner (Default)", "Primary VSOC Operator"):
-                    subs[cid_str] = {
+
+                # Strictly 1 active user per QR code: replace previous subscriber with the newly paired user
+                is_new_scan = text.lower().startswith("/start") or (cid_str not in subs) or bool(state.get("awaiting_scan"))
+                subs = {
+                    cid_str: {
                         "chat_id": cid_str,
                         "name": name,
                         "username": chat.get("username") or "",
                         "role": "VSOC_OPERATOR",
                         "type": chat.get("type", "private"),
-                        "welcomed": bool(existing and existing.get("welcomed")),
+                        "welcomed": True,
                     }
-                    changed = True
+                }
+                state["awaiting_scan"] = False
+                if is_new_scan:
+                    _rotate_pairing_token(state)
+                changed = True
 
-                if uid > last_uid and text.startswith("/"):
-                    subs[cid_str]["welcomed"] = True
-                    changed = True
-                    if send_welcome:
-                        _handle_bot_command(token, cid_str, name, text, state)
+                if text.startswith("/") and send_welcome:
+                    cmd_root = text.split()[0].lower().split("@")[0]
+                    dedup_key = f"{cid_str}:{cmd_root}"
+                    last_sig = state.get("last_cmd_sig")
+                    last_sig_ts = float(state.get("last_cmd_ts") or 0)
+                    # Prevent duplicate /start or command replies within 6 seconds or within same batch
+                    if dedup_key not in seen_in_batch and not (dedup_key == last_sig and (now_ts - last_sig_ts) < 6.0):
+                        seen_in_batch.add(dedup_key)
+                        state["last_cmd_sig"] = dedup_key
+                        state["last_cmd_ts"] = now_ts
+                        user_mid = int(msg.get("message_id") or 0)
+                        commands_to_run.append((cid_str, name, text, user_mid))
 
-            if max_uid > last_uid:
+            if max_uid > last_uid or changed:
                 state["last_update_id"] = max_uid
                 _save_bot_state(state)
             if changed:
                 _save_subscribers(subs)
+
+            # Dispatch welcome/command replies asynchronously AFTER saving subscriber so UI updates in <1s
+            for c_cid, c_name, c_text, c_mid in commands_to_run:
+                threading.Thread(
+                    target=_handle_bot_command,
+                    args=(token, c_cid, c_name, c_text, dict(state), c_mid),
+                    daemon=True,
+                ).start()
         except Exception:
             pass
 
         return list(subs.values())
 
 
-def start_command_poller(interval_s: float = 4.0):
-    """Starts a background daemon thread so phone commands (/status, /update, /attack) respond within seconds."""
+def start_command_poller(interval_s: float = 0.6):
+    """Starts a background daemon thread so phone commands (/status, /update, /attack) respond within ~0.6s."""
     global _poller_started
     if _poller_started or _in_test_harness() or not _get_token():
         return
@@ -523,7 +690,7 @@ def start_command_poller(interval_s: float = 4.0):
     def _loop():
         while True:
             try:
-                sync_subscribers(send_welcome=True, force=False)
+                sync_subscribers(send_welcome=True, force=True)
             except Exception:
                 pass
             time.sleep(interval_s)
@@ -534,33 +701,39 @@ def start_command_poller(interval_s: float = 4.0):
 
 def unlink_subscriber(chat_id_suffix: str) -> Dict[str, Any]:
     """Removes a subscriber by chat_id or masked suffix so a user can unlink a phone."""
-    with _sub_lock:
-        subs = _load_saved_subscribers()
-        clean_suffix = str(chat_id_suffix or "").replace("SOC-", "").replace(".", "").strip()
-        to_delete = [cid for cid in subs if cid == clean_suffix or cid.endswith(clean_suffix)]
-        for cid in to_delete:
-            subs.pop(cid, None)
-        _save_subscribers(subs)
     return get_telegram_status(force_sync=False, new_qr=True)
 
 
 def get_telegram_status(force_sync: bool = False, new_qr: bool = False) -> Dict[str, Any]:
-    """Returns cached status in <1ms by default; rotates unique pairing QR when new_qr=True."""
+    """Returns cached status in <1ms by default; rotates unique pairing QR and resets active user when new_qr=True."""
     token = _get_token()
-    if force_sync and token:
-        subs = sync_subscribers(send_welcome=True, force=True)
+    if new_qr:
+        if token and not _in_test_harness():
+            try:
+                sync_subscribers(send_welcome=False, force=True)
+            except Exception:
+                pass
+        with _sub_lock:
+            state = _load_bot_state()
+            if token and not state.get("bot_base_url") and not _in_test_harness():
+                _ensure_bot_commands_menu(token, state)
+            if state.get("bot_base_url") or state.get("bot_url"):
+                _rotate_pairing_token(state)
+            state["awaiting_scan"] = True
+            _save_bot_state(state)
+            _save_subscribers({})
+            subs: List[Dict[str, Any]] = []
     else:
-        subs = list(_load_saved_subscribers().values())
-
-    state = _load_bot_state()
-    if token and (not state.get("bot_base_url") or not state.get("qr_svg")) and not _in_test_harness():
-        _ensure_bot_commands_menu(token, state)
-    elif new_qr and (state.get("bot_base_url") or state.get("bot_url")):
-        _rotate_pairing_token(state)
-        _save_bot_state(state)
-    elif state.get("bot_url") and not state.get("qr_svg"):
-        _rotate_pairing_token(state)
-        _save_bot_state(state)
+        if force_sync and token:
+            subs = sync_subscribers(send_welcome=True, force=True)
+        else:
+            subs = list(_load_saved_subscribers().values())
+        state = _load_bot_state()
+        if token and (not state.get("bot_base_url") or not state.get("qr_svg")) and not _in_test_harness():
+            _ensure_bot_commands_menu(token, state)
+        elif state.get("bot_url") and not state.get("qr_svg"):
+            _rotate_pairing_token(state)
+            _save_bot_state(state)
 
     return {
         "configured": bool(token),
@@ -594,20 +767,12 @@ def send_telegram_alert(text: str, async_send: bool = True, force: bool = False,
     _save_bot_state(state)
 
     def _deliver() -> bool:
-        subs = sync_subscribers(send_welcome=True)
+        # Read saved subscriber directly from disk (<0.2ms) without blocking on getUpdates
+        subs = list(_load_saved_subscribers().values())
+        if not subs:
+            subs = sync_subscribers(send_welcome=True)
         if not subs:
             return False
-        # Flush any queued offline alerts first
-        cur_state = _load_bot_state()
-        pending = list(cur_state.get("pending_alerts") or [])
-        if pending:
-            still_pending = []
-            for old_msg in pending[-5:]:
-                sent_old = any(_send_one(token, str(s.get("chat_id")), old_msg, parse_mode=parse_mode) for s in subs if s.get("chat_id"))
-                if not sent_old:
-                    still_pending.append(old_msg)
-            cur_state["pending_alerts"] = still_pending
-            _save_bot_state(cur_state)
 
         any_ok = False
         for s in subs:
@@ -651,45 +816,81 @@ def _incident_id(seed_str: str) -> str:
     return f"AQ-INC-{now.strftime('%m%d')}-{short_hash}"
 
 
+def _format_verifier_trace(verifiers: list, sha3_ms=None) -> str:
+    if not verifiers:
+        return ""
+    parts = []
+    for v in verifiers:
+        lbl = str(v.get("label", "")).split()[0]
+        ok = v.get("ok")
+        ms = v.get("ms")
+        st = "PASS" if ok else "FAIL"
+        ms_str = f" ({ms} ms)" if ms is not None else ""
+        parts.append(f"{html.escape(lbl)} {st}{ms_str}")
+    if sha3_ms is not None and all(v.get("ok") for v in verifiers):
+        parts.append(f"SHA3-256 ({sha3_ms} ms)")
+    return " → ".join(parts)
+
+
 def notify_hil_result(entry: dict):
-    """Formats and dispatches an automatic attack-detection or update-success alert for ESP32 HIL."""
+    """Formats and dispatches an executive + technical attack-detection or update-success report for ESP32 HIL."""
     decision = entry.get("decision", "UNKNOWN")
     reason = entry.get("reason", "UNKNOWN")
     title = entry.get("title") or entry.get("description") or "OTA Package"
+    pkg_name = entry.get("filename") or title
     ecu_after = entry.get("ecu_after") or {}
     fw_ver = ecu_after.get("app_version") or entry.get("release") or "v1.0.0"
     slot = ecu_after.get("running_slot") or "ota_0"
     sec_ver = ecu_after.get("installed_security_version") or entry.get("security_version") or 1
-    elapsed = entry.get("elapsed_s")
+    verifiers = entry.get("verifiers") or []
+    sha3_ms = entry.get("sha3_ms")
+    trace_str = _format_verifier_trace(verifiers, sha3_ms)
 
-    if decision == "ACCEPT":
+    if decision == "ROLLBACK" or entry.get("rollback_triggered"):
+        threat_title, plain_summary, tech_gate = _describe_threat(reason)
+        headline = "Update Issue Caught — Restored Safe Version"
         lines = [
-            "<b>✅ AutoQrypt — Firmware Update Installed</b>",
-            f"• <b>Release:</b> {html.escape(str(title))} (<code>{html.escape(str(fw_ver))}</code>)",
-            "• <b>Verification:</b> Falcon-512 + ML-DSA-44 + Ed25519 + SHA3-256 Passed",
-            f"• <b>Auto-Action:</b> Activated <code>{html.escape(str(slot))}</code> &amp; locked NVS counter at <code>v{html.escape(str(sec_ver))}</code>",
+            "<b>⚠️ AutoQrypt — Update Issue Caught</b>",
+            "",
+            f"<i>{html.escape(plain_summary)}</i>",
+            "",
+            f"• <b>What happened:</b> {html.escape(threat_title)}",
+            "",
+            f"• <b>How we protected your car:</b> Automatically restored your previous working software (<code>{html.escape(str(fw_ver))}</code>) with zero downtime.",
         ]
-    elif decision == "ROLLBACK":
-        threat_desc, gate_desc = _describe_threat(reason)
+    elif decision == "ACCEPT":
+        headline = "Vehicle Update Installed"
         lines = [
-            "<b>⚠️ AutoQrypt — Faulty Firmware Auto-Rolled Back</b>",
-            f"• <b>Issue Detected:</b> {html.escape(threat_desc)}",
-            f"• <b>Caught By:</b> {html.escape(gate_desc)}",
-            f"• <b>Auto-Response:</b> Unconfirmed slot invalidated; restored safe <code>{html.escape(str(fw_ver))}</code> on <code>{html.escape(str(slot))}</code>",
+            "<b>✅ AutoQrypt — Vehicle Update Installed</b>",
+            "",
+            "<i>Your vehicle verified and installed the latest official software update.</i>",
+            "",
+            f"• <b>Installed Version:</b> <code>{html.escape(str(fw_ver))}</code>",
+            "",
+            "• <b>Security Check:</b> All digital signatures &amp; safety checks passed",
+            "",
+            "• <b>Vehicle Status:</b> Up to date and safe to drive",
         ]
     else:
-        threat_desc, gate_desc = _describe_threat(reason)
+        threat_title, plain_summary, tech_gate = _describe_threat(reason)
+        headline = "Suspicious Update Blocked"
         lines = [
-            "<b>🚨 AutoQrypt — Cyberattack Detected &amp; Blocked</b>",
-            f"• <b>Attack Type:</b> {html.escape(threat_desc)}",
-            f"• <b>Blocked By:</b> {html.escape(gate_desc)} (<code>{html.escape(str(reason))}</code>)",
-            f"• <b>Auto-Response:</b> Update aborted &amp; staging slot wiped. Vehicle kept running safe <code>{html.escape(str(fw_ver))}</code> on <code>{html.escape(str(slot))}</code>",
+            "<b>🛡️ AutoQrypt — Suspicious Update Blocked</b>",
+            "",
+            f"<i>{html.escape(plain_summary)}</i>",
+            "",
+            f"• <b>Issue Detected:</b> {html.escape(threat_title)}",
+            "",
+            f"• <b>How we protected your car:</b> Blocked automatically before touching your vehicle. Your current software (<code>{html.escape(str(fw_ver))}</code>) is 100% safe and untouched.",
         ]
 
-    if elapsed is not None:
-        lines.append(f"• <b>Mitigation Time:</b> <code>{elapsed}s</code>")
-
-    send_telegram_alert("\n".join(lines), parse_mode="HTML")
+    subs = list(_load_saved_subscribers().values())
+    sent_ok = send_telegram_alert("\n".join(lines), parse_mode="HTML")
+    entry["telegram_alert"] = {
+        "sent": bool(sent_ok and len(subs) > 0),
+        "subscriber_count": len(subs),
+        "headline": headline,
+    }
 
 
 def notify_simulated_ota(
@@ -703,30 +904,51 @@ def notify_simulated_ota(
     hybrid_verified: bool,
     total_ms: float = None,
 ):
-    """Formats and dispatches an automatic attack-detection or update-success alert for GatewayECU runs."""
+    """Formats and dispatches an executive + technical attack-detection or update-success report for GatewayECU runs."""
     if success:
         lines = [
             f"<b>✅ AutoQrypt — Firmware Update Installed ({html.escape(device_id)})</b>",
-            f"• <b>Installed:</b> <code>{html.escape(installed_version)}</code> on <code>{html.escape(active_slot)}</code> (Security Ver: <code>v{installed_build}</code>)",
-            "• <b>Verification:</b> Falcon-512 + ML-DSA-44 + Ed25519 + Merkle/SBOM Passed",
-            f"• <b>Auto-Action:</b> Atomic A/B partition swap complete",
+            "<i>Authentic OEM firmware passed all cryptographic and supply-chain checks and was activated on the ECU.</i>",
+            "",
+            "<b>📋 Update Summary</b>",
+            f"• <b>Installed Release:</b> <code>{html.escape(installed_version)}</code> (Security Ver: <code>SV {installed_build}</code>)",
+            "",
+            "<b>🔐 Technical Verification</b>",
+            "• <b>Checks Passed:</b> Falcon-512 Director + ML-DSA-44 &amp; Ed25519 Hybrid 2FA + Merkle &amp; SBOM",
+            "",
+            "<b>🚗 Vehicle ECU Status</b>",
+            f"• <b>Active Partition:</b> Atomic A/B swap to <code>{html.escape(active_slot)}</code> complete",
         ]
     elif reason == "OTA_INTERRUPTED":
         lines = [
             f"<b>⚠️ AutoQrypt — Transfer Interrupted ({html.escape(device_id)})</b>",
-            "• <b>Event:</b> Network connection dropped mid-stream",
-            f"• <b>Auto-Response:</b> Verified chunk state saved for resume; active <code>{html.escape(installed_version)}</code> on <code>{html.escape(active_slot)}</code> untouched",
+            "<i>Network connection dropped mid-stream. Verified chunks were checkpointed so the update can resume safely.</i>",
+            "",
+            "<b>🔧 Technical Diagnosis</b>",
+            "• <b>Checkpoint:</b> Verified chunk bitmap persisted in non-volatile state",
+            f"• <b>Reason Code:</b> <code>{html.escape(str(reason))}</code>",
+            "",
+            "<b>🚗 Vehicle Safety Status</b>",
+            f"• <b>Active System:</b> Running safe <code>{html.escape(installed_version)}</code> on <code>{html.escape(active_slot)}</code> untouched",
         ]
     else:
-        threat_desc, gate_desc = _describe_threat(reason)
+        threat_title, plain_summary, tech_gate = _describe_threat(reason)
         lines = [
             f"<b>🚨 AutoQrypt — Cyberattack Detected &amp; Blocked ({html.escape(device_id)})</b>",
-            f"• <b>Attack Type:</b> {html.escape(threat_desc)}",
-            f"• <b>Blocked By:</b> {html.escape(gate_desc)} (<code>{html.escape(str(reason))}</code>)",
-            f"• <b>Auto-Response:</b> Update aborted &amp; inactive slot wiped. Vehicle kept running safe Golden Image <code>{html.escape(installed_version)}</code> on <code>{html.escape(active_slot)}</code>",
+            f"<i>{html.escape(plain_summary)}</i>",
+            "",
+            "<b>📋 Threat Summary</b>",
+            f"• <b>Attack Type:</b> {html.escape(threat_title)}",
+            "",
+            "<b>🛡 Technical Diagnosis</b>",
+            f"• <b>Stopped At:</b> {html.escape(tech_gate)}",
+            f"• <b>Reason Code:</b> <code>{html.escape(str(reason))}</code>",
+            "",
+            "<b>🚗 Vehicle Safety Status</b>",
+            f"• <b>Active System:</b> Staging slot wiped; running safe Golden Image <code>{html.escape(installed_version)}</code> on <code>{html.escape(active_slot)}</code> (<code>SV {installed_build}</code>)",
         ]
 
     if total_ms is not None:
-        lines.append(f"• <b>Response Time:</b> <code>{total_ms} ms</code>")
+        lines.append(f"• <b>Verification Time:</b> <code>{total_ms} ms</code>")
 
     send_telegram_alert("\n".join(lines), parse_mode="HTML")

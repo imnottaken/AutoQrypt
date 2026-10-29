@@ -87,6 +87,7 @@ class GatewayECU:
         # THIS vehicle, right now". Protects against a manifest meant for a
         # different device being misapplied, and (with step 2b below) is
         # only half of what's needed to authorize new firmware content.
+        t_dir0 = time.perf_counter()
         director_valid = (
             SigningAuthority.verify_director_signature(
                 self.pinned_director_pub, director.device_id, director.version,
@@ -95,6 +96,8 @@ class GatewayECU:
             and director.device_id == self.device_id
         )
         crypto_end = time.perf_counter()
+        self.perf["falcon_verify_ms"] = round((crypto_end - t_dir0) * 1000, 2)
+        self.perf["falcon_ok"] = bool(director_valid)
         self.perf["crypto_handshake_latency_ms"] = round((crypto_end - crypto_start) * 1000, 2)
         # ---- END PERF ----
 
@@ -117,17 +120,23 @@ class GatewayECU:
 
         # 2a. Image Signature Verification (PQ/T Hybrid 2FA)
         # Stacks Classical Ed25519 and Post-Quantum NIST FIPS 204 (ML-DSA-44)
+        t_ed0 = time.perf_counter()
         image_classical_valid = SigningAuthority.verify_manifest_signature(
             self.pinned_image_pub, manifest.version, manifest.build_number,
             manifest.merkle_root, manifest.sbom_hash, manifest.metadata_signature
         )
+        self.perf["ed25519_verify_ms"] = round((time.perf_counter() - t_ed0) * 1000, 2)
+        self.perf["ed25519_ok"] = bool(image_classical_valid)
 
         # MANDATORY hybrid policy: the ML-DSA-44 signature is verified unconditionally.
         # An absent signature or unpinned PQC key is a rejection, never a skip.
+        t_pqc0 = time.perf_counter()
         image_pqc_valid = SigningAuthority.verify_manifest_signature_pqc(
             self.pinned_image_pqc_pub, manifest.version, manifest.build_number,
             manifest.merkle_root, manifest.sbom_hash, manifest.metadata_signature_pqc
         )
+        self.perf["mldsa44_verify_ms"] = round((time.perf_counter() - t_pqc0) * 1000, 2)
+        self.perf["mldsa44_ok"] = bool(image_pqc_valid)
 
         if not (image_classical_valid and image_pqc_valid):
             threat_detect_time = time.perf_counter_ns()

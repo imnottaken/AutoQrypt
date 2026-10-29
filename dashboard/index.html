@@ -1859,11 +1859,11 @@
     const CASE_SCRIPT_MAP = {
       'T01': 'demo_1_normal.py',
       'T02': 'demo_2_tampered.py',
-      'T03': 'demo_2_tampered.py',
-      'T04': 'demo_2_tampered.py',
+      'T03': 'demo_5_rogue_hsm.py',
+      'T04': 'demo_5_rogue_hsm.py',
       'T07b': 'demo_7_rollback.py',
       'T08b': 'demo_5_rogue_hsm.py',
-      'T10': 'demo_3_retransmit.py',
+      'T10': 'demo_4_resume.py',
       'T12': 'demo_7_rollback.py',
       'T13a': 'demo_8_compromised_director.py',
     };
@@ -2265,10 +2265,48 @@
 
       if (log.perf_data) {
         const p = log.perf_data;
-        if (p.crypto_handshake_latency_ms && $('stat-falcon')) {
+        if (p.falcon_verify_ms != null && $('stat-falcon')) {
+          $('stat-falcon').removeAttribute('style');
+          $('stat-falcon').innerText = `${p.falcon_verify_ms} ms`;
+        } else if (p.crypto_handshake_latency_ms && $('stat-falcon')) {
           $('stat-falcon').removeAttribute('style');
           $('stat-falcon').innerText = `${p.crypto_handshake_latency_ms} ms`;
         }
+        if ($('stat-falcon-stack')) $('stat-falcon-stack').innerText = '4,904 B';
+        if (p.mldsa44_verify_ms != null && $('stat-mldsa')) {
+          $('stat-mldsa').removeAttribute('style');
+          $('stat-mldsa').innerText = `${p.mldsa44_verify_ms} ms`;
+        }
+        if ($('stat-mldsa-stack')) $('stat-mldsa-stack').innerText = '36,344 B';
+        if (p.ed25519_verify_ms != null && $('stat-ed25519')) {
+          $('stat-ed25519').removeAttribute('style');
+          $('stat-ed25519').innerText = `${p.ed25519_verify_ms} ms`;
+        }
+        if (p.per_chunk_validation_time_us != null && $('stat-sha3')) {
+          $('stat-sha3').innerText = `${(p.per_chunk_validation_time_us * 10 / 1000).toFixed(2)} ms`;
+        }
+
+        const tbody = $('dash-verdict-checks-tbody');
+        if (tbody) {
+          const fOk = p.falcon_ok !== false;
+          const eRan = p.ed25519_ok !== undefined;
+          const mRan = p.mldsa44_ok !== undefined;
+          const cRan = p.per_chunk_validation_time_us !== undefined;
+          const cOk = p.decision === 'ACCEPT';
+          tbody.innerHTML = [
+            `<tr><td>Falcon-512 director signature</td><td class="${fOk ? 'pass' : 'fail'}">${fOk ? 'valid' : 'INVALID'}</td><td class="num">${p.falcon_verify_ms ?? p.crypto_handshake_latency_ms ?? '—'} ms</td><td class="num">4,904 B</td></tr>`,
+            eRan
+              ? `<tr><td>Ed25519 image signature</td><td class="${p.ed25519_ok ? 'pass' : 'fail'}">${p.ed25519_ok ? 'valid' : 'INVALID'}</td><td class="num">${p.ed25519_verify_ms} ms</td><td class="num">2,288 B</td></tr>`
+              : `<tr><td>Ed25519 image signature</td><td style="color:var(--text-muted); font-family:var(--font-mono);">skipped (halted earlier)</td><td class="num">—</td><td class="num">—</td></tr>`,
+            mRan
+              ? `<tr><td>ML-DSA-44 image signature</td><td class="${p.mldsa44_ok ? 'pass' : 'fail'}">${p.mldsa44_ok ? 'valid' : 'INVALID'}</td><td class="num">${p.mldsa44_verify_ms} ms</td><td class="num">36,344 B</td></tr>`
+              : `<tr><td>ML-DSA-44 image signature</td><td style="color:var(--text-muted); font-family:var(--font-mono);">skipped (halted earlier)</td><td class="num">—</td><td class="num">—</td></tr>`,
+            cRan
+              ? `<tr><td>SHA3-256 / HMAC chunk verification</td><td class="${cOk ? 'pass' : 'fail'}">${cOk ? 'valid' : 'MISMATCH'}</td><td class="num">${(p.per_chunk_validation_time_us * 10 / 1000).toFixed(2)} ms</td><td class="num">—</td></tr>`
+              : `<tr><td>SHA3-256 / HMAC chunk verification</td><td style="color:var(--text-muted); font-family:var(--font-mono);">skipped (halted earlier)</td><td class="num">—</td><td class="num">—</td></tr>`,
+          ].join('');
+        }
+
         if (p.installed_version && $('ecu-version')) $('ecu-version').innerText = p.installed_version;
         if (p.installed_build && $('ecu-sec-version')) $('ecu-sec-version').innerText = p.installed_build;
         if (p.active_partition_slot && $('ecu-slot')) $('ecu-slot').innerText = p.active_partition_slot;

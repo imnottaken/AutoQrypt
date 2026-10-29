@@ -194,19 +194,14 @@ def _ensure_bot_commands_menu(token: str, state: Dict[str, Any]):
 
 
 def _build_welcome_card(name: str, cid_str: str) -> str:
-    now_utc = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     return (
-        "<b>[VSOC-AUTH] AUTOQRYPT TELEMATICS ENDPOINT REGISTERED</b>\n"
-        "──────────────────────────────────────\n"
-        f"<b>Operator:</b>    <code>{html.escape(name)}</code>\n"
-        f"<b>Endpoint ID:</b> <code>SOC-{html.escape(cid_str[-4:])}</code>\n"
-        f"<b>Timestamp:</b>   <code>{now_utc}</code>\n"
-        "<b>Compliance:</b>  <code>NIST FIPS 204 · ISO/SAE 21434</code>\n\n"
-        "<b>2-Way Mobile Command Interface:</b>\n"
-        "• /status — Query live ECU slot &amp; NVS counter\n"
-        "• /last   — Inspect last forensic SHA3-256 receipt\n"
-        "• /update — Dispatch genuine OEM firmware release\n"
-        "• /attack — Inject adversarial OTA threat vector"
+        f"<b>✅ Connected to AutoQrypt Alerts</b>\n"
+        f"Hi {html.escape(name)}, this phone will now receive live OTA update and security summaries.\n\n"
+        "<b>Quick Commands:</b>\n"
+        "• /status — Current ECU firmware &amp; slot\n"
+        "• /last — Last test summary\n"
+        "• /update — Run genuine OEM update\n"
+        "• /attack — Run attack simulation"
     )
 
 
@@ -233,16 +228,12 @@ def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, stat
                         break
             except Exception:
                 pass
-        now_utc = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         msg = (
-            "<b>[VSOC-STATUS] LIVE ECU TELEMETRY SNAPSHOT</b>\n"
-            "──────────────────────────────────────\n"
-            f"<b>Target ECU:</b>   <code>ESP32-ECU-GW / VEH-1</code>\n"
-            f"<b>Hardware Bus:</b> <code>{'UART 921,600 Bd (CONNECTED)' if hw_connected else 'Simulated Gateway Active'}</code>\n"
-            f"<b>Active Build:</b> <code>{html.escape(str(ecu_info.get('app_version', 'v2.0.0')))}</code>\n"
-            f"<b>Running Slot:</b> <code>{html.escape(str(ecu_info.get('running_slot', 'ota_0')))}</code>\n"
-            f"<b>NVS Counter:</b>  <code>v{html.escape(str(ecu_info.get('installed_security_version', 1)))} (MONOTONIC LOCKED)</code>\n"
-            f"<b>Queried At:</b>   <code>{now_utc}</code>"
+            "<b>📊 AutoQrypt — ECU Status</b>\n"
+            f"• <b>Firmware:</b> <code>{html.escape(str(ecu_info.get('app_version', 'v2.0.0')))}</code>\n"
+            f"• <b>Active Slot:</b> <code>{html.escape(str(ecu_info.get('running_slot', 'ota_0')))}</code>\n"
+            f"• <b>Security Version:</b> <code>v{html.escape(str(ecu_info.get('installed_security_version', 1)))}</code>\n"
+            f"• <b>Mode:</b> {'ESP32 Hardware Connected' if hw_connected else 'Simulated ECU Gateway'}"
         )
         _send_one(token, cid_str, msg, parse_mode="HTML", reply_markup=REPLY_KEYBOARD)
         return
@@ -255,7 +246,7 @@ def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, stat
             _send_one(
                 token,
                 cid_str,
-                "<b>[VSOC-AUDIT]</b> No OTA sessions recorded in current cycle yet. Tap /update or /attack to execute.",
+                "No recent test recorded yet. Tap /update or /attack to run one.",
                 parse_mode="HTML",
                 reply_markup=REPLY_KEYBOARD,
             )
@@ -265,7 +256,7 @@ def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, stat
         _send_one(
             token,
             cid_str,
-            "<b>[VSOC-DISPATCH]</b> Initiating Genuine OEM Release (ML-DSA-44 + Ed25519 + Falcon-512)...",
+            "🚀 Starting genuine OEM firmware update...",
             parse_mode="HTML",
             reply_markup=REPLY_KEYBOARD,
         )
@@ -290,7 +281,7 @@ def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, stat
         _send_one(
             token,
             cid_str,
-            f"<b>[VSOC-DISPATCH]</b> Injecting adversarial threat vector (<code>{script}</code>) into OTA bus...",
+            f"🛡 Running attack simulation (<code>{script}</code>)...",
             parse_mode="HTML",
             reply_markup=REPLY_KEYBOARD,
         )
@@ -488,7 +479,7 @@ def _incident_id(seed_str: str) -> str:
 
 
 def notify_hil_result(entry: dict):
-    """Formats and dispatches an ISO/SAE 21434 VSOC Incident Report for physical ESP32 HIL execution."""
+    """Formats and dispatches a clean, minimal summary for physical ESP32 HIL execution."""
     decision = entry.get("decision", "UNKNOWN")
     reason = entry.get("reason", "UNKNOWN")
     title = entry.get("title") or entry.get("description") or "OTA Package"
@@ -497,70 +488,32 @@ def notify_hil_result(entry: dict):
     slot = ecu_after.get("running_slot") or "ota_0"
     sec_ver = ecu_after.get("installed_security_version") or entry.get("security_version") or 1
     elapsed = entry.get("elapsed_s")
-    header_hash = entry.get("header_sha3_256") or hashlib.sha3_256(f"{title}:{reason}:{fw_ver}".encode()).hexdigest()
-
-    now_utc = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    inc_id = _incident_id(header_hash)
 
     if decision == "ACCEPT":
-        banner = "<b>[VSOC-PASS] AUTOQRYPT SILICON OTA COMMITTED</b>"
-        severity = "INFO · AUTHORIZED_RELEASE"
-        action = f"Atomic switch to {slot}; NVS counter locked at v{sec_ver}"
+        banner = "<b>✅ AutoQrypt — Update Installed</b>"
     elif decision == "ROLLBACK":
-        banner = "<b>[VSOC-WARN] AUTOQRYPT BOOTLOADER CRASH RECOVERY</b>"
-        severity = "HIGH · FAULTY_IMAGE_CONTAINED"
-        action = f"Unconfirmed slot invalidated; restored Golden Image on {slot}"
+        banner = "<b>⚠️ AutoQrypt — Crash Rolled Back</b>"
     else:
-        banner = "<b>[VSOC-CRIT] AUTOQRYPT THREAT MITIGATION ALERT</b>"
-        severity = "CRITICAL · ATTACK_CONTAINED"
-        action = f"Staging buffer wiped; active {slot} ({fw_ver}) untouched"
+        banner = "<b>🚨 AutoQrypt — Threat Blocked</b>"
 
     verifiers = entry.get("verifiers") or []
-    v_map = {}
+    v_parts = []
     for v in verifiers:
-        lbl = (v.get("label") or "").lower()
-        if "falcon" in lbl:
-            v_map["Falcon-512"] = v
-        elif "ed25519" in lbl:
-            v_map["Ed25519"] = v
-        elif "ml-dsa" in lbl or "mldsa" in lbl:
-            v_map["ML-DSA-44"] = v
-
-    table_rows = ["LAYER              STATUS   LATENCY   STACK"]
-    for alg_name in ("Falcon-512", "Ed25519", "ML-DSA-44"):
-        v = v_map.get(alg_name)
-        if v:
-            st_txt = "PASS  " if v.get("ok") else "FAIL  "
-            ms_txt = f"{v['ms']:.1f}ms".ljust(9) if v.get("ms") is not None else "—        "
-            stk_txt = f"{v['stack_bytes']}B" if v.get("stack_bytes") is not None else "—"
-            table_rows.append(f"{alg_name.ljust(18)} {st_txt}   {ms_txt} {stk_txt}")
-        else:
-            table_rows.append(f"{alg_name.ljust(18)} SKIP     —         —")
-
-    sha3_ms = entry.get("sha3_ms")
-    if sha3_ms is not None:
-        sha_st = "FAIL  " if "DIGEST" in str(reason) else "PASS  "
-        table_rows.append(f"{'SHA3-256 Digest'.ljust(18)} {sha_st}   {f'{sha3_ms:.1f}ms'.ljust(9)} —")
-
-    crypto_block = "\n".join(table_rows)
+        name = (v.get("label") or "").split()[0]
+        st_txt = "PASS" if v.get("ok") else "FAIL"
+        ms_txt = f" ({v['ms']:.1f}ms)" if v.get("ms") is not None else ""
+        v_parts.append(f"{name}: {st_txt}{ms_txt}")
 
     lines = [
         banner,
-        "──────────────────────────────────────",
-        f"<b>Incident ID:</b>  <code>{inc_id}</code>",
-        f"<b>Timestamp:</b>    <code>{now_utc}</code>",
-        f"<b>Target ECU:</b>   <code>VEH-1 · ESP32-LX6 @ 240MHz</code>",
-        f"<b>Severity:</b>     <code>{severity}</code>",
-        f"<b>Scenario:</b>     <b>{html.escape(str(title))}</b>",
-        f"<b>Verdict:</b>      <code>{html.escape(f'{decision} ({reason})')}</code>",
-        f"<b>ECU State:</b>    <code>{html.escape(f'{fw_ver} on {slot} | NVS Lock: v{sec_ver}')}</code>",
-        f"<b>Mitigation:</b>   <code>{html.escape(action)}</code>",
-        "",
-        "<b>On-Silicon Cryptographic Audit:</b>",
-        f"<pre>{html.escape(crypto_block)}</pre>",
-        f"<b>Forensic SHA3:</b> <code>{header_hash[:16]}...{header_hash[-12:]}</code>"
-        + (f"  |  <b>Time:</b> <code>{elapsed}s</code>" if elapsed is not None else ""),
+        f"• <b>Scenario:</b> {html.escape(str(title))}",
+        f"• <b>Verdict:</b> <code>{html.escape(f'{decision} ({reason})')}</code>",
+        f"• <b>ECU State:</b> <code>{html.escape(f'{fw_ver} on {slot} (v{sec_ver})')}</code>",
     ]
+    if v_parts:
+        lines.append(f"• <b>Checks:</b> <code>{html.escape(' | '.join(v_parts))}</code>")
+    if elapsed is not None:
+        lines.append(f"• <b>Time:</b> <code>{elapsed}s</code>")
 
     send_telegram_alert("\n".join(lines), parse_mode="HTML")
 
@@ -576,51 +529,21 @@ def notify_simulated_ota(
     hybrid_verified: bool,
     total_ms: float = None,
 ):
-    """Formats and dispatches an ISO/SAE 21434 VSOC Incident Report for simulated GatewayECU runs."""
-    now_utc = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    forensic_hash = hashlib.sha3_256(
-        f"{device_id}|{target_version}|{reason}|{active_slot}|{installed_version}|{installed_build}".encode()
-    ).hexdigest()
-    inc_id = _incident_id(forensic_hash)
-
+    """Formats and dispatches a clean, minimal summary for simulated GatewayECU runs."""
     if success:
-        banner = f"<b>[VSOC-PASS] AUTOQRYPT OTA TELEMATICS REPORT ({html.escape(device_id)})</b>"
-        severity = "INFO · AUTHORIZED_RELEASE"
-        action = f"Partition switched to {active_slot}; build locked at v{installed_build}"
+        banner = "<b>✅ AutoQrypt — Update Installed</b>"
     else:
-        banner = f"<b>[VSOC-CRIT] AUTOQRYPT THREAT MITIGATION ALERT ({html.escape(device_id)})</b>"
-        severity = "CRITICAL · ATTACK_CONTAINED"
-        action = f"Inactive bank wiped; Golden Image {installed_version} preserved on {active_slot}"
+        banner = "<b>🚨 AutoQrypt — Threat Blocked</b>"
 
-    dir_st = "FAIL" if "DIRECTOR" in str(reason) else "PASS"
-    pqc_st = "PASS" if hybrid_verified else ("SKIP" if dir_st == "FAIL" else "FAIL")
-    ed_st = "PASS" if hybrid_verified else ("SKIP" if dir_st == "FAIL" else "FAIL")
-    chunk_st = "PASS" if success else ("FAIL" if "CHUNK" in str(reason) or "MERKLE" in str(reason) else "SKIP")
-
-    crypto_block = "\n".join([
-        "SECURITY GATE            VERDICT   STANDARD",
-        f"Falcon-512 (Director)    {dir_st.ljust(7)}   NIST FN-DSA",
-        f"ML-DSA-44 (OEM Image)    {pqc_st.ljust(7)}   NIST FIPS 204",
-        f"Ed25519 (Classical 2FA)  {ed_st.ljust(7)}   RFC 8032",
-        f"Merkle + SBOM Audit      {chunk_st.ljust(7)}   HMAC-SHA256 / CVE",
-    ])
-
+    crypto_st = "Falcon-512 + ML-DSA-44 + Ed25519 PASS" if hybrid_verified else "Signature Verification Failed"
     lines = [
         banner,
-        "──────────────────────────────────────",
-        f"<b>Incident ID:</b>  <code>{inc_id}</code>",
-        f"<b>Timestamp:</b>    <code>{now_utc}</code>",
-        f"<b>Vehicle ID:</b>   <code>{html.escape(device_id)} (SDV Gateway Surrogate)</code>",
-        f"<b>Severity:</b>     <code>{severity}</code>",
-        f"<b>TargetPkg:</b>    <code>{html.escape(target_version)}</code>",
-        f"<b>Verdict:</b>      <code>{'ACCEPT' if success else 'REJECT'} ({html.escape(reason)})</code>",
-        f"<b>ECU State:</b>    <code>{html.escape(f'{installed_version} (Build {installed_build}) on {active_slot}')}</code>",
-        f"<b>Mitigation:</b>   <code>{html.escape(action)}</code>",
-        "",
-        "<b>Multi-Layer Verification Matrix:</b>",
-        f"<pre>{html.escape(crypto_block)}</pre>",
-        f"<b>Forensic SHA3:</b> <code>{forensic_hash[:16]}...{forensic_hash[-12:]}</code>"
-        + (f"  |  <b>Duration:</b> <code>{total_ms}ms</code>" if total_ms is not None else ""),
+        f"• <b>Vehicle:</b> <code>{html.escape(device_id)}</code> (Target: <code>{html.escape(target_version)}</code>)",
+        f"• <b>Verdict:</b> <code>{'ACCEPT' if success else 'REJECT'} ({html.escape(reason)})</code>",
+        f"• <b>Crypto 2FA:</b> <code>{crypto_st}</code>",
+        f"• <b>ECU State:</b> <code>{html.escape(f'{installed_version} on {active_slot} (v{installed_build})')}</code>",
     ]
+    if total_ms is not None:
+        lines.append(f"• <b>Duration:</b> <code>{total_ms} ms</code>")
 
     send_telegram_alert("\n".join(lines), parse_mode="HTML")

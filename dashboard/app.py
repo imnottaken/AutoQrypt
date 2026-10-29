@@ -148,25 +148,11 @@ def telegram_status(sync: int = 0):
 
 @app.post("/api/telegram/test")
 def telegram_test():
-    import datetime, hashlib
     st = get_telegram_status()
-    now_utc = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    digest = hashlib.sha3_256(f"VSOC-DIAG-{now_utc}".encode()).hexdigest()
     ok = send_telegram_alert(
-        "<b>[VSOC-DIAG] AUTOQRYPT TELEMATICS LINK VERIFIED</b>\n"
-        "──────────────────────────────────────\n"
-        f"<b>Timestamp:</b>    <code>{now_utc}</code>\n"
-        f"<b>Console Node:</b> <code>Fleet Operations Center (Port 7001)</code>\n"
-        f"<b>Active Endpoints:</b> <code>{st.get('subscriber_count', 0)} Registered Operator(s)</code>\n"
-        "<b>Compliance:</b>   <code>NIST FIPS 204 · IEEE-ISTO 6100 · ISO 21434</code>\n\n"
-        "<b>Cryptographic Engine Readiness:</b>\n"
-        "<pre>GATE                     STATUS   SPECIFICATION\n"
-        "Falcon-512 (Director)    READY    666B Sig / CAN-FD\n"
-        "ML-DSA-44 (OEM Root)     READY    FIPS 204 Lattice\n"
-        "Ed25519 (Classical 2FA)  READY    RFC 8032 Curve\n"
-        "NVS Anti-Rollback        LOCKED   Monotonic Counter</pre>\n"
-        f"<b>Forensic SHA3:</b> <code>{digest[:16]}...{digest[-12:]}</code>\n"
-        "<i>Tip: Tap /status, /last, /update, or /attack below to control from mobile.</i>",
+        "<b>✅ AutoQrypt — Test Alert</b>\n"
+        f"• <b>Connected Phones:</b> <code>{st.get('subscriber_count', 0)}</code>\n"
+        "• <b>Status:</b> Live OTA &amp; security alerts active.",
         async_send=False,
         force=True,
         parse_mode="HTML",
@@ -176,23 +162,27 @@ def telegram_test():
 
 @app.get("/api/status")
 def api_status():
-    """Returns HIL status from physical testbench if running on 8080, or simulated ECU telemetry."""
+    """Returns HIL status from physical testbench if connected on 8080, otherwise simulated ECU telemetry."""
     try:
         import urllib.request
         req = urllib.request.Request("http://127.0.0.1:8080/api/status")
         with urllib.request.urlopen(req, timeout=0.4) as resp:
-            return json.loads(resp.read().decode())
+            hil_data = json.loads(resp.read().decode())
+            if hil_data.get("connected") and hil_data.get("ecu"):
+                return hil_data
     except Exception:
-        active_slot = latest_perf_data.get("active_partition_slot", "ota_0")
-        installed_ver = latest_perf_data.get("installed_version", "v1.0.0")
-        installed_sec_ver = latest_perf_data.get("installed_build", 1)
-        return {
-            "ecu": {
-                "running_slot": active_slot,
-                "installed_security_version": installed_sec_ver,
-                "app_version": installed_ver
-            },
-            "connected": True,
-            "history": []
-        }
+        pass
+
+    active_slot = latest_perf_data.get("active_partition_slot", "ota_0")
+    installed_ver = latest_perf_data.get("installed_version", "v1.0.0")
+    installed_sec_ver = latest_perf_data.get("installed_build", 1)
+    return {
+        "ecu": {
+            "running_slot": active_slot,
+            "installed_security_version": installed_sec_ver,
+            "app_version": installed_ver,
+        },
+        "connected": True,
+        "history": [],
+    }
 

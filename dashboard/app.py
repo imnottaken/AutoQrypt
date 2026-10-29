@@ -353,3 +353,16 @@ def api_reset():
 def api_case(case_id: str):
     return _dispatch_hil_or_sim(f"/api/case/{case_id}")
 
+
+@app.get("/api/qpiai/status")
+def api_qpiai_status():
+    from src.sponsors.qpiai_qcloud import get_qpiai_suite_status
+    return get_qpiai_suite_status(run_fresh=False)
+
+
+@app.post("/api/qpiai/run")
+def api_qpiai_run():
+    from src.sponsors.qpiai_qcloud import get_qpiai_suite_status
+    return get_qpiai_suite_status(run_fresh=True)
+
+

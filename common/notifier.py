@@ -127,6 +127,22 @@ ATTACK_DIAGNOSIS = {
         "Cross-ECU Firmware Misdirection Attack",
         "Hardware Target ID Pinning Gate",
     ),
+    "UNTRUSTED_KEY_ID": (
+        "Unauthorized Signing Key (Unpinned Key ID)",
+        "Pinned Public Key Fingerprint Check",
+    ),
+    "MALFORMED_PACKAGE_MAGIC": (
+        "Corrupted or Non-AutoQrypt OTA Frame Header",
+        "Gate 01 Magic & Frame Header Check",
+    ),
+    "TRUNCATED_HEADER": (
+        "Truncated Cryptographic OTA Envelope",
+        "Gate 01 3,262-Byte Header Framing Gate",
+    ),
+    "MALFORMED_MANIFEST_MAGIC": (
+        "Corrupted Manifest Header Magic",
+        "Gate 01 Manifest Structure Verifier",
+    ),
 }
 
 

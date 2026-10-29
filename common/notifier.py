@@ -4,6 +4,7 @@ import hashlib
 import html
 import json
 import os
+import secrets
 import sys
 import tempfile
 import threading
@@ -262,25 +263,35 @@ def _make_qr_svg(url: str) -> str:
         return FALLBACK_QR_HTML
     try:
         import segno
-        clean_url = url.split("?")[0]
-        qr = segno.make(clean_url, error="m")
-        uri = qr.png_data_uri(scale=6, border=2, dark="#000000", light="#ffffff")
+        qr = segno.make(url, error="l")
+        uri = qr.png_data_uri(scale=5, border=3, dark="#000000", light="#ffffff")
         return f'<img src="{uri}" width="156" height="156" alt="QR Code" style="display:block; image-rendering:pixelated;">'
     except Exception:
         return FALLBACK_QR_HTML
 
 
+def _rotate_pairing_token(state: Dict[str, Any]):
+    base = (state.get("bot_base_url") or state.get("bot_url") or "").split("?")[0]
+    if not base:
+        return
+    tok = secrets.token_hex(3)
+    pair_url = f"{base}?start=pair_{tok}"
+    state["pair_token"] = tok.upper()
+    state["bot_url"] = pair_url
+    state["qr_svg"] = _make_qr_svg(pair_url)
+
+
 def _ensure_bot_commands_menu(token: str, state: Dict[str, Any]):
-    if state.get("commands_registered") and state.get("bot_url") and state.get("qr_svg"):
+    if state.get("commands_registered") and state.get("bot_base_url") and state.get("qr_svg"):
         return
     try:
-        if not state.get("bot_url"):
+        if not state.get("bot_base_url"):
             me = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=3).json()
             uname = (me.get("result") or {}).get("username")
             if uname:
-                state["bot_url"] = f"https://t.me/{uname}?start=subscribe"
-        if state.get("bot_url") and not state.get("qr_svg"):
-            state["qr_svg"] = _make_qr_svg(state["bot_url"])
+                state["bot_base_url"] = f"https://t.me/{uname}"
+        if state.get("bot_base_url") and not state.get("qr_svg"):
+            _rotate_pairing_token(state)
         if not state.get("commands_registered"):
             requests.post(
                 f"https://api.telegram.org/bot{token}/setMyCommands",
@@ -299,9 +310,10 @@ def _ensure_bot_commands_menu(token: str, state: Dict[str, Any]):
         pass
 
 
-def _build_welcome_card(name: str, cid_str: str) -> str:
+def _build_welcome_card(name: str, cid_str: str, pair_token: str = "") -> str:
+    pair_line = f" (Token <code>#{html.escape(pair_token.upper())}</code>)" if pair_token else ""
     return (
-        f"<b>✅ Connected to AutoQrypt Alerts</b>\n"
+        f"<b>✅ Connected to AutoQrypt Alerts{pair_line}</b>\n"
         f"Hi {html.escape(name)}, this phone is now paired with the vehicle ECU.\n\n"
         "Whenever an OTA update or cyberattack occurs, the ECU will automatically block threats, roll back safely, and push the report here.\n\n"
         "• /status — Check live ECU firmware &amp; slot\n"
@@ -311,10 +323,16 @@ def _build_welcome_card(name: str, cid_str: str) -> str:
 
 def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, state: Dict[str, Any]):
     global _attack_cycle_idx
-    cmd = cmd_text.split()[0].lower().split("@")[0]
+    parts = cmd_text.split()
+    cmd = parts[0].lower().split("@")[0]
+    arg = parts[1] if len(parts) > 1 else ""
 
     if cmd in ("/start", "/help"):
-        _send_one(token, cid_str, _build_welcome_card(name, cid_str), parse_mode="HTML", reply_markup=REPLY_KEYBOARD)
+        pair_tok = arg.replace("pair_", "") if arg.startswith("pair_") else ""
+        if pair_tok:
+            _rotate_pairing_token(state)
+            _save_bot_state(state)
+        _send_one(token, cid_str, _build_welcome_card(name, cid_str, pair_tok), parse_mode="HTML", reply_markup=REPLY_KEYBOARD)
         return
 
     if cmd == "/status":
@@ -498,8 +516,20 @@ def start_command_poller(interval_s: float = 4.0):
     t.start()
 
 
-def get_telegram_status(force_sync: bool = False) -> Dict[str, Any]:
-    """Returns cached status in <1ms by default; only hits Telegram network when force_sync=True."""
+def unlink_subscriber(chat_id_suffix: str) -> Dict[str, Any]:
+    """Removes a subscriber by chat_id or masked suffix so a user can unlink a phone."""
+    with _sub_lock:
+        subs = _load_saved_subscribers()
+        clean_suffix = str(chat_id_suffix or "").replace("SOC-", "").replace(".", "").strip()
+        to_delete = [cid for cid in subs if cid == clean_suffix or cid.endswith(clean_suffix)]
+        for cid in to_delete:
+            subs.pop(cid, None)
+        _save_subscribers(subs)
+    return get_telegram_status(force_sync=False, new_qr=True)
+
+
+def get_telegram_status(force_sync: bool = False, new_qr: bool = False) -> Dict[str, Any]:
+    """Returns cached status in <1ms by default; rotates unique pairing QR when new_qr=True."""
     token = _get_token()
     if force_sync and token:
         subs = sync_subscribers(send_welcome=True, force=True)
@@ -507,15 +537,19 @@ def get_telegram_status(force_sync: bool = False) -> Dict[str, Any]:
         subs = list(_load_saved_subscribers().values())
 
     state = _load_bot_state()
-    if token and (not state.get("bot_url") or not state.get("qr_svg")) and not _in_test_harness():
+    if token and (not state.get("bot_base_url") or not state.get("qr_svg")) and not _in_test_harness():
         _ensure_bot_commands_menu(token, state)
+    elif new_qr and (state.get("bot_base_url") or state.get("bot_url")):
+        _rotate_pairing_token(state)
+        _save_bot_state(state)
     elif state.get("bot_url") and not state.get("qr_svg"):
-        state["qr_svg"] = _make_qr_svg(state["bot_url"])
+        _rotate_pairing_token(state)
         _save_bot_state(state)
 
     return {
         "configured": bool(token),
         "bot_url": state.get("bot_url") or "/api/telegram/open",
+        "pair_token": state.get("pair_token") or "AQ01",
         "qr_svg": state.get("qr_svg") or FALLBACK_QR_HTML,
         "subscriber_count": len(subs),
         "subscribers": [

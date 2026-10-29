@@ -216,8 +216,8 @@ def run_demo(req: DemoRequest):
 
 
 @app.get("/api/telegram/status")
-def telegram_status(sync: int = 0):
-    return get_telegram_status(force_sync=bool(sync))
+def telegram_status(sync: int = 0, new_qr: int = 0):
+    return get_telegram_status(force_sync=bool(sync), new_qr=bool(new_qr))
 
 
 @app.get("/api/telegram/open")
@@ -272,14 +272,20 @@ def api_status():
     }
 
 
-def _dispatch_hil_or_sim(path: str):
+def _dispatch_hil_or_sim(path: str, body: dict = None):
     """Forwards /api/update, /api/attack, /api/case/* to HIL server on 8080 (or runs in-process fallback) and logs to audit stream."""
     global latest_perf_data
     import datetime
+    payload_bytes = json.dumps(body or {}).encode()
     result = None
     try:
         import urllib.request
-        req = urllib.request.Request(f"http://127.0.0.1:8080{path}", method="POST", headers={"X-AutoQrypt": "1"})
+        req = urllib.request.Request(
+            f"http://127.0.0.1:8080{path}",
+            data=payload_bytes,
+            method="POST",
+            headers={"X-AutoQrypt": "1", "Content-Type": "application/json"},
+        )
         with urllib.request.urlopen(req, timeout=30) as resp:
             result = json.loads(resp.read().decode())
     except Exception:
@@ -289,9 +295,11 @@ def _dispatch_hil_or_sim(path: str):
                 _dispatch_hil_or_sim._demo = hil.Demo("auto", None)
             d = _dispatch_hil_or_sim._demo
             if path == "/api/update":
-                result = d.update()
+                result = d.update(image_type=(body or {}).get("image", "v2"))
             elif path == "/api/attack":
-                result = d.attack()
+                result = d.attack(attack_name=(body or {}).get("attack"))
+            elif path == "/api/reset":
+                result = d.reset_state()
             elif path.startswith("/api/case/"):
                 result = d.run_case(path.rsplit("/", 1)[-1])
         except Exception as e:
@@ -319,13 +327,26 @@ def _dispatch_hil_or_sim(path: str):
 
 
 @app.post("/api/update")
-def api_update():
-    return _dispatch_hil_or_sim("/api/update")
+async def api_update(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    return _dispatch_hil_or_sim("/api/update", body)
 
 
 @app.post("/api/attack")
-def api_attack():
-    return _dispatch_hil_or_sim("/api/attack")
+async def api_attack(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    return _dispatch_hil_or_sim("/api/attack", body)
+
+
+@app.post("/api/reset")
+def api_reset():
+    return _dispatch_hil_or_sim("/api/reset")
 
 
 @app.post("/api/case/{case_id}")

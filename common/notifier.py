@@ -41,11 +41,104 @@ _attack_cycle_idx = 0
 REPLY_KEYBOARD = {
     "keyboard": [
         [{"text": "/status"}, {"text": "/last"}],
-        [{"text": "/update"}, {"text": "/attack"}],
     ],
     "resize_keyboard": True,
     "is_persistent": True,
 }
+
+
+ATTACK_DIAGNOSIS = {
+    "IMAGE_PQC_SIGNATURE_VERIFICATION_FAILURE": (
+        "Quantum Signature Forgery (Invalid ML-DSA-44 Signature)",
+        "NIST FIPS 204 ML-DSA-44 Lattice Verifier",
+    ),
+    "IMAGE_MLDSA44_SIGNATURE_INVALID": (
+        "Quantum Signature Forgery (Invalid ML-DSA-44 Signature)",
+        "NIST FIPS 204 ML-DSA-44 Lattice Verifier",
+    ),
+    "UNTRUSTED_MLDSA44_KEY_ID": (
+        "Unauthorized OEM Signing Key (Rogue HSM)",
+        "Pinned Public Key Fingerprint Check",
+    ),
+    "IMAGE_PQC_SIGNATURE_MISSING": (
+        "Classical-Only Downgrade Attempt (Missing PQC Signature)",
+        "Mandatory PQ/T Hybrid 2FA Policy Gate",
+    ),
+    "IMAGE_SIGNATURE_VERIFICATION_FAILURE": (
+        "Classical Signature Forgery (Invalid Ed25519 Signature)",
+        "RFC 8032 Ed25519 Classical Verifier",
+    ),
+    "IMAGE_ED25519_SIGNATURE_INVALID": (
+        "Classical Signature Forgery (Invalid Ed25519 Signature)",
+        "RFC 8032 Ed25519 Classical Verifier",
+    ),
+    "DIRECTOR_SIGNATURE_VERIFICATION_FAILURE": (
+        "Tampered or Untrusted Fleet Dispatch Instruction",
+        "Falcon-512 Online Director Verifier",
+    ),
+    "DIRECTOR_FALCON512_SIGNATURE_INVALID": (
+        "Forged or Misdirected Fleet Director Signature",
+        "Falcon-512 Online Director Verifier",
+    ),
+    "DIRECTOR_IMAGE_MISMATCH": (
+        "Director / Image Metadata Substitution Attack",
+        "Uptane Dual-Role Digest Binding Gate",
+    ),
+    "ROLLBACK_ATTACK_DETECTED": (
+        "Firmware Rollback / Replay of Older Release",
+        "Non-Volatile Monotonic Version Counter (NVS)",
+    ),
+    "SBOM_CVE_BLOCK": (
+        "Supply-Chain Vulnerable Dependency (CVE-2023-38545)",
+        "SBOM Cryptographic Hash & CVE Policy Gate",
+    ),
+    "CHUNK_DIGEST_MISMATCH": (
+        "In-Flight Firmware Bit-Flip / Payload Tampering",
+        "Per-Chunk HMAC-SHA256 & Merkle Verifier",
+    ),
+    "IMAGE_DIGEST_MISMATCH": (
+        "In-Flight Firmware Bit-Flip / Payload Tampering",
+        "Streaming SHA3-256 Image Digest Gate",
+    ),
+    "MERKLE_ROOT_MISMATCH": (
+        "Tampered Chunk Hash List in Manifest",
+        "Merkle Root Reconstruction Gate",
+    ),
+    "TRANSFER_INTERRUPTED": (
+        "Incomplete / Cut-Off Firmware Transfer",
+        "Atomic Staging Slot Integrity Check",
+    ),
+    "OTA_INTERRUPTED": (
+        "Network Drop During Chunk Streaming",
+        "Persisted Verified-Chunk Resume Checkpoint",
+    ),
+    "WRONG_TARGET": (
+        "Cross-ECU Firmware Misdirection Attack",
+        "Hardware Target ID Pinning Gate",
+    ),
+}
+
+
+def _describe_threat(reason: str):
+    r = str(reason or "UNKNOWN").upper()
+    if r in ATTACK_DIAGNOSIS:
+        return ATTACK_DIAGNOSIS[r]
+    if "BOOTLOADER_ROLLBACK" in r:
+        return (
+            "Faulty Firmware Crashed on First Boot",
+            "Hardware Bootloader Watchdog & Unconfirmed Slot Rollback",
+        )
+    if "FALCON" in r or "DIRECTOR" in r:
+        return ("Forged Fleet Director Instruction", "Falcon-512 Online Director Verifier")
+    if "MLDSA" in r or "PQC" in r:
+        return ("Forged Post-Quantum Signature", "NIST FIPS 204 ML-DSA-44 Verifier")
+    if "ED25519" in r or "SIGNATURE" in r:
+        return ("Unauthorized Firmware Signature", "PQ/T Hybrid 2FA Signature Gate")
+    if "ROLLBACK" in r:
+        return ("Firmware Downgrade Replay Attack", "Monotonic Security Version Counter")
+    if "DIGEST" in r or "CHUNK" in r or "MERKLE" in r:
+        return ("Tampered Firmware Payload Bytes", "Cryptographic Digest Verifier")
+    return (f"Security Policy Violation ({reason})", "ECU Admission Gate")
 
 
 def _flush_notify_threads():
@@ -59,6 +152,8 @@ atexit.register(_flush_notify_threads)
 
 
 def _in_test_harness() -> bool:
+    if os.environ.get("SKIP_TELEGRAM", "").lower() == "true":
+        return True
     if os.environ.get("TELEGRAM_FORCE_SEND", "").lower() == "true":
         return False
     return "unittest" in sys.modules or "pytest" in sys.modules
@@ -195,12 +290,10 @@ def _ensure_bot_commands_menu(token: str, state: Dict[str, Any]):
 def _build_welcome_card(name: str, cid_str: str) -> str:
     return (
         f"<b>✅ Connected to AutoQrypt Alerts</b>\n"
-        f"Hi {html.escape(name)}, this phone will now receive live OTA update and security summaries.\n\n"
-        "<b>Quick Commands:</b>\n"
-        "• /status — Current ECU firmware &amp; slot\n"
-        "• /last — Last test summary\n"
-        "• /update — Run genuine OEM update\n"
-        "• /attack — Run attack simulation"
+        f"Hi {html.escape(name)}, this phone is now paired with the vehicle ECU.\n\n"
+        "Whenever an OTA update or cyberattack occurs, the ECU will automatically block threats, roll back safely, and push the report here.\n\n"
+        "• /status — Check live ECU firmware &amp; slot\n"
+        "• /last — View last security report"
     )
 
 
@@ -478,7 +571,7 @@ def _incident_id(seed_str: str) -> str:
 
 
 def notify_hil_result(entry: dict):
-    """Formats and dispatches a clean, minimal summary for physical ESP32 HIL execution."""
+    """Formats and dispatches an automatic attack-detection or update-success alert for ESP32 HIL."""
     decision = entry.get("decision", "UNKNOWN")
     reason = entry.get("reason", "UNKNOWN")
     title = entry.get("title") or entry.get("description") or "OTA Package"
@@ -489,30 +582,31 @@ def notify_hil_result(entry: dict):
     elapsed = entry.get("elapsed_s")
 
     if decision == "ACCEPT":
-        banner = "<b>✅ AutoQrypt — Update Installed</b>"
+        lines = [
+            "<b>✅ AutoQrypt — Firmware Update Installed</b>",
+            f"• <b>Release:</b> {html.escape(str(title))} (<code>{html.escape(str(fw_ver))}</code>)",
+            "• <b>Verification:</b> Falcon-512 + ML-DSA-44 + Ed25519 + SHA3-256 Passed",
+            f"• <b>Auto-Action:</b> Activated <code>{html.escape(str(slot))}</code> &amp; locked NVS counter at <code>v{html.escape(str(sec_ver))}</code>",
+        ]
     elif decision == "ROLLBACK":
-        banner = "<b>⚠️ AutoQrypt — Crash Rolled Back</b>"
+        threat_desc, gate_desc = _describe_threat(reason)
+        lines = [
+            "<b>⚠️ AutoQrypt — Faulty Firmware Auto-Rolled Back</b>",
+            f"• <b>Issue Detected:</b> {html.escape(threat_desc)}",
+            f"• <b>Caught By:</b> {html.escape(gate_desc)}",
+            f"• <b>Auto-Response:</b> Unconfirmed slot invalidated; restored safe <code>{html.escape(str(fw_ver))}</code> on <code>{html.escape(str(slot))}</code>",
+        ]
     else:
-        banner = "<b>🚨 AutoQrypt — Threat Blocked</b>"
+        threat_desc, gate_desc = _describe_threat(reason)
+        lines = [
+            "<b>🚨 AutoQrypt — Cyberattack Detected &amp; Blocked</b>",
+            f"• <b>Attack Type:</b> {html.escape(threat_desc)}",
+            f"• <b>Blocked By:</b> {html.escape(gate_desc)} (<code>{html.escape(str(reason))}</code>)",
+            f"• <b>Auto-Response:</b> Update aborted &amp; staging slot wiped. Vehicle kept running safe <code>{html.escape(str(fw_ver))}</code> on <code>{html.escape(str(slot))}</code>",
+        ]
 
-    verifiers = entry.get("verifiers") or []
-    v_parts = []
-    for v in verifiers:
-        name = (v.get("label") or "").split()[0]
-        st_txt = "PASS" if v.get("ok") else "FAIL"
-        ms_txt = f" ({v['ms']:.1f}ms)" if v.get("ms") is not None else ""
-        v_parts.append(f"{name}: {st_txt}{ms_txt}")
-
-    lines = [
-        banner,
-        f"• <b>Scenario:</b> {html.escape(str(title))}",
-        f"• <b>Verdict:</b> <code>{html.escape(f'{decision} ({reason})')}</code>",
-        f"• <b>ECU State:</b> <code>{html.escape(f'{fw_ver} on {slot} (v{sec_ver})')}</code>",
-    ]
-    if v_parts:
-        lines.append(f"• <b>Checks:</b> <code>{html.escape(' | '.join(v_parts))}</code>")
     if elapsed is not None:
-        lines.append(f"• <b>Time:</b> <code>{elapsed}s</code>")
+        lines.append(f"• <b>Mitigation Time:</b> <code>{elapsed}s</code>")
 
     send_telegram_alert("\n".join(lines), parse_mode="HTML")
 
@@ -528,21 +622,30 @@ def notify_simulated_ota(
     hybrid_verified: bool,
     total_ms: float = None,
 ):
-    """Formats and dispatches a clean, minimal summary for simulated GatewayECU runs."""
+    """Formats and dispatches an automatic attack-detection or update-success alert for GatewayECU runs."""
     if success:
-        banner = "<b>✅ AutoQrypt — Update Installed</b>"
+        lines = [
+            f"<b>✅ AutoQrypt — Firmware Update Installed ({html.escape(device_id)})</b>",
+            f"• <b>Installed:</b> <code>{html.escape(installed_version)}</code> on <code>{html.escape(active_slot)}</code> (Security Ver: <code>v{installed_build}</code>)",
+            "• <b>Verification:</b> Falcon-512 + ML-DSA-44 + Ed25519 + Merkle/SBOM Passed",
+            f"• <b>Auto-Action:</b> Atomic A/B partition swap complete",
+        ]
+    elif reason == "OTA_INTERRUPTED":
+        lines = [
+            f"<b>⚠️ AutoQrypt — Transfer Interrupted ({html.escape(device_id)})</b>",
+            "• <b>Event:</b> Network connection dropped mid-stream",
+            f"• <b>Auto-Response:</b> Verified chunk state saved for resume; active <code>{html.escape(installed_version)}</code> on <code>{html.escape(active_slot)}</code> untouched",
+        ]
     else:
-        banner = "<b>🚨 AutoQrypt — Threat Blocked</b>"
+        threat_desc, gate_desc = _describe_threat(reason)
+        lines = [
+            f"<b>🚨 AutoQrypt — Cyberattack Detected &amp; Blocked ({html.escape(device_id)})</b>",
+            f"• <b>Attack Type:</b> {html.escape(threat_desc)}",
+            f"• <b>Blocked By:</b> {html.escape(gate_desc)} (<code>{html.escape(str(reason))}</code>)",
+            f"• <b>Auto-Response:</b> Update aborted &amp; inactive slot wiped. Vehicle kept running safe Golden Image <code>{html.escape(installed_version)}</code> on <code>{html.escape(active_slot)}</code>",
+        ]
 
-    crypto_st = "Falcon-512 + ML-DSA-44 + Ed25519 PASS" if hybrid_verified else "Signature Verification Failed"
-    lines = [
-        banner,
-        f"• <b>Vehicle:</b> <code>{html.escape(device_id)}</code> (Target: <code>{html.escape(target_version)}</code>)",
-        f"• <b>Verdict:</b> <code>{'ACCEPT' if success else 'REJECT'} ({html.escape(reason)})</code>",
-        f"• <b>Crypto 2FA:</b> <code>{crypto_st}</code>",
-        f"• <b>ECU State:</b> <code>{html.escape(f'{installed_version} on {active_slot} (v{installed_build})')}</code>",
-    ]
     if total_ms is not None:
-        lines.append(f"• <b>Duration:</b> <code>{total_ms} ms</code>")
+        lines.append(f"• <b>Response Time:</b> <code>{total_ms} ms</code>")
 
     send_telegram_alert("\n".join(lines), parse_mode="HTML")

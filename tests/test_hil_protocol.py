@@ -155,9 +155,8 @@ class SendPackage(unittest.TestCase):
                 total_ms=12.4,
             )
         self.assertEqual(len(sent), 2)
-        self.assertIn("AutoQrypt — Update Installed", sent[0])
-        self.assertIn("ALL_CHECKS_PASSED", sent[0])
-        self.assertIn("AutoQrypt — Threat Blocked", sent[1])
+        self.assertIn("AutoQrypt — Firmware Update Installed", sent[0])
+        self.assertIn("AutoQrypt — Cyberattack Detected &amp; Blocked", sent[1])
         self.assertIn("ROLLBACK_ATTACK_DETECTED", sent[1])
 
 

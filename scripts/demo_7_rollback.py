@@ -23,6 +23,7 @@ def run_demo():
         print("\n[*] Step 1: Vehicle installs the current release (v2.0.0) legitimately...")
         env_ok = env.copy()
         env_ok["SKIP_BAD_BATTERY"] = "true"
+        env_ok["SKIP_TELEGRAM"] = "true"
         subprocess.run([sys.executable, "main.py", "--vehicle"], env=env_ok, cwd=root_dir)
 
         print("\n[*] Step 2: Attacker replays the old, validly-signed v1.0.0 manifest...")

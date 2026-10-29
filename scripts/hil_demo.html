@@ -960,16 +960,16 @@
       <!-- Live Silicon Execution Verdict Banner -->
       <div class="verdict-hero" id="result">
         <div class="verdict-hero-header">
-          <div class="verdict-title ok" id="verdict-title">
-            Update installed: Genuine OEM update
+          <div class="verdict-title" id="verdict-title">
+            Silicon Verification Engine Ready
           </div>
-          <div class="reason-pill ok" id="verdict-decision">ALL_CHECKS_PASSED</div>
+          <div class="reason-pill" id="verdict-decision" style="background:var(--bg-subtle); border-color:var(--border); color:var(--text-secondary);">STANDBY</div>
         </div>
         <div class="verdict-desc" id="verdict-desc">
-          Signed by the OEM image keys (Ed25519 + ML-DSA-44), authorised by the Director (Falcon-512).
+          Select a scenario or dispatch a release from the Hardware Operations Console to execute on physical silicon.
         </div>
         <div class="verdict-led-line" id="verdict-led">
-          Now running v2.0.0 at security version 3. LED: 4 blinks, then solid. (1.8 s)
+          ESP32 link active. Hardware admission gate listening on UART CAN-FD.
         </div>
         <div id="virtual-led-bulb" class="virtual-led-bulb pass" style="display:none;"></div>
       </div>
@@ -989,12 +989,12 @@
             <div class="crypto-pillar">
               <div class="pillar-head">
                 <span class="pillar-role">Online Fleet Director</span>
-                <span class="role-badge-status" id="pill-falcon">VALID</span>
+                <span class="role-badge-status" id="pill-falcon" style="background:var(--bg-subtle); border-color:var(--border); color:var(--text-secondary);">STANDBY</span>
               </div>
               <div class="pillar-alg-name">Falcon-512</div>
               <div class="pillar-latency-banner">
-                <span class="pillar-latency-num" id="stat-falcon">4.9 ms</span>
-                <span class="pillar-latency-lbl">ESP32 Silicon (<span id="stat-falcon-stack">18,640 B</span> stack)</span>
+                <span class="pillar-latency-num" id="stat-falcon" style="color:var(--text-primary);">—</span>
+                <span class="pillar-latency-lbl">ESP32 Silicon (<span id="stat-falcon-stack">—</span> stack)</span>
               </div>
               <div class="pillar-meta-row">
                 <span>Algorithm: <strong>FN-DSA Lattice</strong></span>
@@ -1006,12 +1006,12 @@
             <div class="crypto-pillar">
               <div class="pillar-head">
                 <span class="pillar-role">Offline OEM Image Root</span>
-                <span class="role-badge-status" id="pill-mldsa">VALID</span>
+                <span class="role-badge-status" id="pill-mldsa" style="background:var(--bg-subtle); border-color:var(--border); color:var(--text-secondary);">STANDBY</span>
               </div>
               <div class="pillar-alg-name">ML-DSA-44</div>
               <div class="pillar-latency-banner">
-                <span class="pillar-latency-num" id="stat-mldsa">17.7 ms</span>
-                <span class="pillar-latency-lbl">ESP32 Silicon (<span id="stat-mldsa-stack">36,496 B</span> stack)</span>
+                <span class="pillar-latency-num" id="stat-mldsa" style="color:var(--text-primary);">—</span>
+                <span class="pillar-latency-lbl">ESP32 Silicon (<span id="stat-mldsa-stack">—</span> stack)</span>
               </div>
               <div class="pillar-meta-row">
                 <span>Standard: <strong>NIST FIPS 204</strong></span>
@@ -1023,11 +1023,11 @@
             <div class="crypto-pillar">
               <div class="pillar-head">
                 <span class="pillar-role">Classical Co-Signer</span>
-                <span class="role-badge-status" id="pill-ed25519">VALID</span>
+                <span class="role-badge-status" id="pill-ed25519" style="background:var(--bg-subtle); border-color:var(--border); color:var(--text-secondary);">STANDBY</span>
               </div>
               <div class="pillar-alg-name">Ed25519</div>
               <div class="pillar-latency-banner">
-                <span class="pillar-latency-num" id="stat-ed25519">34.0 ms</span>
+                <span class="pillar-latency-num" id="stat-ed25519" style="color:var(--text-primary);">—</span>
                 <span class="pillar-latency-lbl">ESP32 Silicon Latency</span>
               </div>
               <div class="pillar-meta-row">
@@ -1042,7 +1042,7 @@
             <span style="font-size: 12.5px; color: var(--text-secondary);">
               <strong>Dual-Authority Gate:</strong> Falcon-512 (Director) ⊗ [ ML-DSA-44 ∧ Ed25519 (OEM Root) ]
             </span>
-            <span class="combinator-badge" id="pill-2fa-gate">DUAL-AUTHORITY INTERLOCK: PASS</span>
+            <span class="combinator-badge" id="pill-2fa-gate" style="background:var(--bg-subtle); border-color:var(--border); color:var(--text-secondary);">AWAITING DISPATCH</span>
           </div>
         </div>
       </section>
@@ -1070,26 +1070,26 @@
               <tbody id="verdict-checks-tbody">
                 <tr>
                   <td>Falcon-512 director signature</td>
-                  <td class="pass">valid</td>
-                  <td class="num">4.9 ms</td>
-                  <td class="num">18,640 B</td>
+                  <td style="color:var(--text-muted); font-family:var(--font-mono);">standby</td>
+                  <td class="num">—</td>
+                  <td class="num">—</td>
                 </tr>
                 <tr>
                   <td>Ed25519 image signature</td>
-                  <td class="pass">valid</td>
-                  <td class="num">34.0 ms</td>
+                  <td style="color:var(--text-muted); font-family:var(--font-mono);">standby</td>
+                  <td class="num">—</td>
                   <td class="num">—</td>
                 </tr>
                 <tr>
                   <td>ML-DSA-44 image signature</td>
-                  <td class="pass">valid</td>
-                  <td class="num">17.7 ms</td>
-                  <td class="num">36,496 B</td>
+                  <td style="color:var(--text-muted); font-family:var(--font-mono);">standby</td>
+                  <td class="num">—</td>
+                  <td class="num">—</td>
                 </tr>
                 <tr>
                   <td>SHA3-256 over image</td>
-                  <td class="pass">valid</td>
-                  <td class="num" id="stat-sha3">42.1 ms</td>
+                  <td style="color:var(--text-muted); font-family:var(--font-mono);">standby</td>
+                  <td class="num" id="stat-sha3">—</td>
                   <td class="num">—</td>
                 </tr>
               </tbody>
@@ -1100,7 +1100,7 @@
           <div class="chunk-bar-container">
             <div class="chunk-bar-header">
               <span>Payload Transmission Progress (10 Chunks)</span>
-              <span class="role-badge-status" id="payload-overall-status">10/10 VERIFIED</span>
+              <span class="role-badge-status" id="payload-overall-status">AWAITING STREAM</span>
             </div>
             <div class="chunk-grid-row" id="chunk-grid-row"></div>
           </div>
@@ -1111,19 +1111,19 @@
               <div style="font-size: 13.5px; font-weight: 600; color: var(--text-primary); margin-top: 3px;" id="slot-a-label">
                 Slot A (ota_0) <span class="pill-active" id="slot-a-pill">Active</span>
               </div>
-              <div style="font-size: 11.5px; color: var(--text-muted);" id="slot-a-sub">v2.0.0 (Installed)</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);" id="slot-a-sub">Factory Image (v1.0.0)</div>
             </div>
             <div class="partition-col">
               <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Recovery Backup Slot</div>
               <div style="font-size: 13.5px; font-weight: 600; color: var(--text-primary); margin-top: 3px;" id="slot-b-label">
-                Slot B (ota_1) <span class="pill-backup" id="slot-b-pill">Backup</span>
+                Slot B (ota_1) <span class="pill-backup" id="slot-b-pill">Inactive</span>
               </div>
-              <div style="font-size: 11.5px; color: var(--amber);" id="slot-b-sub">Golden Image (v1.0.0)</div>
+              <div style="font-size: 11.5px; color: var(--amber);" id="slot-b-sub">Staging Inactive Bank</div>
             </div>
             <div class="partition-col">
               <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Anti-Rollback Counter</div>
               <div style="font-size: 13.5px; font-weight: 600; color: var(--text-primary); margin-top: 3px;" id="nvs-counter">
-                Version 3 (Enforced)
+                Version 1 (Hardware Locked)
               </div>
               <div style="font-size: 11.5px; color: var(--emerald);">Hardware NVS Monotonic Lock</div>
             </div>
@@ -1377,17 +1377,49 @@
 
     if ($('active-test-label')) $('active-test-label').innerText = testLabel || 'Hardware Verification Run';
 
-    if ($('update')) $('update').disabled = true;
-    if ($('attack')) $('attack').disabled = true;
+    ['btn-update', 'btn-attack', 'update', 'attack'].forEach(id => {
+      const b = $(id);
+      if (b) b.disabled = true;
+    });
 
     resetChunks();
     if ($('verdict-title')) {
       $('verdict-title').className = 'verdict-title';
-      $('verdict-title').innerText = 'Sending package to physical ESP32...';
+      $('verdict-title').innerText = 'Transmitting Package to Physical ESP32...';
     }
     if ($('verdict-desc')) {
-      $('verdict-desc').innerText = 'Transmitting over UART CAN-FD bus & awaiting silicon verification...';
+      $('verdict-desc').innerText = 'Streaming cryptographic manifest and signed binary over UART CAN-FD bus...';
     }
+    const vDec = $('verdict-decision');
+    if (vDec) {
+      vDec.className = 'reason-pill';
+      vDec.style.background = 'var(--blue-bg)';
+      vDec.style.borderColor = 'var(--blue-border)';
+      vDec.style.color = 'var(--blue)';
+      vDec.innerText = 'IN_FLIGHT';
+    }
+    const gate = $('pill-2fa-gate');
+    if (gate) {
+      gate.className = 'combinator-badge';
+      gate.style.background = 'var(--blue-bg)';
+      gate.style.borderColor = 'var(--blue-border)';
+      gate.style.color = 'var(--blue)';
+      gate.innerText = 'EVALUATING ON SILICON...';
+    }
+    ['pill-falcon', 'pill-mldsa', 'pill-ed25519'].forEach(id => {
+      const p = $(id);
+      if (p) {
+        p.className = 'role-badge-status';
+        p.style.background = 'var(--bg-subtle)';
+        p.style.borderColor = 'var(--border)';
+        p.style.color = 'var(--text-secondary)';
+        p.innerText = 'EVALUATING...';
+      }
+    });
+    if ($('stat-falcon')) $('stat-falcon').innerText = '—';
+    if ($('stat-mldsa')) $('stat-mldsa').innerText = '—';
+    if ($('stat-ed25519')) $('stat-ed25519').innerText = '—';
+    if ($('stat-sha3')) $('stat-sha3').innerText = '—';
 
     try {
       const res = await fetch(endpoint, { method: "POST", headers: { "X-AutoQrypt": "1" } });
@@ -1398,6 +1430,13 @@
           $('verdict-title').innerText = 'ESP32 Communication Error';
         }
         if ($('verdict-desc')) $('verdict-desc').innerText = esc(r.error);
+        if (vDec) {
+          vDec.className = 'reason-pill';
+          vDec.style.background = 'var(--crimson-bg)';
+          vDec.style.borderColor = 'var(--crimson-border)';
+          vDec.style.color = 'var(--crimson)';
+          vDec.innerText = 'LINK_ERROR';
+        }
         return;
       }
       renderResult(r);
@@ -1409,9 +1448,18 @@
         $('verdict-title').innerText = 'Demo Server Unreachable';
       }
       if ($('verdict-desc')) $('verdict-desc').innerText = 'Ensure `python scripts/hil.py demo` is running.';
+      if (vDec) {
+        vDec.className = 'reason-pill';
+        vDec.style.background = 'var(--crimson-bg)';
+        vDec.style.borderColor = 'var(--crimson-border)';
+        vDec.style.color = 'var(--crimson)';
+        vDec.innerText = 'OFFLINE';
+      }
     } finally {
-      if ($('update')) $('update').disabled = false;
-      if ($('attack')) $('attack').disabled = false;
+      ['btn-update', 'btn-attack', 'update', 'attack'].forEach(id => {
+        const b = $(id);
+        if (b) b.disabled = false;
+      });
     }
   }
 

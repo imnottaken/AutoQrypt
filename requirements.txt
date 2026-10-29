@@ -10,3 +10,4 @@ dilithium-py>=1.5.1
 pqcrypto==0.4.0
 pyserial>=3.5
 python-dotenv>=1.0.0
+segno>=1.6.1

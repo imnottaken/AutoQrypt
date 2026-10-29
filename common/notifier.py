@@ -148,28 +148,46 @@ def _send_one(token: str, chat_id: str, text: str, parse_mode: Optional[str] = "
     return False
 
 
+def _make_qr_svg(url: str) -> str:
+    if not url:
+        return ""
+    try:
+        import io
+        import segno
+        qr = segno.make(url, error="m")
+        buf = io.BytesIO()
+        qr.save(buf, kind="svg", xmldecl=False, svgns=False, scale=4, border=1, dark="#0f172a")
+        return buf.getvalue().decode("utf-8")
+    except Exception:
+        return ""
+
+
 def _ensure_bot_commands_menu(token: str, state: Dict[str, Any]):
-    if state.get("commands_registered") and state.get("bot_url"):
+    if state.get("commands_registered") and state.get("bot_url") and state.get("qr_svg"):
         return
     try:
-        me = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=3).json()
-        uname = (me.get("result") or {}).get("username")
-        if uname:
-            state["bot_url"] = f"https://t.me/{uname}?start=subscribe"
-        requests.post(
-            f"https://api.telegram.org/bot{token}/setMyCommands",
-            json={
-                "commands": [
-                    {"command": "status", "description": "Live ECU firmware, boot slot & NVS anti-rollback state"},
-                    {"command": "last", "description": "Replay last cryptographic verification & forensic receipt"},
-                    {"command": "update", "description": "Dispatch genuine PQ/T hybrid OEM release"},
-                    {"command": "attack", "description": "Inject adversarial threat vector into OTA stream"},
-                    {"command": "help", "description": "Show VSOC mobile command reference"},
-                ]
-            },
-            timeout=3,
-        )
-        state["commands_registered"] = True
+        if not state.get("bot_url"):
+            me = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=3).json()
+            uname = (me.get("result") or {}).get("username")
+            if uname:
+                state["bot_url"] = f"https://t.me/{uname}?start=subscribe"
+        if state.get("bot_url") and not state.get("qr_svg"):
+            state["qr_svg"] = _make_qr_svg(state["bot_url"])
+        if not state.get("commands_registered"):
+            requests.post(
+                f"https://api.telegram.org/bot{token}/setMyCommands",
+                json={
+                    "commands": [
+                        {"command": "status", "description": "Live ECU firmware, boot slot & NVS anti-rollback state"},
+                        {"command": "last", "description": "Replay last cryptographic verification & forensic receipt"},
+                        {"command": "update", "description": "Dispatch genuine PQ/T hybrid OEM release"},
+                        {"command": "attack", "description": "Inject adversarial threat vector into OTA stream"},
+                        {"command": "help", "description": "Show VSOC mobile command reference"},
+                    ]
+                },
+                timeout=3,
+            )
+            state["commands_registered"] = True
         _save_bot_state(state)
     except Exception:
         pass
@@ -292,7 +310,7 @@ def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, stat
         return
 
 
-def sync_subscribers(send_welcome: bool = True) -> List[Dict[str, Any]]:
+def sync_subscribers(send_welcome: bool = True, force: bool = False) -> List[Dict[str, Any]]:
     """Polls Telegram getUpdates to register operators and process 2-way commands (/status, /last, /update, /attack)."""
     with _sub_lock:
         subs = _load_saved_subscribers()
@@ -301,14 +319,21 @@ def sync_subscribers(send_welcome: bool = True) -> List[Dict[str, Any]]:
             return list(subs.values())
 
         state = _load_bot_state()
+        now_ts = time.time()
+        # Prevent concurrent processes (7001 and 8080) from colliding on Telegram getUpdates
+        if not force and (now_ts - float(state.get("last_poll_ts") or 0)) < 3.5:
+            return list(subs.values())
+
+        state["last_poll_ts"] = now_ts
+        _save_bot_state(state)
         _ensure_bot_commands_menu(token, state)
         last_uid = int(state.get("last_update_id") or 0)
 
         try:
-            params = {"timeout": 1}
+            params = {"timeout": 0}
             if last_uid > 0:
                 params["offset"] = last_uid + 1
-            r = requests.get(f"https://api.telegram.org/bot{token}/getUpdates", params=params, timeout=3).json()
+            r = requests.get(f"https://api.telegram.org/bot{token}/getUpdates", params=params, timeout=2.0).json()
             changed = False
             max_uid = last_uid
 
@@ -359,8 +384,8 @@ def sync_subscribers(send_welcome: bool = True) -> List[Dict[str, Any]]:
         return list(subs.values())
 
 
-def start_command_poller(interval_s: float = 2.5):
-    """Starts a background daemon thread so phone commands (/status, /update, /attack) respond within ~2 seconds."""
+def start_command_poller(interval_s: float = 4.0):
+    """Starts a background daemon thread so phone commands (/status, /update, /attack) respond within seconds."""
     global _poller_started
     if _poller_started or _in_test_harness() or not _get_token():
         return
@@ -369,7 +394,7 @@ def start_command_poller(interval_s: float = 2.5):
     def _loop():
         while True:
             try:
-                sync_subscribers(send_welcome=True)
+                sync_subscribers(send_welcome=True, force=False)
             except Exception:
                 pass
             time.sleep(interval_s)
@@ -378,15 +403,25 @@ def start_command_poller(interval_s: float = 2.5):
     t.start()
 
 
-def get_telegram_status() -> Dict[str, Any]:
+def get_telegram_status(force_sync: bool = False) -> Dict[str, Any]:
+    """Returns cached status in <1ms by default; only hits Telegram network when force_sync=True."""
     token = _get_token()
-    subs = sync_subscribers(send_welcome=True) if token else []
+    if force_sync and token:
+        subs = sync_subscribers(send_welcome=True, force=True)
+    else:
+        subs = list(_load_saved_subscribers().values())
+
     state = _load_bot_state()
-    if token and not state.get("bot_url") and not _in_test_harness():
+    if token and (not state.get("bot_url") or not state.get("qr_svg")) and not _in_test_harness():
         _ensure_bot_commands_menu(token, state)
+    elif state.get("bot_url") and not state.get("qr_svg"):
+        state["qr_svg"] = _make_qr_svg(state["bot_url"])
+        _save_bot_state(state)
+
     return {
         "configured": bool(token),
         "bot_url": state.get("bot_url", ""),
+        "qr_svg": state.get("qr_svg", ""),
         "subscriber_count": len(subs),
         "subscribers": [
             {

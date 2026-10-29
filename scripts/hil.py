@@ -764,8 +764,9 @@ def cmd_demo(args):
                     self.reply(f.read(), "text/html; charset=utf-8")
             elif self.path == "/api/status":
                 self.reply(json.dumps(demo.status()).encode())
-            elif self.path == "/api/telegram/status":
-                self.reply(json.dumps(get_telegram_status()).encode())
+            elif self.path.startswith("/api/telegram/status"):
+                force_sync = "sync=1" in self.path
+                self.reply(json.dumps(get_telegram_status(force_sync=force_sync)).encode())
             else:
                 self.reply(b"{}", code=404)
 

@@ -152,12 +152,11 @@ def _make_qr_svg(url: str) -> str:
     if not url:
         return ""
     try:
-        import io
         import segno
-        qr = segno.make(url, error="m")
-        buf = io.BytesIO()
-        qr.save(buf, kind="svg", xmldecl=False, svgns=False, scale=4, border=1, dark="#0f172a")
-        return buf.getvalue().decode("utf-8")
+        clean_url = url.split("?")[0]
+        qr = segno.make(clean_url, error="m")
+        uri = qr.png_data_uri(scale=6, border=4, dark="#000000", light="#ffffff")
+        return f'<img src="{uri}" width="144" height="144" alt="QR Code" style="display:block; image-rendering:pixelated;">'
     except Exception:
         return ""
 

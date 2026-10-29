@@ -1373,21 +1373,7 @@ def cmd_demo(args):
                 self.reply(b"", code=404)
 
         def do_GET(self):
-            if self.path in ("/slides", "/presentation"):
-                slides_path = os.path.join(ROOT, "presentation", "AutoQrypt_Motion_Deck.html")
-                with open(slides_path, "rb") as f:
-                    self.reply(f.read(), "text/html; charset=utf-8")
-            elif self.path in ("/deck.pptx", "/AutoQrypt_PQC02_Pitch_Deck.pptx"):
-                pptx_path = os.path.join(ROOT, "AutoQrypt_PQC02_Pitch_Deck.pptx")
-                with open(pptx_path, "rb") as f:
-                    data = f.read()
-                self.send_response(200)
-                self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.presentationml.presentation")
-                self.send_header("Content-Disposition", 'attachment; filename="AutoQrypt_PQC02_Pitch_Deck.pptx"')
-                self.send_header("Content-Length", str(len(data)))
-                self.end_headers()
-                self.wfile.write(data)
-            elif self.path in ("/", "/app", "/demo", "/test-bench") or not self.path.startswith("/api"):
+            if self.path in ("/", "/app", "/demo", "/test-bench") or not self.path.startswith("/api"):
                 with open(DEMO_HTML, "rb") as f:
                     self.reply(f.read(), "text/html; charset=utf-8")
             elif self.path == "/api/status":

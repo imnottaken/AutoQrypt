@@ -10,6 +10,7 @@ from pydantic import BaseModel, ValidationError
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.models import SecurityEvent
+from common.notifier import get_telegram_status, send_telegram_alert
 
 app = FastAPI(title="Fleet Management Dashboard")
 
@@ -137,3 +138,46 @@ def run_demo(req: DemoRequest):
 
     subprocess.Popen([sys.executable, script_path], cwd=root_dir)
     return {"status": "ok", "script": req.script_name}
+
+
+@app.get("/api/telegram/status")
+def telegram_status():
+    return get_telegram_status()
+
+
+@app.post("/api/telegram/test")
+def telegram_test():
+    st = get_telegram_status()
+    ok = send_telegram_alert(
+        "🔔 AutoQrypt Test Alert\n"
+        "• Source: Fleet Security Console\n"
+        f"• Connected Phones: {st.get('subscriber_count', 0)}\n"
+        "• Status: Live OTA & Attack Alerts Active",
+        async_send=False,
+        force=True,
+    )
+    return {"ok": ok, "status": get_telegram_status()}
+
+
+@app.get("/api/status")
+def api_status():
+    """Returns HIL status from physical testbench if running on 8080, or simulated ECU telemetry."""
+    try:
+        import urllib.request
+        req = urllib.request.Request("http://127.0.0.1:8080/api/status")
+        with urllib.request.urlopen(req, timeout=0.4) as resp:
+            return json.loads(resp.read().decode())
+    except Exception:
+        active_slot = latest_perf_data.get("active_partition_slot", "ota_0")
+        installed_ver = latest_perf_data.get("installed_version", "v1.0.0")
+        installed_sec_ver = latest_perf_data.get("installed_build", 1)
+        return {
+            "ecu": {
+                "running_slot": active_slot,
+                "installed_security_version": installed_sec_ver,
+                "app_version": installed_ver
+            },
+            "connected": True,
+            "history": []
+        }
+

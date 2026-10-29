@@ -2,15 +2,21 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from starlette.requests import ClientDisconnect
 from collections import defaultdict
+import asyncio
 import os
 import sys
 import subprocess
 import json
+import logging
+import threading
 from pydantic import BaseModel, ValidationError
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.models import SecurityEvent
 from common.notifier import get_telegram_status, send_telegram_alert, start_command_poller
+from sbom.osv_scanner import CycloneDXError, OSVScanner, parse_cyclonedx
+
+sbom_log = logging.getLogger("dashboard.sbom")
 
 app = FastAPI(title="Fleet Management Dashboard")
 start_command_poller()
@@ -120,6 +126,74 @@ def clear_logs():
 @app.get("/perf")
 def get_perf():
     return latest_perf_data
+
+# ---- SBOM scan (scan-only) --------------------------------------------------
+# An uploaded SBOM is parsed and looked up in OSV, then the result is returned. It is never sent to
+# the OTA server's /upload, never signed, and never written to `logs` or the audit file: the signed
+# release pipeline (sbom_hash -> Image signatures -> ECU gate) is untouched by this route.
+SBOM_MAX_BYTES = 2 * 1024 * 1024
+SBOM_MAX_COMPONENTS = 500
+_scan_slots = threading.BoundedSemaphore(2)  # ponytail: per-process cap on concurrent outbound scans
+
+
+def make_sbom_scanner():
+    return OSVScanner()
+
+
+def _scan_in_worker(doc):
+    try:
+        return make_sbom_scanner().scan(doc)
+    finally:
+        _scan_slots.release()
+
+
+async def _read_limited(request: Request) -> bytes:
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > SBOM_MAX_BYTES:
+        raise HTTPException(status_code=413, detail=f"SBOM larger than {SBOM_MAX_BYTES} bytes")
+    body = bytearray()
+    async for chunk in request.stream():  # also enforced for chunked uploads with no Content-Length
+        body += chunk
+        if len(body) > SBOM_MAX_BYTES:
+            raise HTTPException(status_code=413, detail=f"SBOM larger than {SBOM_MAX_BYTES} bytes")
+    return bytes(body)
+
+
+@app.post("/sbom/scan")
+async def scan_sbom(request: Request):
+    raw = await _read_limited(request)
+    if not raw.strip():
+        raise HTTPException(status_code=400, detail="Empty request body")
+    try:
+        doc = json.loads(raw)
+    except (ValueError, RecursionError):  # includes bad UTF-8 and pathologically nested JSON
+        raise HTTPException(status_code=400, detail="Request body is not valid JSON")
+    try:
+        count = len(parse_cyclonedx(doc))
+    except CycloneDXError as e:
+        raise HTTPException(status_code=422, detail=f"Unsupported SBOM: {e}")
+    if count > SBOM_MAX_COMPONENTS:
+        raise HTTPException(status_code=422, detail=f"SBOM has {count} components; the limit is {SBOM_MAX_COMPONENTS}")
+
+    if not _scan_slots.acquire(blocking=False):
+        raise HTTPException(status_code=429, detail="Too many scans in progress; retry shortly")
+    try:
+        # Submitted synchronously (no await between acquire and submit), and the worker itself frees
+        # the slot, so a cancelled request cannot release capacity while its scan is still running.
+        future = asyncio.get_running_loop().run_in_executor(None, _scan_in_worker, doc)
+    except BaseException:
+        _scan_slots.release()
+        raise
+    try:
+        result = await future
+    except Exception as e:
+        # Type only: the message could echo SBOM or upstream content.
+        sbom_log.error("SBOM scan failed unexpectedly (%s)", type(e).__name__)
+        raise HTTPException(status_code=502, detail="SBOM scan failed")
+    sbom_log.info("SBOM scan: verdict=%s complete=%s metadata_complete=%s counts=%s",
+                  result["verdict"], result["complete"], result["metadata_complete"], result["counts"])
+    return result
+
 
 class DemoRequest(BaseModel):
     script_name: str

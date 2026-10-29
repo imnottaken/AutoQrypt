@@ -1128,6 +1128,123 @@
     background: var(--bg-subtle);
     color: var(--text-primary);
   }
+
+  /* SBOM Security Scanner (OSV) -- built on the page's modal system and colour tokens */
+  #sbom-overlay:not(.open) { visibility: hidden; }          /* keep the closed dialog out of keyboard focus order */
+  .sbom-dialog { max-width: 1040px; min-width: 0; }         /* min-width:0: as a flex item, long unbreakable text must not widen it past the screen */
+  .sbom-dialog [hidden] { display: none !important; }
+  #sbom-result { display: flex; flex-direction: column; gap: 16px; }   /* the page's modal-body gap only reaches direct children */
+  .sbom-lead { color: var(--text-primary); font-size: 13px; }
+  .sbom-notes {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px 10px 28px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .sbom-notes li { margin-bottom: 4px; }
+  .sbom-notes li:last-child { margin-bottom: 0; }
+  .sbom-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .sbom-controls input[type="file"] { font-family: var(--font-sans); font-size: 12px; color: var(--text-secondary); max-width: 100%; min-width: 0; }
+  .sbom-controls input[type="file"]::file-selector-button {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 10px;
+    margin-right: 8px;
+    font-family: var(--font-sans);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+  .sbom-controls input[type="file"]:disabled { opacity: 0.5; }
+  .sbom-file-info { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); overflow-wrap: anywhere; min-width: 0; }
+  .sbom-scan-btn {
+    background: var(--text-primary);
+    color: #ffffff;
+    border: 1px solid var(--border-dark);
+    border-radius: 4px;
+    padding: 6px 16px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sbom-scan-btn:hover:not(:disabled) { background: var(--text-secondary); }
+  .sbom-scan-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .sbom-progress { color: var(--text-muted); font-size: 12px; }
+  .sbom-bar { height: 4px; border-radius: 2px; background: var(--bg-subtle); border: 1px solid var(--border); overflow: hidden; margin-bottom: 6px; }
+  .sbom-bar span { display: block; height: 100%; width: 30%; background: var(--blue); animation: sbom-slide 1.4s ease-in-out infinite; }
+  @keyframes sbom-slide { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .sbom-bar span { animation: none; width: 100%; opacity: 0.5; } }
+  .sbom-error {
+    border: 1px solid var(--crimson-border);
+    border-left: 3px solid var(--crimson);
+    background: var(--crimson-bg);
+    color: var(--crimson);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+  .sbom-empty { border: 1px dashed var(--border-strong); border-radius: 6px; padding: 22px 14px; text-align: center; color: var(--text-muted); }
+  .sbom-banner { border: 1px solid; border-left-width: 4px; border-radius: 6px; padding: 12px 16px; }
+  .sbom-banner.vulnerable { border-color: var(--crimson-border); border-left-color: var(--crimson); background: var(--crimson-bg); }
+  .sbom-banner.incomplete { border-color: var(--amber-border); border-left-color: var(--amber); background: var(--amber-bg); }
+  .sbom-banner.clean { border-color: var(--emerald-border); border-left-color: var(--emerald); background: var(--emerald-bg); }
+  .sbom-verdict { font-size: 15px; font-weight: 700; letter-spacing: 0.02em; margin-bottom: 2px; }
+  .sbom-banner.vulnerable .sbom-verdict { color: var(--crimson); }
+  .sbom-banner.incomplete .sbom-verdict { color: var(--amber); }
+  .sbom-banner.clean .sbom-verdict { color: var(--emerald); }
+  .sbom-verdict-text { color: var(--text-primary); font-size: 12.5px; }
+  .sbom-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .sbom-stat { background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; }
+  .sbom-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+  .sbom-stat-value { font-family: var(--font-mono); font-size: 19px; font-weight: 600; color: var(--text-primary); }
+  .sbom-stat.vulnerable .sbom-stat-value { color: var(--crimson); }
+  .sbom-stat.error .sbom-stat-value, .sbom-stat.unscanned .sbom-stat-value { color: var(--amber); }
+  .sbom-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; font-size: 12px; }
+  .sbom-facts dt { color: var(--text-muted); }
+  .sbom-facts dd { margin: 0; overflow-wrap: anywhere; color: var(--text-primary); }
+  .sbom-warn {
+    padding: 10px 14px 10px 28px;
+    border: 1px solid var(--amber-border);
+    border-left: 3px solid var(--amber);
+    border-radius: 4px;
+    background: var(--amber-bg);
+    color: var(--text-primary);
+    font-size: 12px;
+  }
+  .sbom-warn li { margin-bottom: 4px; }
+  .sbom-warn li:last-child { margin-bottom: 0; }
+  .sbom-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; }
+  .sbom-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .sbom-table th { text-align: left; color: var(--text-muted); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 12px; background: var(--bg-subtle); }
+  .sbom-table td { padding: 8px 12px; border-top: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; color: var(--text-primary); }
+  .sbom-table td.mono { font-family: var(--font-mono); }
+  .sbom-eco { display: block; color: var(--text-muted); font-size: 10.5px; font-family: var(--font-sans); }
+  .sbom-reason { color: var(--text-muted); }
+  .sbom-badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 10.5px; font-weight: 600; border: 1px solid; white-space: nowrap; }
+  .sbom-badge.vulnerable { color: var(--crimson); border-color: var(--crimson-border); background: var(--crimson-bg); }
+  .sbom-badge.error, .sbom-badge.unscanned, .sbom-badge.partial { color: var(--amber); border-color: var(--amber-border); background: var(--amber-bg); }
+  .sbom-badge.no-known-match { color: var(--text-muted); border-color: var(--border); background: var(--bg-subtle); }
+  .sbom-table details > summary { cursor: pointer; color: var(--blue); font-weight: 500; }
+  .sbom-vulns { list-style: none; margin: 8px 0 0 0; padding: 0; }
+  .sbom-vuln { border-top: 1px solid var(--border); padding: 7px 0; }
+  .sbom-vuln:first-child { border-top: none; }
+  .sbom-vuln-id { font-family: var(--font-mono); font-weight: 600; }
+  .sbom-vuln-meta { color: var(--text-muted); font-size: 11.5px; margin-top: 2px; }
+  .sbom-vuln-missing { color: var(--amber); font-size: 11.5px; margin-top: 2px; }
+  @media (max-width: 720px) {
+    #sbom-overlay { padding: 0; }
+    .sbom-dialog { max-height: 100vh; height: 100vh; border-radius: 0; }
+    .sbom-stats { grid-template-columns: repeat(2, 1fr); }
+    .sbom-facts { grid-template-columns: 1fr; }
+    .sbom-controls { flex-direction: column; align-items: stretch; }
+  }
 </style>
 </head>
 <body>
@@ -1142,6 +1259,13 @@
         <div class="brand-desc">Post-Quantum Automotive Security Operations Console (PQC-02 · Real ESP32 HIL)</div>
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
+        <button class="tg-connect-btn" id="sbom-open-btn" type="button" title="Scan an uploaded CycloneDX SBOM against the OSV vulnerability database">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 2h8l5 5v15H6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M9 12h7M9 16h7M9 8h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>SBOM Scanner</span>
+        </button>
         <button class="tg-connect-btn" id="tg-pill-btn" onclick="openTelegramModal()" title="Configure Telegram Mobile Alerts">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M21.4 2.6L2.7 9.8c-1.2.5-1.2 1.2-.2 1.5l4.8 1.5 11.1-7c.5-.3 1-.1.6.2l-9 8.1-.3 4.9c.5 0 .7-.2 1-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8L22.7 4c.3-1.2-.5-1.8-1.3-1.4z" fill="currentColor"/>
@@ -1703,6 +1827,44 @@
       </div>
     </div>
   </footer>
+
+  <!-- SBOM Security Scanner (OSV). Scan-only: the file is never signed, published or sent to the OTA server. -->
+  <div class="modal-backdrop" id="sbom-overlay">
+    <div class="modal-dialog sbom-dialog" role="dialog" aria-modal="true" aria-labelledby="sbom-title">
+      <div class="modal-header">
+        <h3 class="modal-title" id="sbom-title">SBOM Security Scanner</h3>
+        <button class="modal-close-btn" id="sbom-close-btn" type="button" aria-label="Close">&#10005;</button>
+      </div>
+      <div class="modal-body">
+        <p class="sbom-lead">Checks the dependency list in an uploaded CycloneDX JSON SBOM against the OSV
+          vulnerability database (osv.dev).</p>
+        <ul class="sbom-notes">
+          <li>Only the ecosystem, package name and version of each component are sent to the external OSV API
+            (api.osv.dev).</li>
+          <li>&ldquo;No known match&rdquo; means OSV returned no record for that exact package version. It does
+            not prove the package is safe.</li>
+          <li>An incomplete scan is never a clean result.</li>
+          <li>This evaluates the uploaded dependency SBOM only, not the ESP32 firmware binary or the
+            firmware&rsquo;s overall security.</li>
+          <li>It is independent of AutoQrypt&rsquo;s release signing and ECU installation checks. The file is not
+            signed, published or sent to the OTA server.</li>
+        </ul>
+        <div class="sbom-controls">
+          <input type="file" id="sbom-file" accept=".json,application/json" aria-label="CycloneDX JSON SBOM file">
+          <span class="sbom-file-info" id="sbom-file-info">No file selected</span>
+          <button class="sbom-scan-btn" id="sbom-scan-btn" type="button" disabled>Scan SBOM</button>
+        </div>
+        <div class="sbom-progress" id="sbom-progress" role="status" aria-live="polite" hidden>
+          <div class="sbom-bar"><span></span></div>
+          <div id="sbom-progress-text"></div>
+        </div>
+        <div class="sbom-error" id="sbom-error" role="alert" hidden></div>
+        <div class="sbom-empty" id="sbom-empty">No scan yet. Choose a CycloneDX JSON file (up to 2&nbsp;MiB, 500
+          components) and press <b>Scan SBOM</b>.</div>
+        <div id="sbom-result" aria-live="polite" hidden></div>
+      </div>
+    </div>
+  </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
@@ -2378,6 +2540,309 @@
     refreshHardwareStatus();
     refreshTelegramStatus(false);
     setInterval(refreshHardwareStatus, 3000);
+  </script>
+
+  <script>
+        // SBOM Security Scanner. Everything shown from the uploaded file or from OSV is untrusted: it is only ever
+        // placed into the page with textContent (never by building HTML strings). No result is invented: every figure comes from
+        // the /sbom/scan response, and an unexpected or inconsistent response is shown as an error, never as clean.
+        (function () {
+            'use strict';
+            const SBOM_MAX_BYTES = 2 * 1024 * 1024;   // mirrors dashboard/app.py; the server is what enforces it
+            const SCAN_TIMEOUT_MS = 5 * 60 * 1000;
+            const STATE_LABEL = { 'vulnerable': 'Vulnerable', 'no-known-match': 'No known match', 'unscanned': 'Unscanned', 'error': 'Query error' };
+            const STATE_ORDER = { 'vulnerable': 0, 'error': 1, 'unscanned': 2, 'no-known-match': 3 };
+            const $ = (id) => document.getElementById(id);
+
+            function el(tag, cls, text) {
+                const e = document.createElement(tag);
+                if (cls) e.className = cls;
+                if (text !== undefined && text !== null) e.textContent = String(text);
+                return e;
+            }
+            function str(v, max) {
+                if (typeof v !== 'string') return '';
+                return v.length > max ? v.slice(0, max) + '…' : v;
+            }
+            function fmtBytes(n) {
+                if (n < 1024) return n + ' B';
+                if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KiB';
+                return (n / (1024 * 1024)).toFixed(2) + ' MiB';
+            }
+
+            let selected = null;
+            let inFlight = false;
+            let ticker = null;
+
+            // ---- modal ----
+            // Uses the page's modal system: the backdrop gets the `open` class (see .modal-backdrop in the page CSS).
+            const isOpen = () => $('sbom-overlay').classList.contains('open');
+            function openModal() { $('sbom-overlay').classList.add('open'); $('sbom-file').focus(); }
+            function closeModal() { $('sbom-overlay').classList.remove('open'); $('sbom-open-btn').focus(); }
+
+            // ---- state helpers ----
+            function showError(msg) { const e = $('sbom-error'); e.textContent = msg; e.hidden = false; }
+            function clearError() { const e = $('sbom-error'); e.textContent = ''; e.hidden = true; }
+            function clearResult() { const r = $('sbom-result'); r.replaceChildren(); r.hidden = true; updateEmpty(); }
+            function updateEmpty() { $('sbom-empty').hidden = inFlight || !$('sbom-error').hidden || !$('sbom-result').hidden; }
+            function setBusy(b) {
+                $('sbom-scan-btn').disabled = b || !selected;
+                $('sbom-scan-btn').textContent = b ? 'Scanning…' : 'Scan SBOM';
+                $('sbom-file').disabled = b;
+                $('sbom-result').setAttribute('aria-busy', b ? 'true' : 'false');
+            }
+            function startProgress() {
+                const started = Date.now();
+                const text = $('sbom-progress-text');
+                const render = () => {
+                    text.textContent = 'Scanning ' + selected.name + '… ' + Math.floor((Date.now() - started) / 1000) +
+                        ' s elapsed. OSV is queried over the network, so a large SBOM can take over a minute.';
+                };
+                render();
+                $('sbom-progress').hidden = false;
+                ticker = setInterval(render, 1000);   // only while a scan is running; always cleared in stopProgress
+            }
+            function stopProgress() {
+                if (ticker !== null) { clearInterval(ticker); ticker = null; }
+                $('sbom-progress').hidden = true;
+            }
+
+            // ---- file selection ----
+            function onFile() {
+                clearError();
+                clearResult();
+                selected = null;
+                const f = $('sbom-file').files[0];
+                if (!f) { $('sbom-file-info').textContent = 'No file selected'; setBusy(false); return; }
+                $('sbom-file-info').textContent = f.name + ' · ' + fmtBytes(f.size);
+                if (f.size === 0) showError('The selected file is empty.');
+                else if (f.size > SBOM_MAX_BYTES) showError('The file is ' + fmtBytes(f.size) + '; the limit is 2 MiB.');
+                else selected = f;
+                setBusy(false);
+                updateEmpty();
+            }
+
+            // ---- response handling ----
+            function httpMessage(status, data) {
+                const detail = data && typeof data.detail === 'string' ? str(data.detail, 300) : '';
+                if (status === 400) return 'The file is not valid JSON.';
+                if (status === 413) return 'The file is larger than the 2 MiB limit.';
+                if (status === 422) return detail ? 'The file was rejected: ' + detail : 'The file was rejected as an unsupported SBOM.';
+                if (status === 429) return 'The server is already running the maximum number of scans. Try again shortly.';
+                if (status === 404) return 'This dashboard server does not provide the SBOM scan endpoint (it may be running older code).';
+                if (status >= 500) return 'The scan failed on the server and produced no result. This is not a clean result.';
+                return 'Unexpected server response (HTTP ' + status + '). No scan result is available.';
+            }
+
+            const isCount = (n) => Number.isInteger(n) && n >= 0;
+
+            // The response is only displayed if it is complete and self-consistent; otherwise it is an error.
+            function validate(d) {
+                if (!d || typeof d !== 'object' || !Array.isArray(d.components) || !d.counts || typeof d.counts !== 'object') return false;
+                if (!['vulnerable', 'clean', 'incomplete'].includes(d.verdict)) return false;
+                if (typeof d.complete !== 'boolean' || typeof d.metadata_complete !== 'boolean' || !isCount(d.metadata_missing)) return false;
+                const tally = { 'vulnerable': 0, 'no-known-match': 0, 'unscanned': 0, 'error': 0 };
+                let missing = 0;
+                for (const c of d.components) {
+                    if (!c || typeof c !== 'object' || !(c.state in tally) || typeof c.complete !== 'boolean') return false;
+                    if (!Array.isArray(c.vulnerabilities)) return false;
+                    tally[c.state]++;
+                    for (const v of c.vulnerabilities) {
+                        if (!v || typeof v.id !== 'string' || typeof v.record_retrieved !== 'boolean') return false;
+                        if (!v.record_retrieved) missing++;
+                    }
+                    if (c.state === 'vulnerable' && c.vulnerabilities.length === 0) return false;
+                }
+                for (const k of Object.keys(tally)) if (d.counts[k] !== tally[k]) return false;
+                if (d.counts.total !== d.components.length) return false;
+                if (d.metadata_missing !== missing || d.metadata_complete !== (missing === 0)) return false;
+                if (d.complete !== d.components.every((c) => c.complete)) return false;
+                if (d.verdict === 'vulnerable' && tally.vulnerable === 0) return false;
+                if (d.verdict !== 'vulnerable' && tally.vulnerable > 0) return false;
+                return true;
+            }
+
+            // 'clean' is shown only when the server says clean AND every component is a complete no-known-match.
+            function displayClass(d) {
+                if (d.verdict === 'vulnerable') return 'vulnerable';
+                const allClear = d.complete === true && d.components.every((c) => c.state === 'no-known-match' && c.complete === true);
+                return d.verdict === 'clean' && allClear ? 'clean' : 'incomplete';
+            }
+
+            // ---- rendering ----
+            function stat(label, value, cls) {
+                const s = el('div', 'sbom-stat' + (cls ? ' ' + cls : ''));
+                s.append(el('div', 'sbom-stat-label', label), el('div', 'sbom-stat-value', value));
+                return s;
+            }
+
+            function vulnItem(v) {
+                const li = el('li', 'sbom-vuln');
+                li.append(el('div', 'sbom-vuln-id', str(v.id, 200)));
+                if (!v.record_retrieved) {
+                    li.append(el('div', 'sbom-vuln-missing',
+                        'OSV detail record not retrieved: summary, aliases, dates and severity are unavailable (the ID itself is a real OSV match).'));
+                    return li;
+                }
+                li.append(el('div', null, v.summary ? str(v.summary, 2000) : '(OSV record has no summary)'));
+                const sev = Array.isArray(v.severity) && v.severity.length
+                    ? v.severity.map((s) => (s && typeof s === 'object') ? str(String(s.type), 40) + ': ' + str(String(s.score), 200) : '').filter(Boolean).join('; ')
+                    : '';
+                li.append(el('div', 'sbom-vuln-meta', 'Severity: ' + (sev || 'not provided by OSV')));
+                const aliases = Array.isArray(v.aliases) ? v.aliases.filter((a) => typeof a === 'string').map((a) => str(a, 100)).join(', ') : '';
+                if (aliases) li.append(el('div', 'sbom-vuln-meta', 'Aliases: ' + aliases));
+                const dates = [];
+                if (typeof v.published === 'string') dates.push('Published ' + str(v.published, 40));
+                if (typeof v.modified === 'string') dates.push('Modified ' + str(v.modified, 40));
+                if (dates.length) li.append(el('div', 'sbom-vuln-meta', dates.join(' · ')));
+                return li;
+            }
+
+            function componentRow(c) {
+                const tr = el('tr');
+                const q = c.query && c.query.package ? c.query : null;
+                const name = q ? str(String(q.package.name), 300) : (typeof c.name === 'string' && c.name ? str(c.name, 300) : '(unnamed component)');
+                const version = q ? str(String(q.version), 100) : (typeof c.version === 'string' && c.version ? str(c.version, 100) : '—');
+                const nameTd = el('td', 'mono', name);
+                if (q && q.package.ecosystem) nameTd.append(el('span', 'sbom-eco', str(String(q.package.ecosystem), 40)));
+                tr.append(nameTd, el('td', 'mono', version));
+
+                const stateTd = el('td');
+                stateTd.append(el('span', 'sbom-badge ' + c.state, STATE_LABEL[c.state]));
+                if (c.state === 'vulnerable' && c.complete === false) {
+                    stateTd.append(document.createTextNode(' '), el('span', 'sbom-badge partial', 'list incomplete'));
+                }
+                tr.append(stateTd);
+
+                const vulnTd = el('td');
+                if (c.vulnerabilities.length) {
+                    const det = el('details');
+                    det.append(el('summary', null, c.vulnerabilities.length + (c.vulnerabilities.length === 1 ? ' vulnerability' : ' vulnerabilities')));
+                    const ul = el('ul', 'sbom-vulns');
+                    c.vulnerabilities.forEach((v) => ul.append(vulnItem(v)));
+                    det.append(ul);
+                    vulnTd.append(det);
+                    if (c.reason) vulnTd.append(el('div', 'sbom-reason', str(c.reason, 300)));
+                } else if (c.state === 'no-known-match') {
+                    vulnTd.append(el('span', 'sbom-reason', 'No OSV record returned for this version'));
+                } else {
+                    vulnTd.append(el('span', 'sbom-reason', str(c.reason, 300) || 'Not checked'));
+                }
+                tr.append(vulnTd);
+                return tr;
+            }
+
+            function renderResult(d) {
+                const root = $('sbom-result');
+                root.replaceChildren();
+                const cls = displayClass(d);
+                const n = d.counts;
+                const partial = d.components.filter((c) => c.state === 'vulnerable' && c.complete === false).length;
+                const unassessed = n.unscanned + n.error + partial;
+
+                const banner = el('div', 'sbom-banner ' + cls);
+                if (cls === 'vulnerable') {
+                    banner.append(el('div', 'sbom-verdict', 'VULNERABLE'),
+                        el('div', 'sbom-verdict-text', 'OSV returned known vulnerabilities for ' + n.vulnerable + ' of ' + n.total + ' component(s).' +
+                            (d.complete ? '' : ' The assessment is INCOMPLETE: other components may also be vulnerable.')));
+                } else if (cls === 'clean') {
+                    banner.append(el('div', 'sbom-verdict', 'NO KNOWN OSV MATCH (SCAN COMPLETE)'),
+                        el('div', 'sbom-verdict-text', 'OSV returned no record for any of the ' + n.total + ' component versions and every query completed. This does not prove the packages are safe.'));
+                } else {
+                    banner.append(el('div', 'sbom-verdict', 'INCOMPLETE — NOT CLEAN'),
+                        el('div', 'sbom-verdict-text', 'Some components could not be fully checked, so this scan cannot show that the SBOM is free of known vulnerabilities.'));
+                }
+                root.append(banner);
+
+                const stats = el('div', 'sbom-stats');
+                stats.append(stat('Components', n.total), stat('Vulnerable', n.vulnerable, 'vulnerable'),
+                    stat('No known match', n['no-known-match']), stat('Unscanned', n.unscanned, 'unscanned'),
+                    stat('Query errors', n.error, 'error'));
+                root.append(stats);
+
+                const facts = el('dl', 'sbom-facts');
+                const fact = (k, v) => facts.append(el('dt', null, k), el('dd', null, v));
+                fact('Scan completeness', d.complete ? 'Complete: every component was queried and fully answered'
+                    : 'Incomplete: ' + unassessed + ' component(s) not fully assessed');
+                fact('Vulnerability detail records', d.metadata_complete ? 'All retrieved'
+                    : d.metadata_missing + ' missing (IDs known; summary, dates and severity unavailable)');
+                if (typeof d.scanned_at === 'string') fact('Scanned at', str(d.scanned_at, 40));
+                if (typeof d.data_source === 'string') fact('Data source', str(d.data_source, 200));
+                root.append(facts);
+
+                const warns = [];
+                if (cls === 'vulnerable' && !d.complete) {
+                    warns.push('Assessment incomplete: ' + unassessed + ' component(s) were not fully assessed (unscanned: ' + n.unscanned +
+                        ', query errors: ' + n.error + ', partial vulnerability lists: ' + partial + '). The findings below are real OSV matches, but more may exist.');
+                }
+                if (n.unscanned > 0) warns.push('Unscanned components could not be checked at all, for example because they have no package URL or use an ecosystem this scanner does not support.');
+                if (n.error > 0) warns.push('Query errors mean OSV could not be reached or returned an unusable answer for those components. They are not treated as clean.');
+                if (!d.metadata_complete) warns.push(d.metadata_missing + ' vulnerability entr' + (d.metadata_missing === 1 ? 'y has' : 'ies have') +
+                    ' no OSV detail record. The IDs are shown, but nothing has been filled in for their summary, dates or severity.');
+                if (warns.length) {
+                    const ul = el('ul', 'sbom-warn');
+                    warns.forEach((w) => ul.append(el('li', null, w)));
+                    root.append(ul);
+                }
+
+                const wrap = el('div', 'sbom-table-wrap');
+                const table = el('table', 'sbom-table');
+                const head = el('tr');
+                ['Component', 'Version', 'State', 'Vulnerabilities / reason'].forEach((h) => { const th = el('th', null, h); th.scope = 'col'; head.append(th); });
+                const thead = el('thead'); thead.append(head);
+                const tbody = el('tbody');
+                d.components.map((c, i) => [c, i]).sort((a, b) => (STATE_ORDER[a[0].state] - STATE_ORDER[b[0].state]) || (a[1] - b[1]))
+                    .forEach((p) => tbody.append(componentRow(p[0])));
+                table.append(thead, tbody);
+                wrap.append(table);
+                root.append(wrap);
+                root.hidden = false;
+            }
+
+            // ---- scan ----
+            async function scan() {
+                if (inFlight || !selected) return;          // duplicate submissions are ignored
+                inFlight = true;
+                setBusy(true);
+                clearError();
+                clearResult();
+                startProgress();
+                const ctrl = new AbortController();
+                const timeout = setTimeout(() => ctrl.abort(), SCAN_TIMEOUT_MS);
+                try {
+                    const resp = await fetch('/sbom/scan', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: selected, signal: ctrl.signal, cache: 'no-store'
+                    });
+                    const raw = await resp.text();           // text first: error bodies are not guaranteed to be JSON
+                    let data = null;
+                    try { data = JSON.parse(raw); } catch (e) { data = null; }
+                    if (!resp.ok) { showError(httpMessage(resp.status, data)); return; }
+                    if (!validate(data)) {
+                        showError('The server returned an unexpected or inconsistent response, so no result is shown. This is not a clean result.');
+                        return;
+                    }
+                    renderResult(data);
+                } catch (e) {
+                    showError(e && e.name === 'AbortError'
+                        ? 'The browser stopped waiting after 5 minutes. The server may still be scanning; try again shortly. This is not a clean result.'
+                        : 'Could not reach the dashboard server, so there is no scan result. This is not a clean result.');
+                } finally {
+                    clearTimeout(timeout);
+                    inFlight = false;
+                    stopProgress();
+                    setBusy(false);
+                    updateEmpty();
+                }
+            }
+
+            $('sbom-open-btn').addEventListener('click', openModal);
+            $('sbom-close-btn').addEventListener('click', closeModal);
+            $('sbom-overlay').addEventListener('click', (e) => { if (e.target === $('sbom-overlay')) closeModal(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen()) closeModal(); });
+            $('sbom-file').addEventListener('change', onFile);
+            $('sbom-scan-btn').addEventListener('click', scan);
+        })();
   </script>
 </body>
 </html>

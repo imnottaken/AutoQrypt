@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
 import base64
+import hmac
 import os
 from common.logger import SecurityLogger
 from key_management.hsm import SimulatedHSM
@@ -45,14 +46,25 @@ class ReleaseUpload(BaseModel):
     manifest: dict
     chunks_base64: List[str]
 
+def _allowed_devices() -> set:
+    return {d.strip() for d in os.environ.get("OTA_ALLOWED_DEVICES", "VEH-1").split(",") if d.strip()}
+
+
 @app.post("/upload")
-def upload_release(data: ReleaseUpload):
+def upload_release(data: ReleaseUpload, x_upload_token: str = Header(default="")):
+    # Only the build pipeline may publish releases: the Director signs whatever is stored here.
+    # main.py generates OTA_UPLOAD_TOKEN per run; with no token configured, every upload is refused.
+    expected = os.environ.get("OTA_UPLOAD_TOKEN", "")
+    if not expected or not hmac.compare_digest(x_upload_token.encode(), expected.encode()):
+        raise HTTPException(status_code=403, detail="Upload not authorised")
     RELEASE_STORE["manifest"] = data.manifest
     RELEASE_STORE["chunks"] = [base64.b64decode(c) for c in data.chunks_base64]
     return {"status": "success", "message": f"Version {data.manifest['version']} uploaded."}
 
 @app.get("/manifest")
 def get_manifest(device_id: str = "VEH-1"):
+    if device_id not in _allowed_devices():  # the Director only authorises vehicles it manages
+        raise HTTPException(status_code=403, detail="Unknown device")
     if not RELEASE_STORE["manifest"]:
         raise HTTPException(status_code=404, detail="No release available")
 

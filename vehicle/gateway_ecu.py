@@ -5,7 +5,7 @@ from signing.authority import SigningAuthority, compute_image_digest
 from merkle.tree import MerkleTreeBuilder
 from vehicle.chunk_manager import ChunkManager
 from vehicle.installer import ECUInstaller
-from sbom.generator import SBOMGenerator
+from sbom.generator import SBOMGenerator, SBOMScanError
 import time
 import json
 import tracemalloc
@@ -217,7 +217,11 @@ class GatewayECU:
 
         # ---- PERF: Manifest Parsing Speed (SBOM scan) ----
         sbom_scan_start = time.perf_counter()
-        is_safe, violations = sbom_gen.verify_sbom(raw_sbom)
+        try:
+            is_safe, violations = sbom_gen.verify_sbom(raw_sbom)
+        except SBOMScanError as e:
+            # A scan that can't run is a rejection, never a pass
+            return self._abort(e.reason, e.reason.lower(), f"SBOM SCAN FAILED - {e}. Rejecting.", workflow_start)
         sbom_scan_end = time.perf_counter()
         self.perf["manifest_parsing_speed_ms"] = round((sbom_scan_end - sbom_scan_start) * 1000, 2)
         # ---- END PERF ----
@@ -349,12 +353,15 @@ class GatewayECU:
 
     def _emit_perf_report(self, workflow_start: float):
         """Emit all collected performance metrics as a single telemetry event."""
-        # Memory peak & Hardware Stack Watermark (ESP32-LX6 HIL Simulation)
+        # Python heap peak of this simulated gateway (tracemalloc). This simulation does not run on
+        # the ESP32, so it reports no stack or SRAM figures of its own; real ones come from the
+        # board's perf_report (firmware/main/main.c) and measurements/hil_results.json.
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
         self.perf["gateway_memory_peak_kb"] = round(peak / 1024, 2)
-        self.perf["stack_high_water_mark_bytes"] = 18640  # 18.2 KB inside 520 KB SRAM ESP32 budget
-        self.perf["sram_utilization_pct"] = "3.58% of 520 KB"
+        self.perf["esp32_reference"] = ("Not measured by this simulation. ESP32-D0WD-V3 (ESP-IDF 5.5.6, -Og): "
+                                        "ML-DSA-44 verify task stack peak 36,496 B = 6.85% of 520 KiB; "
+                                        "source measurements/hil_results.json")
         self.perf["active_partition_slot"] = self.installer.active_partition
         self.perf["pqt_hybrid_status"] = "ML-DSA-44 + Ed25519 (2FA Verified)" if self.hybrid_verified else "NOT VERIFIED (hybrid check failed or not reached)"
         

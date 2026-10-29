@@ -11,6 +11,38 @@ import os
 # matches execute, the deployment policy halts installation.
 # ---------------------------------------------------------
 
+SEVERITIES = ("LOW", "MEDIUM", "HIGH", "CRITICAL")
+BLOCKING_SEVERITIES = ("HIGH", "CRITICAL")
+
+
+def _cve_db_problem(db):
+    """None if `db` is {component: {version: {"cve_id": str, "severity": one of SEVERITIES}}}, else what is wrong.
+    Every entry is checked before any lookup, so a bad record can't crash the scan past the gate."""
+    if not isinstance(db, dict) or not db:
+        return "top level must be a non-empty {component: {version: entry}} mapping"
+    for name, versions in db.items():
+        if not isinstance(versions, dict) or not versions:
+            return f"{name!r}: expected a non-empty {{version: entry}} mapping"
+        for version, entry in versions.items():
+            if not version.strip():
+                return f"{name!r}: empty version key"
+            if not isinstance(entry, dict):
+                return f"{name!r} {version!r}: entry must be an object, got {type(entry).__name__}"
+            if not isinstance(entry.get("cve_id"), str) or not entry["cve_id"]:
+                return f"{name!r} {version!r}: missing cve_id"
+            if entry.get("severity") not in SEVERITIES:
+                return f"{name!r} {version!r}: severity {entry.get('severity')!r} not one of {SEVERITIES}"
+    return None
+
+
+class SBOMScanError(ValueError):
+    """The SBOM could not be scanned reliably; `reason` is the rejection code for the gateway."""
+
+    def __init__(self, reason: str, message: str):
+        super().__init__(message)
+        self.reason = reason
+
+
 class SBOMGenerator:
     def __init__(self):
         self.cve_db_path = os.path.join(os.path.dirname(__file__), "cve_database.json")
@@ -59,22 +91,34 @@ class SBOMGenerator:
         """
         Parses components against cve_database.json
         Returns: (is_valid: bool, cve_violations: list)
+        Raises SBOMScanError when the scan cannot be trusted (no usable CVE database, or an
+        SBOM without a well-formed component list), so the caller rejects instead of passing.
         """
-        if not os.path.exists(self.cve_db_path):
-            return True, []
+        try:
+            with open(self.cve_db_path, "r") as f:
+                cve_db = json.load(f)
+        except (OSError, ValueError) as e:
+            raise SBOMScanError("SBOM_SCAN_UNAVAILABLE", f"CVE database unavailable: {e}") from e
+        problem = _cve_db_problem(cve_db)
+        if problem:
+            raise SBOMScanError("SBOM_SCAN_UNAVAILABLE", f"CVE database malformed: {problem}")
 
-        with open(self.cve_db_path, "r") as f:
-            cve_db = json.load(f)
+        components = sbom_dict.get("components")
+        if not isinstance(components, list) or not components:
+            raise SBOMScanError("SBOM_MALFORMED", "SBOM has no component list")
+        for comp in components:
+            if not (isinstance(comp, dict) and isinstance(comp.get("name"), str) and isinstance(comp.get("version"), str)):
+                raise SBOMScanError("SBOM_MALFORMED", f"SBOM component without string name/version: {comp!r:.80}")
 
         violations = []
 
-        for comp in sbom_dict.get("components", []):
+        for comp in components:
             name = comp.get("name")
             version = comp.get("version")
 
             if name in cve_db and version in cve_db[name]:
                 cve_meta = cve_db[name][version]
-                if cve_meta and cve_meta.get("severity") in ["HIGH", "CRITICAL"]:
+                if cve_meta["severity"] in BLOCKING_SEVERITIES:
                     violations.append({
                         "name": name,
                         "version": version,

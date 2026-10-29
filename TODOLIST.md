@@ -209,7 +209,7 @@ When presenting to judges:
 2. **Open Dashboard**: Navigate to `http://<HOST_IP>:7001` on the screen.
 3. **Trigger Update**: Send update from cloud server to ESP32.
 4. **Click "Measured" Button**: Open the telemetry modal on the dashboard to display:
-   - Peak stack usage on silicon (`18,640 bytes` / `3.58% of SRAM`).
+   - Peak stack usage on silicon: ML-DSA-44 verify task `36,496 bytes` (`6.85%` of 520 KiB), measured on ESP32-D0WD-V3, debug `-Og` build (`measurements/hil_results.json`).
    - Clock cycle latency graph.
    - Dual-bank partition transition from `SLOT_A` $\to$ `SLOT_B`.
 5. **Demonstrate Rollback Defense**: Replay an old manifest over serial $\to$ show the ESP32 reject it instantly on NVS monotonic check.

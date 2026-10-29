@@ -1,10 +1,10 @@
 import argparse
 import sys
-import subprocess
 import os
 import shutil
 import requests
 import base64
+import secrets
 import time
 
 # Ensure imports work dynamically
@@ -17,6 +17,7 @@ from key_management.hsm import SimulatedHSM
 from signing.authority import SigningAuthority, compute_image_digest
 from vehicle.gateway_ecu import GatewayECU
 from attacker.mitm import MITMAttacker
+from common.proc import port_in_use, popen_detachable, kill_process_tree
 
 # main.py is the Orchestrator entry point for OTA server or vehicle runtime.
 # In production, HMAC Keys and Server Certificates are securely provisioned out-of-band.
@@ -47,34 +48,21 @@ PINNED_DIRECTOR_PUB_CERT = DIRECTOR_HSM.get_public_key_bytes()
 
 def run_server_node():
     print(f"[*] Starting OTA Server & Dashboard on {OTA_SERVER_HOST}...")
-    env = os.environ.copy()
     # The OTA server plays the Director role and needs to sign per-device
     # instructions itself; hand it the seed via env rather than hardcoding it
     # in server/ota_server.py, since that's the process actually exposed to
     # the network.
-    env["DIRECTOR_HSM_SEED_B64"] = base64.b64encode(DIRECTOR_HSM_SEED).decode("utf-8")
+    director_seed_b64 = base64.b64encode(DIRECTOR_HSM_SEED).decode("utf-8")
+    # Per-run secret that authorises this pipeline's /upload; the Director signs whatever is uploaded.
+    upload_token = secrets.token_urlsafe(32)
+    ota_env, dash_env = _server_envs(os.environ, upload_token, director_seed_b64)
 
-    # Fallback safety net only: callers (demo scripts) now use
-    # common.proc.kill_process_tree() to clean up the whole process tree on
-    # exit instead of relying on this. Kept in case something outside this
-    # project's own scripts (e.g. Ctrl+C during manual `--server` use) leaves
-    # a port bound from a previous run.
-    for port in [OTA_SERVER_PORT, DASHBOARD_PORT]:
-        try:
-            if sys.platform == "win32":
-                subprocess.run(
-                    ["powershell", "-Command", 
-                     f"(Get-NetTCPConnection -LocalPort {port} -ErrorAction SilentlyContinue).OwningProcess | ForEach-Object {{ Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }}"],
-                    capture_output=True, timeout=5
-                )
-            else:
-                subprocess.run(
-                    f"lsof -ti :{port} | xargs kill -9",
-                    shell=True, capture_output=True, timeout=5
-                )
-        except Exception:
-            pass
-    time.sleep(1)
+    # Never kill whatever holds the ports: it may be another program, or a server still in use.
+    busy = [(h, p) for h, p in ((OTA_SERVER_HOST, OTA_SERVER_PORT), (DASHBOARD_HOST, DASHBOARD_PORT)) if port_in_use(h, p)]
+    if busy:
+        print("ERROR: already in use: " + ", ".join(f"{h}:{p}" for h, p in busy)
+              + ". Stop that process (or the previous AutoQrypt server) and try again.", file=sys.stderr)
+        sys.exit(1)
 
     # Each demo is meant to be self-contained (README: "each demo can also be
     # run standalone"). Vehicle-side persisted state (chunk resume progress,
@@ -91,10 +79,10 @@ def run_server_node():
     ota_cmd = [sys.executable, "-m", "uvicorn", "server.ota_server:app", "--host", OTA_SERVER_HOST, "--port", str(OTA_SERVER_PORT), "--loop", "asyncio"]
     dash_cmd = [sys.executable, "-m", "uvicorn", "dashboard.app:app", "--host", DASHBOARD_HOST, "--port", str(DASHBOARD_PORT), "--loop", "asyncio"]
     
-    ota_p = subprocess.Popen(ota_cmd, env=env)
-    dash_p = subprocess.Popen(dash_cmd, env=env)
-
+    ota_p = dash_p = None
     try:
+        ota_p = popen_detachable(ota_cmd, env=ota_env)
+        dash_p = popen_detachable(dash_cmd, env=dash_env)
         print("\n[+] Build Pipeline: Compiling and Signing Firmware...")
         
         # Scenario 3: 10-chunk firmware OTA requirement
@@ -113,28 +101,48 @@ def run_server_node():
         #chunks_b64 is responsible for encoding binary chunks into base64 strings so that they can be safely transmitted in JSON format over HTTP
         #we convert the binary data into a text representation that can be included in the JSON payload sent to the OTA server.
         chunks_b64 = [base64.b64encode(c).decode("utf-8") for c in chunks]
-        # The OTA server process may still be starting: retry (upload is idempotent) until it answers,
-        # but give up if it died or the deadline passes, so a failed startup cannot hang or half-run.
-        upload_deadline = time.monotonic() + 90
-        while True:
-            try:
-                requests.post(f"http://{OTA_SERVER_HOST}:{OTA_SERVER_PORT}/upload", json={
-                    "manifest": manifest.model_dump(),
-                    "chunks_base64": chunks_b64
-                }, timeout=30).raise_for_status()
-                break
-            except requests.RequestException:
-                if ota_p.poll() is not None or time.monotonic() > upload_deadline:
-                    raise
-                time.sleep(0.5)
-        
+        _upload_release(f"http://{OTA_SERVER_HOST}:{OTA_SERVER_PORT}/upload",
+                        {"manifest": manifest.model_dump(), "chunks_base64": chunks_b64}, upload_token, ota_p)
+
         print("\n[!] Servers are live. Run vehicular node in another terminal via --vehicle.")
         ota_p.wait()
     except KeyboardInterrupt:
         pass
     finally:
-        ota_p.terminate()
-        dash_p.terminate()
+        # Whole trees (with the .venv launcher on Windows, uvicorn is a grandchild), and only
+        # the two this run started; nothing is looked up by port or name.
+        for p in (ota_p, dash_p):
+            if p is not None:
+                kill_process_tree(p)
+
+
+SERVER_ONLY_SECRETS = ("OTA_UPLOAD_TOKEN", "DIRECTOR_HSM_SEED_B64")
+
+
+def _server_envs(base_env, upload_token, director_seed_b64):
+    """(OTA server env, dashboard env). Only the OTA server checks uploads and signs as the
+    Director, so only it gets the token and the signing seed. The dashboard's copy also drops
+    both if they were inherited from the caller's environment (and so does anything it spawns)."""
+    dash_env = {k: v for k, v in base_env.items() if k not in SERVER_ONLY_SECRETS}
+    return {**dash_env, "OTA_UPLOAD_TOKEN": upload_token, "DIRECTOR_HSM_SEED_B64": director_seed_b64}, dash_env
+
+
+def _upload_release(url, payload, upload_token, server_proc, deadline_s=90):
+    """POST the release. Retries only while the server may still be starting (connection errors,
+    timeouts, 5xx) and it is still running. A 4xx such as 403 (token) or 422 (body) is final."""
+    deadline = time.monotonic() + deadline_s
+    while True:
+        try:
+            resp = requests.post(url, json=payload, headers={"X-Upload-Token": upload_token}, timeout=30)
+            if resp.status_code < 500:
+                resp.raise_for_status()  # 4xx raises here and is not retried
+                return resp
+            error = requests.HTTPError(f"{resp.status_code} Server Error for {url}", response=resp)
+        except (requests.ConnectionError, requests.Timeout) as e:
+            error = e
+        if server_proc.poll() is not None or time.monotonic() > deadline:
+            raise error
+        time.sleep(0.5)
 
 
 def run_vehicle_node():

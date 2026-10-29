@@ -51,7 +51,7 @@ def test_qpiai_qcloud():
     try:
         receipt = engine.generate_qrng_seed(n_qubits=8, shots=1024)
     finally:
-        if prior_receipt is not None and ("pytest" in sys.modules or "unittest" in sys.modules):
+        if prior_receipt is not None:
             with open(receipt_file, "wb") as f:
                 f.write(prior_receipt)
 
@@ -86,10 +86,22 @@ def test_qpiai_qcloud():
     print(f"\n[✓] QpiAI QCloud Artifacts Generated:")
     print(f"    - OpenQASM 2.0 Circuit: {qasm_file} (Ready for 'Circuits' UI tab)")
     print(f"    - Verified Receipt:     {receipt_file} (Ready for 'Datasets' UI tab)")
+    if receipt.cloud_circuit_id:
+        print(f"    - Synced QCloud ID:     {receipt.cloud_circuit_id} (Experiment: {receipt.cloud_experiment_id})")
+
+    # Execute Shor's Algorithm QFT Threat Proof on QpiAI-QSV-Local
+    print("\n[+] Executing qpiai_quantum.ShorsAlgorithm Threat Proof on QpiAI-QSV-Local...")
+    shor_receipt = engine.run_shor_rsa_threat_demo(N=15, a=7, shots=256)
+    print(f"    - Target RSA Modulus:   N = {shor_receipt.target_rsa_modulus} (a = {shor_receipt.coprime_base_a})")
+    print(f"    - Quantum Period Found: r = {shor_receipt.period_r} ({shor_receipt.total_qubits}-qubit QFT circuit)")
+    print(f"    - Recovered Factors:    p = {shor_receipt.recovered_factors[0]}, q = {shor_receipt.recovered_factors[1]} ({shor_receipt.execution_ms} ms)")
+    if shor_receipt.cloud_circuit_id:
+        print(f"    - Synced QCloud ID:     {shor_receipt.cloud_circuit_id}")
 
     assert receipt.entropy_health_pass, "QpiAI Entropy health check failed!"
     assert len(pk) == 1312, f"Unexpected ML-DSA-44 pk length: {len(pk)}"
     assert is_valid, "ML-DSA-44 signature verification failed!"
+    assert shor_receipt.recovered_factors == [3, 5], f"Shor factoring failed: {shor_receipt.recovered_factors}"
 
 
 def test_bloq_platform():
@@ -111,9 +123,14 @@ def test_bloq_platform():
     print(f"    - Linear Coefficients Count:     {len(qubo['linear_coefficients'])}")
     print(f"    - Quadratic Constraint Terms:    {len(qubo['quadratic_coefficients'])}")
 
-    # Optimize ECU Mappings
-    print("\n[+] Solving Constrained Optimization for Automotive Fleet Tiers...")
+    # Optimize ECU Mappings via QpiAI QAOASolver on QpiAI-QSV-Local
+    print("\n[+] Solving Constrained Optimization via qpiai_quantum.QAOASolver (QpiAI-QSV-Local)...")
     assignments = optimizer.optimize_all_ecus()
+    qaoa_sum = optimizer.last_qaoa_summary
+    print(f"    - Quantum Solver:       {qaoa_sum.get('solver')} ({qaoa_sum.get('device_name')})")
+    print(f"    - Circuit Evaluations:  {qaoa_sum.get('total_circuit_evaluations')} statevector evaluations ({qaoa_sum.get('execution_ms')} ms)")
+    if qaoa_sum.get("cloud_circuit_id"):
+        print(f"    - Synced QCloud ID:     {qaoa_sum.get('cloud_circuit_id')}")
 
     # Pretty Terminal Table
     print("\n" + "-" * 115)

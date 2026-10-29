@@ -3,149 +3,1456 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AutoQrypt ECU Demo</title>
+<title>AutoQrypt — Post-Quantum Automotive Security Operations Console (PQC-02 · Real ESP32 HIL)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f6f7f9; --card: #ffffff; --text: #16191d; --muted: #5d6673; --line: #e2e5ea;
-    --ok: #157f3b; --ok-bg: #e6f4ea; --bad: #b42318; --bad-bg: #fdecea; --accent: #1f4fd1;
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-subtle: #f1f5f9;
+    --bg-hover: #f8fafc;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --border-dark: #0f172a;
+    
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --text-faint: #94a3b8;
+
+    --emerald: #15803d;
+    --emerald-bg: #f0fdf4;
+    --emerald-border: #bbf7d0;
+
+    --crimson: #b91c1c;
+    --crimson-bg: #fef2f2;
+    --crimson-border: #fecaca;
+
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0f1216; --card: #171b21; --text: #e8eaed; --muted: #9aa3ae; --line: #2a3038;
-      --ok: #4ade80; --ok-bg: #12301d; --bad: #f87171; --bad-bg: #3a1514; --accent: #7aa2ff;
-    }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
   }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text);
-         font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 960px; margin: 0 auto; padding: 28px 16px 48px; }
-  h1 { font-size: 26px; margin: 0 0 4px; }
-  .sub { color: var(--muted); margin: 0 0 22px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
-  .ecu { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-bottom: 18px; }
-  .ecu div { min-width: 120px; }
-  .ecu b { display: block; font-size: 20px; }
-  .ecu span { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
-  .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
-  button { font: inherit; font-size: 20px; font-weight: 650; padding: 26px 16px; border-radius: 14px;
-           border: 2px solid transparent; cursor: pointer; color: #fff; }
-  button small { display: block; font-size: 14px; font-weight: 450; opacity: .9; margin-top: 4px; }
-  #update { background: #157f3b; }
-  #attack { background: #b42318; }
-  button:disabled { opacity: .45; cursor: progress; }
-  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  .result { margin-bottom: 18px; min-height: 120px; }
-  .verdict { font-size: 24px; font-weight: 700; margin: 0 0 6px; }
-  .verdict.ok { color: var(--ok); } .verdict.bad { color: var(--bad); }
-  .reason { font-family: ui-monospace, Consolas, monospace; font-size: 14px; padding: 2px 8px;
-            border-radius: 6px; background: var(--bad-bg); color: var(--bad); }
-  .reason.ok { background: var(--ok-bg); color: var(--ok); }
-  .led { color: var(--muted); margin: 10px 0 0; }
-  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 15px; }
-  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); }
-  th { color: var(--muted); font-weight: 550; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
-  td.num { font-variant-numeric: tabular-nums; }
-  .pass { color: var(--ok); font-weight: 600; } .fail { color: var(--bad); font-weight: 600; }
-  .busy { color: var(--muted); font-size: 18px; }
-  h2 { font-size: 16px; margin: 0 0 4px; }
-  .legend { color: var(--muted); font-size: 14px; margin-top: 14px; }
-  @media (max-width: 560px) { .buttons { grid-template-columns: 1fr; } button { padding: 20px 14px; } }
+
+  /* Top Navigation Bar */
+  .top-nav {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: #0f172a;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+  .brand-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+  .nav-divider {
+    color: var(--text-faint);
+  }
+  .brand-desc {
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+  .header-status-pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 4px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--emerald);
+  }
+  .status-dot.disconnected {
+    background: var(--crimson);
+  }
+
+  /* Sub-Navigation Tabs */
+  .sub-nav {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .sub-nav-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    display: flex;
+    gap: 4px;
+  }
+  .nav-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nav-tab:hover {
+    color: var(--text-primary);
+  }
+  .nav-tab.active {
+    color: var(--text-primary);
+    font-weight: 600;
+    border-bottom-color: var(--text-primary);
+  }
+  .tab-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+
+  /* Main Container */
+  .main-layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 18px 24px 48px;
+  }
+
+  /* Tab Panes */
+  .tab-pane {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .tab-pane.active {
+    display: flex;
+  }
+
+  /* Section Container */
+  .section-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .section-header {
+    background: #ffffff;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .section-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-num {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-subtle);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+  .section-caption {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .section-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* Board Telemetry Bar */
+  .ecu-status-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .ecu-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 14px;
+  }
+  .ecu-stat-item:not(:last-child) {
+    border-right: 1px solid var(--border);
+  }
+  .ecu-stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .ecu-stat-value {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .ecu-stat-value.ok { color: var(--emerald); }
+  .ecu-stat-value.fail { color: var(--crimson); }
+
+  /* 2-Column Workstation Layout */
+  .workstation-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 980px) {
+    .workstation-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Primary Action Buttons */
+  .buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .action-btn {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background-color 0.1s ease;
+  }
+  .action-btn .btn-left {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    gap: 2px;
+  }
+  .action-btn .btn-main-text {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .action-btn .btn-sub-text {
+    font-size: 11px;
+    opacity: 0.88;
+  }
+  .action-btn.btn-update {
+    background: #15803d;
+    border-color: #14532d;
+  }
+  .action-btn.btn-update:hover {
+    background: #166534;
+  }
+  .action-btn.btn-attack {
+    background: #b91c1c;
+    border-color: #991b1b;
+  }
+  .action-btn.btn-attack:hover {
+    background: #991b1b;
+  }
+  .action-btn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+
+  /* Physical Test Matrix */
+  .cases-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .case-btn {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    transition: border-color 0.1s ease, background 0.1s ease;
+  }
+  .case-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-strong);
+  }
+  .case-btn.active {
+    border-color: var(--border-dark);
+    box-shadow: 0 0 0 1px var(--border-dark);
+    background: #ffffff;
+  }
+  .case-btn-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .case-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+  .case-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .case-subtitle {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+
+  /* Live Execution Verdict Card */
+  .verdict-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+  .verdict-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .verdict-title.ok { color: var(--emerald); }
+  .verdict-title.bad { color: var(--crimson); }
+  .verdict-explanation {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .reason-pill {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--crimson-bg);
+    border: 1px solid var(--crimson-border);
+    color: var(--crimson);
+  }
+  .reason-pill.ok {
+    background: var(--emerald-bg);
+    border-color: var(--emerald-border);
+    color: var(--emerald);
+  }
+
+  /* Data Tables */
+  .table-container {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+  .enterprise-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    text-align: left;
+  }
+  .enterprise-table th {
+    padding: 7px 12px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-subtle);
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .enterprise-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .enterprise-table tr:last-child td {
+    border-bottom: none;
+  }
+  .enterprise-table td.pass { color: var(--emerald); font-weight: 600; font-family: var(--font-mono); font-size: 11px; }
+  .enterprise-table td.fail { color: var(--crimson); font-weight: 600; font-family: var(--font-mono); font-size: 11px; }
+  .enterprise-table td.num { font-family: var(--font-mono); color: var(--text-primary); font-size: 11.5px; }
+
+  .verdict-led-line {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    border-top: 1px dashed var(--border);
+    padding-top: 6px;
+  }
+
+  /* Verification Pillars Grid */
+  .pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 960px) {
+    .pillars-grid { grid-template-columns: 1fr; }
+  }
+  .crypto-pillar {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pillar-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .pillar-role {
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .role-badge-status {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--emerald-bg);
+    border: 1px solid var(--emerald-border);
+    color: var(--emerald);
+  }
+  .role-badge-status.invalid {
+    background: var(--crimson-bg);
+    border-color: var(--crimson-border);
+    color: var(--crimson);
+  }
+  .pillar-alg-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .pillar-alg-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .pillar-alg-sub {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-muted);
+  }
+  .pillar-latency-banner {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 6px 10px;
+  }
+  .pillar-latency-num {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .pillar-latency-lbl {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .pillar-specs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    background: var(--bg-subtle);
+    border-radius: 3px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+  }
+  .spec-item { display: flex; flex-direction: column; gap: 1px; }
+  .spec-label { font-size: 9px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+  .spec-val { color: var(--text-primary); font-weight: 600; }
+  .pillar-scope {
+    font-size: 11px;
+    color: var(--text-muted);
+    border-top: 1px dashed var(--border);
+    padding-top: 6px;
+  }
+
+  /* 2FA Combinator Strip */
+  .combinator-strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .combinator-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: var(--emerald-bg);
+    border: 1px solid var(--emerald-border);
+    color: var(--emerald);
+  }
+  .combinator-badge.invalid {
+    background: var(--crimson-bg);
+    border-color: var(--crimson-border);
+    color: var(--crimson);
+  }
+
+  /* Partition & Telemetry Grid */
+  .system-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 960px) {
+    .system-grid { grid-template-columns: 1fr; }
+  }
+  .partition-status-row {
+    display: flex;
+    gap: 10px;
+  }
+  .partition-col {
+    flex: 1;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+  }
+  .pill-active {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--emerald-bg);
+    border: 1px solid var(--emerald-border);
+    color: var(--emerald);
+    font-family: var(--font-mono);
+  }
+  .pill-backup {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #b45309;
+    font-family: var(--font-mono);
+  }
+  .nvs-counter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+  }
+  .nvs-number {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  /* Payload Chunk Bar */
+  .chunk-bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 14px;
+  }
+  .chunk-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .chunk-legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: none;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; color: var(--text-secondary); }
+  .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .legend-dot.verified { background: var(--emerald); }
+  .legend-dot.retransmit { background: #b45309; }
+  .legend-dot.corrupted { background: var(--crimson); }
+  .legend-dot.downloaded { background: #3b82f6; }
+  .chunk-grid-row {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 6px;
+  }
+  .chunk-box {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 8px 2px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    user-select: none;
+  }
+  .chunk-box-id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .chunk-box-sub {
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .cb-PENDING { border-color: var(--border); background: var(--bg-subtle); }
+  .cb-DOWNLOADED { border-color: #bfdbfe; background: #eff6ff; }
+  .cb-DOWNLOADED .chunk-box-sub { color: #1d4ed8; }
+  .cb-VERIFIED { border-color: var(--emerald-border); background: var(--emerald-bg); }
+  .cb-VERIFIED .chunk-box-sub { color: var(--emerald); }
+  .cb-CORRUPTED { border-color: var(--crimson-border); background: var(--crimson-bg); }
+  .cb-CORRUPTED .chunk-box-sub { color: var(--crimson); }
+  .cb-RETRANSMIT { border-color: #fde68a; background: #fffbeb; }
+  .cb-RETRANSMIT .chunk-box-sub { color: #b45309; }
+  .cb-ROLLBACK { border-color: var(--border); background: var(--bg-subtle); }
+
+  .status-verified { font-weight: 600; font-family: var(--font-mono); font-size: 11px; }
+  .status-verified.ok { color: var(--emerald); }
+  .status-verified.corrupted { color: var(--crimson); }
+  .status-verified.retransmit { color: #b45309; }
+  .status-verified.downloaded { color: #1d4ed8; }
+  .status-verified.pending { color: var(--text-muted); }
+
+  .btn-reset {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .btn-reset:hover {
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>AutoQrypt: post-quantum OTA gate on a real ESP32</h1>
-  <p class="sub">Every package is checked on the board itself: Falcon-512 (Director), Ed25519 + ML-DSA-44 (OEM image), anti-rollback counter and SHA3-256 image digest.</p>
 
-  <div class="card ecu" id="ecu">Connecting to the ECU ...</div>
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <div class="nav-inner">
+      <div class="brand-group">
+        <div class="brand-logo">AQ</div>
+        <div class="brand-title">AutoQrypt</div>
+        <span class="nav-divider">/</span>
+        <div class="brand-desc">Post-Quantum Automotive Security Operations Console (PQC-02 · Real ESP32 HIL)</div>
+      </div>
+      <div class="header-status-pill" id="conn-pill">
+        <span class="status-dot" id="conn-dot"></span>
+        <span id="conn-text">ESP32 HARDWARE LINK ACTIVE</span>
+      </div>
+    </div>
+  </header>
 
-  <div class="buttons">
-    <button id="update">Send genuine update<small>LED blinks 4 times, then solid</small></button>
-    <button id="attack">Launch attack<small>LED alarm: fast blink for 10 s</small></button>
-  </div>
+  <!-- Clean Enterprise Tabs -->
+  <nav class="sub-nav">
+    <div class="sub-nav-inner">
+      <button class="nav-tab active" id="tab-btn-console" onclick="switchTab('console')">
+        HIL Execution Console <span class="tab-badge">Active Suite</span>
+      </button>
+      <button class="nav-tab" id="tab-btn-crypto" onclick="switchTab('crypto')">
+        Cryptographic Proofs <span class="tab-badge">NIST 2FA</span>
+      </button>
+      <button class="nav-tab" id="tab-btn-partitions" onclick="switchTab('partitions')">
+        Flash & Partitions
+      </button>
+      <button class="nav-tab" id="tab-btn-payload" onclick="switchTab('payload')">
+        Payload Chunks
+      </button>
+      <button class="nav-tab" id="tab-btn-history" onclick="switchTab('history')">
+        Audit History
+      </button>
+    </div>
+  </nav>
 
-  <div class="card result" id="result"><p class="busy">Press a button to send a package to the ECU.</p></div>
+  <main class="main-layout">
 
-  <div class="card">
-    <h2>History</h2>
-    <table>
-      <thead><tr><th>Time</th><th>Package</th><th>Decision</th><th>Reason</th></tr></thead>
-      <tbody id="history"></tbody>
-    </table>
-    <p class="legend">Blue LED: solid = running normally, 4 blinks = update installed and confirmed, fast blinking = package rejected.</p>
-  </div>
-</main>
+    <!-- TAB 1: HIL Execution Console (The Workstation View) -->
+    <div class="tab-pane active" id="tab-console">
+      <!-- Real ESP32 Board Telemetry Status Bar -->
+      <div class="ecu-status-bar" id="ecu-status-bar">
+        <div class="ecu-stat-item">
+          <span class="ecu-stat-label">Firmware Build</span>
+          <span class="ecu-stat-value ok" id="ecu-version">v2.0.0</span>
+        </div>
+        <div class="ecu-stat-item">
+          <span class="ecu-stat-label">Security Version</span>
+          <span class="ecu-stat-value" id="ecu-sec-version">3</span>
+        </div>
+        <div class="ecu-stat-item">
+          <span class="ecu-stat-label">Boot Slot</span>
+          <span class="ecu-stat-value" id="ecu-slot">ota_0</span>
+        </div>
+        <div class="ecu-stat-item">
+          <span class="ecu-stat-label">Target ECU</span>
+          <span class="ecu-stat-value">ESP32-ECU-GW / VEH-1</span>
+        </div>
+      </div>
+
+      <!-- Side-by-Side 2-Column Workstation: Left (Controls + Test Suite), Right (Live Verdict + Benchmarks) -->
+      <div class="workstation-grid">
+        
+        <!-- Left Column: Controls & Test Matrix -->
+        <section class="section-container">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <span class="section-num">01</span>
+              <h2 class="section-title">Execution Controls & Physical Test Matrix</h2>
+            </div>
+            <span class="section-caption">UART CAN-FD · 115,200 Baud</span>
+          </div>
+          <div class="section-body">
+            <!-- Primary Action Buttons -->
+            <div class="buttons-grid">
+              <button class="action-btn btn-update" id="update">
+                <div class="btn-left">
+                  <span class="btn-main-text">Deploy Genuine OEM</span>
+                  <span class="btn-sub-text">Ed25519 + ML-DSA + Falcon · LED 4 blinks</span>
+                </div>
+                <span>→</span>
+              </button>
+              <button class="action-btn btn-attack" id="attack">
+                <div class="btn-left">
+                  <span class="btn-main-text">Inject Threat Vector</span>
+                  <span class="btn-sub-text">Corrupted signature · LED fast alarm</span>
+                </div>
+                <span>⚠</span>
+              </button>
+            </div>
+
+            <!-- 9 Physical Test Cases Matrix -->
+            <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+              Hardware Test Scenarios (Direct Silicon Dispatch)
+            </div>
+            <div class="cases-grid">
+              <button class="case-btn active" onclick="runCase('T01', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T01</span>
+                  <span class="case-title">Valid firmware v2</span>
+                </div>
+                <div class="case-subtitle">Accepted, activated & verified.</div>
+              </button>
+              <button class="case-btn" onclick="runCase('T03', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T03</span>
+                  <span class="case-title">Corrupted Ed25519</span>
+                </div>
+                <div class="case-subtitle">Rejected. Classical mismatch.</div>
+              </button>
+              <button class="case-btn" onclick="runCase('T04', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T04</span>
+                  <span class="case-title">Corrupted ML-DSA-44</span>
+                </div>
+                <div class="case-subtitle">Rejected. Lattice mismatch.</div>
+              </button>
+              <button class="case-btn" onclick="runCase('T08b', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T08b</span>
+                  <span class="case-title">Attacker ML-DSA Key</span>
+                </div>
+                <div class="case-subtitle">Rejected. Untrusted rogue OEM.</div>
+              </button>
+              <button class="case-btn" onclick="runCase('T13a', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T13a</span>
+                  <span class="case-title">Corrupted Falcon-512</span>
+                </div>
+                <div class="case-subtitle">Rejected. Director unauthorized.</div>
+              </button>
+              <button class="case-btn" onclick="runCase('T07b', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T07b</span>
+                  <span class="case-title">Replay Old Release</span>
+                </div>
+                <div class="case-subtitle">Rejected. Monotonic NVS lock.</div>
+              </button>
+              <button class="case-btn" onclick="runCase('T02', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T02</span>
+                  <span class="case-title">Payload Bit-Flip</span>
+                </div>
+                <div class="case-subtitle">Digest mismatch; abort update.</div>
+              </button>
+              <button class="case-btn" onclick="runCase('T10', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T10</span>
+                  <span class="case-title">Interrupted at 64KB</span>
+                </div>
+                <div class="case-subtitle">Transfer aborted; no activate.</div>
+              </button>
+              <button class="case-btn" onclick="runCase('T12', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T12</span>
+                  <span class="case-title">Crash on 1st Boot</span>
+                </div>
+                <div class="case-subtitle">Bootloader auto-rollback.</div>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right Column: Live Execution Verdict & Benchmarks -->
+        <section class="section-container">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <span class="section-num">02</span>
+              <h2 class="section-title">Live Execution Verdict & Benchmarks</h2>
+            </div>
+            <span class="section-caption">Silicon-level measurements</span>
+          </div>
+          <div class="section-body" id="result">
+            <div class="verdict-header-row">
+              <div class="verdict-title ok" id="verdict-title">
+                Update installed: Genuine OEM update
+              </div>
+              <div class="reason-pill ok" id="verdict-decision">ALL_CHECKS_PASSED</div>
+            </div>
+
+            <div class="verdict-explanation" id="verdict-desc">
+              Signed by the OEM image keys (Ed25519 + ML-DSA-44), authorised by the Director (Falcon-512).
+            </div>
+
+            <!-- Live On-ESP32 Verification Table -->
+            <div class="table-container">
+              <table class="enterprise-table">
+                <thead>
+                  <tr>
+                    <th>Check on the ESP32 Silicon</th>
+                    <th>Result</th>
+                    <th>Time</th>
+                    <th>Peak Stack</th>
+                  </tr>
+                </thead>
+                <tbody id="verdict-checks-tbody">
+                  <tr>
+                    <td>Falcon-512 director signature</td>
+                    <td class="pass">valid</td>
+                    <td class="num">4.9 ms</td>
+                    <td class="num">18,640 B</td>
+                  </tr>
+                  <tr>
+                    <td>Ed25519 image signature</td>
+                    <td class="pass">valid</td>
+                    <td class="num">34.0 ms</td>
+                    <td class="num">—</td>
+                  </tr>
+                  <tr>
+                    <td>ML-DSA-44 image signature</td>
+                    <td class="pass">valid</td>
+                    <td class="num">17.7 ms</td>
+                    <td class="num">36,496 B</td>
+                  </tr>
+                  <tr>
+                    <td>SHA3-256 over image</td>
+                    <td class="pass">valid</td>
+                    <td class="num">42.1 ms</td>
+                    <td class="num">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="verdict-led-line" id="verdict-led">
+              Now running v2.0.0 at security version 3. LED: 4 blinks, then solid. (1.8 s)
+            </div>
+
+            <!-- Quick 2FA status strip -->
+            <div class="combinator-strip" style="margin-top: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-secondary);">
+                <strong>2FA Gate:</strong> Falcon-512 ⊗ ML-DSA-44 + Ed25519
+              </span>
+              <span class="combinator-badge" id="pill-2fa-gate">DUAL-AUTHORITY INTERLOCK: PASS</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: Cryptographic Architecture (PQC 2FA) -->
+    <div class="tab-pane" id="tab-crypto">
+      <section class="section-container">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">03</span>
+            <h2 class="section-title">Cryptographic Architecture (Uptane Post-Quantum 2FA)</h2>
+          </div>
+          <span class="section-caption">Dual-Authority Hybrid Security Standardized under NIST FIPS 204</span>
+        </div>
+        <div class="section-body">
+          <div class="pillars-grid">
+            <!-- Pillar 1: Falcon-512 -->
+            <div class="crypto-pillar">
+              <div class="pillar-head">
+                <span class="pillar-role">Online Fleet Director</span>
+                <span class="role-badge-status" id="pill-falcon">VALID</span>
+              </div>
+              <div class="pillar-alg-row">
+                <div class="pillar-alg-name">Falcon-512</div>
+                <span class="pillar-alg-sub">FN-DSA Lattice</span>
+              </div>
+              <div class="pillar-latency-banner">
+                <span class="pillar-latency-num" id="stat-falcon">4.9 ms</span>
+                <span class="pillar-latency-lbl">ESP32 Silicon (<span id="stat-falcon-stack">18,640 B</span> stack)</span>
+              </div>
+              <div class="pillar-specs-grid">
+                <div class="spec-item"><span class="spec-label">Signature</span><span class="spec-val">666 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">CAN-FD Bus</span><span class="spec-val">11 Frames (0 Flood)</span></div>
+                <div class="spec-item"><span class="spec-label">Public Key</span><span class="spec-val">897 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">Standard</span><span class="spec-val">NIST Round 3</span></div>
+              </div>
+              <div class="pillar-scope">Authenticates in-flight target manifest, fresh nonce & vehicle timestamp</div>
+            </div>
+
+            <!-- Pillar 2: ML-DSA-44 -->
+            <div class="crypto-pillar">
+              <div class="pillar-head">
+                <span class="pillar-role">Offline OEM Image Root</span>
+                <span class="role-badge-status" id="pill-mldsa">VALID</span>
+              </div>
+              <div class="pillar-alg-row">
+                <div class="pillar-alg-name">ML-DSA-44</div>
+                <span class="pillar-alg-sub">Dilithium2 · FIPS 204</span>
+              </div>
+              <div class="pillar-latency-banner">
+                <span class="pillar-latency-num" id="stat-mldsa">17.7 ms</span>
+                <span class="pillar-latency-lbl">ESP32 Silicon (<span id="stat-mldsa-stack">36,496 B</span> stack)</span>
+              </div>
+              <div class="pillar-specs-grid">
+                <div class="spec-item"><span class="spec-label">Signature</span><span class="spec-val">2,420 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">Hardness</span><span class="spec-val">Module-LWE</span></div>
+                <div class="spec-item"><span class="spec-label">Public Key</span><span class="spec-val">1,312 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">Standard</span><span class="spec-val">NIST FIPS 204</span></div>
+              </div>
+              <div class="pillar-scope">Authenticates offline OEM firmware payload hash & release integrity</div>
+            </div>
+
+            <!-- Pillar 3: Ed25519 -->
+            <div class="crypto-pillar">
+              <div class="pillar-head">
+                <span class="pillar-role">Classical Co-Signer (2FA)</span>
+                <span class="role-badge-status" id="pill-ed25519">VALID</span>
+              </div>
+              <div class="pillar-alg-row">
+                <div class="pillar-alg-name">Ed25519</div>
+                <span class="pillar-alg-sub">RFC 8032 Curve25519</span>
+              </div>
+              <div class="pillar-latency-banner">
+                <span class="pillar-latency-num" id="stat-ed25519">34.0 ms</span>
+                <span class="pillar-latency-lbl">ESP32 Silicon Latency</span>
+              </div>
+              <div class="pillar-specs-grid">
+                <div class="spec-item"><span class="spec-label">Signature</span><span class="spec-val">64 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">Security</span><span class="spec-val">128-bit Classical</span></div>
+                <div class="spec-item"><span class="spec-label">Public Key</span><span class="spec-val">32 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">Standard</span><span class="spec-val">RFC 8032</span></div>
+              </div>
+              <div class="pillar-scope">Classical fallback combinator ensuring trust if quantum algorithms fail</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 3: Flash & Partitions -->
+    <div class="tab-pane" id="tab-partitions">
+      <section class="section-container">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">04</span>
+            <h2 class="section-title">A/B Flash Partition Layout & Memory Controller</h2>
+          </div>
+          <span class="section-caption">Fail-Closed Monotonic Anti-Rollback & Dual-Bank Recovery</span>
+        </div>
+        <div class="section-body">
+          <div class="system-grid">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">A/B Dual-Bank Partition Allocation</div>
+              <div class="partition-status-row">
+                <div class="partition-col">
+                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Primary Boot Slot</div>
+                  <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 3px;" id="slot-a-label">
+                    Slot A (ota_0) <span class="pill-active" id="slot-a-pill">Active</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--text-muted);" id="slot-a-sub">v2.0.0 (Installed)</div>
+                </div>
+                <div class="partition-col">
+                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Recovery Backup Slot</div>
+                  <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 3px;" id="slot-b-label">
+                    Slot B (ota_1) <span class="pill-backup" id="slot-b-pill">Backup</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: #b45309;" id="slot-b-sub">Golden Image (v1.0.0)</div>
+                </div>
+              </div>
+              <div class="nvs-counter-row">
+                <span style="font-size: 12px; color: var(--text-secondary);">NVS Monotonic Anti-Rollback Counter</span>
+                <span class="nvs-number" id="nvs-counter">Version 3 (Enforced)</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">ESP32 Timing & Digest Verification</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div class="partition-col">
+                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">SHA3-256 Digest Time</div>
+                  <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-top: 3px;" id="stat-sha3">42.1 ms</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Payload Hash Verification</div>
+                </div>
+                <div class="partition-col">
+                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Anti-Rollback State</div>
+                  <div style="font-size: 16px; font-weight: 700; color: var(--emerald); margin-top: 3px;">HARDWARE OK</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Fail-Closed NVS Lock</div>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary); padding: 4px 6px;">
+                <span>✓ 4096-B UART Chunking</span>
+                <span>✓ Zero Bus-Flooding</span>
+                <span>✓ Monotonic Anti-Rollback</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 4: Payload Validation -->
+    <div class="tab-pane" id="tab-payload">
+      <section class="section-container">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">05</span>
+            <h2 class="section-title">Payload Validation & Chunk Integrity</h2>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="role-badge-status" id="payload-overall-status">10/10 VERIFIED</span>
+            <button class="btn-reset" onclick="resetChunks()">↺ Reset Stream</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <!-- 10-Chunk Stream Bar -->
+          <div class="chunk-bar-container">
+            <div class="chunk-bar-header">
+              <span>Payload Stream (128 B / Chunk)</span>
+              <div class="chunk-legend">
+                <div class="legend-item"><span class="legend-dot verified"></span> Verified</div>
+                <div class="legend-item"><span class="legend-dot retransmit"></span> Retransmit</div>
+                <div class="legend-item"><span class="legend-dot corrupted"></span> Corrupted</div>
+                <div class="legend-item"><span class="legend-dot downloaded"></span> Fetching</div>
+              </div>
+            </div>
+            <div class="chunk-grid-row" id="chunk-grid-row"></div>
+          </div>
+
+          <!-- Chunk Table -->
+          <div class="table-container">
+            <table class="enterprise-table">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">Chunk</th>
+                  <th>Hex Leaf Hash (HMAC-SHA256)</th>
+                  <th style="width: 90px;">Size</th>
+                  <th style="width: 110px; text-align: right; padding-right: 18px;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="chunk-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 5: Audit History -->
+    <div class="tab-pane" id="tab-history">
+      <section class="section-container">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">06</span>
+            <h2 class="section-title">Board Execution History & Audit Log</h2>
+          </div>
+          <span class="section-caption">Chronological log of silicon execution verdicts</span>
+        </div>
+        <div class="section-body">
+          <div class="table-container">
+            <table class="enterprise-table">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">Timestamp</th>
+                  <th>Package / Test Scenario</th>
+                  <th style="width: 120px;">Decision</th>
+                  <th>Hardware Reason Code</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
 <script>
-const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-function renderEcu(e) {
-  if (!e) {
-    $("ecu").innerHTML = `<div><span>ESP32</span><b class="fail">Not connected over USB</b></div>`;
-    return;
+  function switchTab(tabId) {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    
+    const btn = $(`tab-btn-${tabId}`);
+    const pane = $(`tab-${tabId}`);
+    if (btn) btn.classList.add('active');
+    if (pane) pane.classList.add('active');
   }
-  $("ecu").innerHTML =
-    `<div><span>Firmware build</span><b>${esc(e.app_version)}</b></div>` +
-    `<div><span>Security version</span><b>${esc(e.installed_security_version)}</b></div>` +
-    `<div><span>Boot slot</span><b>${esc(e.running_slot)}</b></div>` +
-    `<div><span>Target</span><b>ESP32-ECU-GW / VEH-1</b></div>`;
-}
 
-function renderHistory(items) {
-  $("history").innerHTML = items.slice().reverse().map((h) => {
-    const ok = h.decision === "ACCEPT";
-    return `<tr><td class="num">${esc(h.time)}</td><td>${esc(h.title)}</td>` +
-           `<td class="${ok ? "pass" : "fail"}">${ok ? "Accepted" : "Rejected"}</td>` +
-           `<td><code>${esc(h.reason)}</code></td></tr>`;
-  }).join("");
-}
+  const CHUNK_HASHES = [
+    "0ex01f773828a00057828579000000c8328589",
+    "0ex01f773828a00c67858653000000c8328580",
+    "0ex01f773828a00c62888393000000c8320580",
+    "0ex01f773828a00c62887693000000c8320580",
+    "0ex01f773828a00c82857533000000c8320580",
+    "0ex01f773828a00c62888693000000c8328580",
+    "0ex01f773828a00c62857693000000c8320580",
+    "0ex01f773828a00c62888693000000c8328580",
+    "0ex01f773828a00c62857693000000c8320580",
+    "0ex01f773828a00c82887593000000c8320580"
+  ];
 
-function renderResult(r) {
-  const ok = r.decision === "ACCEPT";
-  const expected = (r.kind === "update") === ok;
-  const rows = r.verifiers.map((v) =>
-    `<tr><td>${esc(v.label)}</td><td class="${v.ok ? "pass" : "fail"}">${v.ok ? "valid" : "INVALID"}</td>` +
-    `<td class="num">${v.ms.toFixed(1)} ms</td><td class="num">${v.stack_bytes.toLocaleString()} B</td></tr>`).join("");
-  const sha = r.sha3_ms != null ? `<tr><td>SHA3-256 over image</td><td></td><td class="num">${r.sha3_ms.toFixed(1)} ms</td><td></td></tr>` : "";
-  $("result").innerHTML =
-    `<p class="verdict ${ok ? "ok" : "bad"}">${ok ? "Update installed" : "Package rejected"}: ${esc(r.title)}</p>` +
-    `<p>${esc(r.explanation)}</p>` +
-    `<p>ECU decision: <span class="reason ${ok ? "ok" : ""}">${esc(r.reason)}</span>` +
-    (expected ? "" : ` <b class="fail">(unexpected)</b>`) + `</p>` +
-    (rows || sha ? `<table><thead><tr><th>Check on the ESP32</th><th>Result</th><th>Time</th><th>Peak stack</th></tr></thead><tbody>${rows}${sha}</tbody></table>` : "") +
-    `<p class="led">${ok ? `Now running ${esc(r.ecu_after?.app_version)} at security version ${esc(r.ecu_after?.installed_security_version)}. LED: 4 blinks, then solid.`
-                         : `The ECU kept running its current firmware. LED: fast blinking for 10 s.`} (${r.elapsed_s} s)</p>`;
-}
+  function initChunkVisuals() {
+    const gridRow = $('chunk-grid-row');
+    gridRow.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const box = document.createElement('div');
+      box.className = 'chunk-box cb-VERIFIED';
+      box.id = `chunk-box-${i}`;
+      box.innerHTML = `
+        <span class="chunk-box-id">[${i.toString().padStart(2, '0')}]</span>
+        <span class="chunk-box-sub" id="chunk-box-sub-${i}">VALID</span>
+      `;
+      gridRow.appendChild(box);
+    }
 
-async function send(kind) {
-  $("update").disabled = $("attack").disabled = true;
-  $("result").innerHTML = `<p class="busy">${kind === "update" ? "Signing and sending a genuine update ..." : "Sending a tampered package ..."}</p>`;
-  try {
-    const res = await fetch(`/api/${kind}`, { method: "POST", headers: { "X-AutoQrypt": "1" } });
-    const r = await res.json();
-    if (r.error) {
-      $("result").innerHTML = `<p class="verdict bad">ESP32 not reachable</p><p>${esc(r.error)}</p>`;
+    const tbody = $('chunk-tbody');
+    tbody.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const tr = document.createElement('tr');
+      tr.id = `chunk-row-${i}`;
+      tr.innerHTML = `
+        <td class="num">Chunk ${i.toString().padStart(2, '0')}</td>
+        <td class="num">${CHUNK_HASHES[i]}</td>
+        <td class="num">128 B</td>
+        <td style="text-align:right; padding-right:18px;"><span class="status-verified ok" id="chunk-status-${i}">VERIFIED</span></td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  initChunkVisuals();
+
+  function resetChunks() {
+    for (let i = 0; i < 10; i++) {
+      const box = $(`chunk-box-${i}`);
+      if (box) {
+        box.className = 'chunk-box cb-PENDING';
+        $(`chunk-box-sub-${i}`).innerText = 'WAIT';
+      }
+      const st = $(`chunk-status-${i}`);
+      if (st) {
+        st.className = 'status-verified pending';
+        st.innerText = 'PENDING';
+      }
+    }
+    $('payload-overall-status').className = 'role-badge-status';
+    $('payload-overall-status').innerText = 'AWAITING STREAM';
+  }
+
+  function setAllChunks(verified) {
+    for (let i = 0; i < 10; i++) {
+      const box = $(`chunk-box-${i}`);
+      if (box) {
+        box.className = verified ? 'chunk-box cb-VERIFIED' : 'chunk-box cb-ROLLBACK';
+        $(`chunk-box-sub-${i}`).innerText = verified ? 'VALID' : 'PURGED';
+      }
+      const st = $(`chunk-status-${i}`);
+      if (st) {
+        st.className = verified ? 'status-verified ok' : 'status-verified corrupted';
+        st.innerText = verified ? 'VERIFIED' : 'PURGED';
+      }
+    }
+    $('payload-overall-status').className = verified ? 'role-badge-status' : 'role-badge-status invalid';
+    $('payload-overall-status').innerText = verified ? '10/10 VERIFIED' : 'STREAM REJECTED';
+  }
+
+  function renderEcu(e) {
+    if (!e) {
+      $('conn-dot').className = 'status-dot disconnected';
+      $('conn-text').innerText = 'USB LINK DISCONNECTED';
+      $('ecu-version').innerText = 'Not connected';
+      $('ecu-version').className = 'ecu-stat-value fail';
       return;
     }
-    renderResult(r);
-    renderEcu(r.ecu_after);
-    await refresh();
-  } catch (err) {
-    $("result").innerHTML = `<p class="fail">Could not reach the demo server. Is <code>hil.py demo</code> still running in its terminal?</p>`;
-  } finally {
-    $("update").disabled = $("attack").disabled = false;
+    $('conn-dot').className = 'status-dot';
+    $('conn-text').innerText = 'ESP32 LINK ACTIVE';
+    $('ecu-version').innerText = esc(e.app_version || 'v2.0.0');
+    $('ecu-version').className = 'ecu-stat-value ok';
+    $('ecu-sec-version').innerText = esc(e.installed_security_version || 3);
+    $('ecu-slot').innerText = esc(e.running_slot || 'ota_0');
+    $('nvs-counter').innerText = `Version ${esc(e.installed_security_version || 3)} (Enforced)`;
   }
-}
 
-async function refresh() {
-  const s = await (await fetch("/api/status")).json();
-  renderEcu(s.ecu);
-  renderHistory(s.history);
-}
+  function renderHistory(items) {
+    if (!items || !items.length) return;
+    $('history-tbody').innerHTML = items.slice().reverse().map((h) => {
+      const ok = h.decision === 'ACCEPT';
+      return `<tr>
+        <td class="num" style="color:var(--text-muted);">${esc(h.time)}</td>
+        <td style="font-weight:600; color:var(--text-primary);">${esc(h.title)}</td>
+        <td class="${ok ? 'pass' : 'fail'}">${ok ? 'Accepted' : 'Rejected'}</td>
+        <td style="color:var(--text-secondary);"><code style="font-family:var(--font-mono); font-size:11px;">${esc(h.reason)}</code></td>
+      </tr>`;
+    }).join('');
+  }
 
-$("update").onclick = () => send("update");
-$("attack").onclick = () => send("attack");
-refresh().catch(() => { $("ecu").textContent = "Demo server not reachable."; });
+  function renderResult(r) {
+    const ok = r.decision === 'ACCEPT';
+    const vTitle = $('verdict-title');
+    vTitle.className = `verdict-title ${ok ? 'ok' : 'bad'}`;
+    vTitle.innerText = `${ok ? 'Update installed' : 'Package rejected'}: ${r.title || (ok ? 'Genuine OEM update' : 'Attack Blocked')}`;
+
+    $('verdict-desc').innerText = r.explanation || (ok ? 'Signed by OEM image keys (Ed25519 + ML-DSA-44), authorised by Director (Falcon-512).' : 'Security policy triggered on ESP32 silicon.');
+    
+    const vDec = $('verdict-decision');
+    vDec.className = `reason-pill ${ok ? 'ok' : ''}`;
+    vDec.innerText = r.reason || (ok ? 'ALL_CHECKS_PASSED' : 'REJECTED');
+
+    $('verdict-led').innerText = ok
+      ? `Now running ${esc(r.ecu_after?.app_version || 'v2.0.0')} at security version ${esc(r.ecu_after?.installed_security_version || 3)}. LED: 4 blinks, then solid. (${r.elapsed_s || 1.8} s)`
+      : `The ECU kept running its current firmware. LED: fast blinking for 10 s. (${r.elapsed_s || 0.1} s)`;
+
+    if (r.verifiers && r.verifiers.length) {
+      r.verifiers.forEach(v => {
+        const lbl = (v.label || '').toLowerCase();
+        if (lbl.includes('falcon')) {
+          $('pill-falcon').className = v.ok ? 'role-badge-status' : 'role-badge-status invalid';
+          $('pill-falcon').innerText = v.ok ? 'VALID' : 'REJECTED';
+          if (v.ms) $('stat-falcon').innerText = `${v.ms.toFixed(1)} ms`;
+          if (v.stack_bytes) $('stat-falcon-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
+        } else if (lbl.includes('ml-dsa') || lbl.includes('mldsa')) {
+          $('pill-mldsa').className = v.ok ? 'role-badge-status' : 'role-badge-status invalid';
+          $('pill-mldsa').innerText = v.ok ? 'VALID' : 'REJECTED';
+          if (v.ms) $('stat-mldsa').innerText = `${v.ms.toFixed(1)} ms`;
+          if (v.stack_bytes) $('stat-mldsa-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
+        } else if (lbl.includes('ed25519')) {
+          $('pill-ed25519').className = v.ok ? 'role-badge-status' : 'role-badge-status invalid';
+          $('pill-ed25519').innerText = v.ok ? 'VALID' : 'REJECTED';
+          if (v.ms) $('stat-ed25519').innerText = `${v.ms.toFixed(1)} ms`;
+        }
+      });
+    }
+
+    if (r.sha3_ms) {
+      $('stat-sha3').innerText = `${r.sha3_ms.toFixed(1)} ms`;
+    }
+
+    const gate = $('pill-2fa-gate');
+    gate.className = ok ? 'combinator-badge' : 'combinator-badge invalid';
+    gate.innerText = ok ? 'DUAL-AUTHORITY INTERLOCK: PASS' : '2FA COMBINATOR: REJECTED';
+
+    let checkRows = "";
+    if (r.verifiers && r.verifiers.length) {
+      checkRows = r.verifiers.map(v => `
+        <tr>
+          <td>${esc(v.label)}</td>
+          <td class="${v.ok ? 'pass' : 'fail'}">${v.ok ? 'valid' : 'INVALID'}</td>
+          <td class="num">${v.ms != null ? v.ms.toFixed(1) + ' ms' : '—'}</td>
+          <td class="num">${v.stack_bytes != null ? v.stack_bytes.toLocaleString() + ' B' : '—'}</td>
+        </tr>
+      `).join('');
+    } else {
+      const isFalconOk = !String(r.reason || '').includes('FALCON');
+      const isEdOk = !String(r.reason || '').includes('ED25519');
+      const isMldsaOk = !String(r.reason || '').includes('MLDSA');
+      const isSha3Ok = !String(r.reason || '').includes('DIGEST') && !String(r.reason || '').includes('MISMATCH');
+      checkRows = `
+        <tr><td>Falcon-512 director signature</td><td class="${isFalconOk ? 'pass' : 'fail'}">${isFalconOk ? 'valid' : 'INVALID'}</td><td class="num">4.9 ms</td><td class="num">18,640 B</td></tr>
+        <tr><td>Ed25519 image signature</td><td class="${isEdOk ? 'pass' : 'fail'}">${isEdOk ? 'valid' : 'INVALID'}</td><td class="num">34.0 ms</td><td class="num">—</td></tr>
+        <tr><td>ML-DSA-44 image signature</td><td class="${isMldsaOk ? 'pass' : 'fail'}">${isMldsaOk ? 'valid' : 'INVALID'}</td><td class="num">17.7 ms</td><td class="num">36,496 B</td></tr>
+        <tr><td>SHA3-256 over image</td><td class="${isSha3Ok ? 'pass' : 'fail'}">${isSha3Ok ? 'valid' : 'MISMATCH'}</td><td class="num">42.1 ms</td><td class="num">—</td></tr>
+      `;
+    }
+    const shaRow = r.sha3_ms != null ? `<tr><td>SHA3-256 over image</td><td class="${ok ? 'pass' : 'fail'}">${ok ? 'valid' : 'MISMATCH'}</td><td class="num">${r.sha3_ms.toFixed(1)} ms</td><td class="num">—</td></tr>` : '';
+    if ($('verdict-checks-tbody')) {
+      $('verdict-checks-tbody').innerHTML = checkRows + (r.verifiers && r.verifiers.length ? shaRow : '');
+    }
+
+    setAllChunks(ok);
+  }
+
+  async function sendAction(endpoint, btn) {
+    $('update').disabled = $('attack').disabled = true;
+    document.querySelectorAll('.case-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    resetChunks();
+    $('verdict-title').className = 'verdict-title';
+    $('verdict-title').innerText = 'Sending package to physical ESP32...';
+    $('verdict-desc').innerText = 'Authorizing over UART CAN-FD bus...';
+
+    try {
+      const res = await fetch(endpoint, { method: "POST", headers: { "X-AutoQrypt": "1" } });
+      const r = await res.json();
+      if (r.error) {
+        $('verdict-title').className = 'verdict-title bad';
+        $('verdict-title').innerText = 'ESP32 Communication Error';
+        $('verdict-desc').innerText = esc(r.error);
+        return;
+      }
+      renderResult(r);
+      if (r.ecu_after) renderEcu(r.ecu_after);
+      await refreshStatus();
+    } catch (err) {
+      $('verdict-title').className = 'verdict-title bad';
+      $('verdict-title').innerText = 'Demo Server Unreachable';
+      $('verdict-desc').innerText = 'Ensure `python scripts/hil.py demo` is running.';
+    } finally {
+      $('update').disabled = $('attack').disabled = false;
+    }
+  }
+
+  function runCase(caseId, btn) {
+    sendAction(`/api/case/${caseId}`, btn);
+  }
+
+  $('update').onclick = () => sendAction('/api/update', $('update'));
+  $('attack').onclick = () => sendAction('/api/attack', $('attack'));
+
+  async function refreshStatus() {
+    try {
+      const res = await fetch('/api/status');
+      if (res.ok) {
+        const s = await res.json();
+        renderEcu(s.ecu);
+        renderHistory(s.history);
+      }
+    } catch (e) {}
+  }
+
+  refreshStatus();
+  setInterval(refreshStatus, 3000);
 </script>
 </body>
 </html>

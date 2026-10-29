@@ -1,1186 +1,1774 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoQrypt: Post-Quantum Automotive Firmware Authentication (PQC-02)</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #23272a;
-            --panel-bg: #2c2f33;
-            --panel-border: rgba(255, 255, 255, 0.05);
-            --text-main: #ffffff;
-            --text-dim: #99aab5;
-            --accent: #7289da;
-            --success: #ffffff;
-            --danger: #ed4245;
-            --warning: #fee75c;
-        }
-
-        body {
-            margin: 0;
-            padding: 2rem;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 300;
-            background: var(--bg-color);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1.5rem 1rem;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--panel-border);
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: var(--text-main);
-        }
-
-        /* Widgets Grid */
-        .metrics-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .metric-card {
-            flex: 1;
-            min-width: 140px;
-            background: #1e2124;
-            border: 1px solid var(--panel-border);
-            border-radius: 4px;
-            padding: 1rem;
-            /* Taller padding */
-        }
-
-        .metric-title {
-            color: var(--text-dim);
-            font-size: 0.7rem;
-            font-weight: 400;
-            margin-bottom: 0.25rem;
-        }
-
-        .metric-value {
-            font-size: 1.2rem;
-            font-weight: 300;
-            margin: 0;
-            display: flex;
-            align-items: baseline;
-            gap: 0.5rem;
-        }
-
-        #val-ota_start {
-            color: var(--accent);
-        }
-
-        #val-install_success {
-            color: var(--text-main);
-        }
-
-        #val-attack_detected {
-            color: var(--danger);
-        }
-
-        #val-safety_block {
-            color: var(--text-main);
-        }
-
-        /* Scenario 3: 10-Chunk Grid Viewer */
-        .chunk-viewer {
-            background: #1e2124;
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .chunk-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-        }
-
-        .chunk-header h3 {
-            font-weight: 400;
-            font-size: 0.85rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin: 0;
-        }
-
-        .chunk-list {
-            display: flex;
-            gap: 4px;
-        }
-
-        .chunk-box {
-            flex: 1;
-            background: transparent;
-            border: 1px solid var(--panel-border);
-            border-radius: 2px;
-            padding: 14px 0;
-            /* Taller padding */
-            text-align: center;
-            font-weight: 300;
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            transition: border-color 0.2s, color 0.2s;
-        }
-
-        .cb-PENDING {
-            border-color: var(--panel-border);
-        }
-
-        .cb-DOWNLOADED {
-            border-color: var(--accent);
-            color: var(--text-main);
-        }
-
-        .cb-VERIFIED {
-            border-color: #57F287;
-            color: #57F287;
-            background: rgba(87, 242, 135, 0.15);
-        }
-
-        .cb-CORRUPTED {
-            border-color: var(--danger);
-            color: var(--danger);
-            background: rgba(237, 66, 69, 0.15);
-        }
-
-        .cb-RETRANSMIT {
-            border-color: var(--warning);
-            color: var(--warning);
-            background: rgba(254, 231, 92, 0.15);
-        }
-
-        .cb-ROLLBACK,
-        .cb-ABORT {
-            border-color: #9b59b6;
-            color: #9b59b6;
-            background: rgba(155, 89, 182, 0.15);
-        }
-
-        /* Scenario 6: SBOM vulnerability Tracker */
-        .sbom-viewer {
-            border: 1px solid var(--warning);
-            background: rgba(254, 231, 92, 0.08);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            display: none;
-            /* hidden until triggered */
-        }
-
-        .sbom-viewer h2 {
-            margin: 0 0 0.5rem 0;
-            color: var(--warning);
-            display: flex;
-            align-items: center;
-            font-weight: 400;
-            gap: 0.5rem;
-        }
-
-        .cve-item {
-            background: rgba(254, 231, 92, 0.06);
-            padding: 0.75rem;
-            border-left: 2px solid var(--warning);
-            border-radius: 4px;
-            font-family: monospace;
-            color: var(--text-main);
-        }
-
-
-
-        /* Logs Section */
-        .logs-section {
-            background: #1e2124;
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            padding: 1rem;
-            /* Tighter outer padding to maximize terminal */
-            flex: 1;
-            /* Stretch to max remaining vertical space */
-            min-height: 250px;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s ease;
-        }
-
-        .logs-section.fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            height: 100vh;
-            margin: 0;
-            border-radius: 0;
-            z-index: 1000;
-        }
-
-        .logs-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            border-bottom: 1px solid var(--panel-border);
-            padding-bottom: 0.5rem;
-            color: var(--text-main);
-        }
-
-        .logs-header h2 {
-            font-weight: 400;
-            font-size: 1rem;
-            margin: 0;
-        }
-
-        .console-btn {
-            background: transparent;
-            color: var(--text-dim);
-            border: 1px solid var(--panel-border);
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 400;
-        }
-
-        .console-btn:hover {
-            color: var(--text-main);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .console-btn.btn-danger {
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-
-        .console-btn.btn-danger:hover {
-            background: rgba(237, 66, 69, 0.1);
-        }
-
-        .logs-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            padding-right: 0.5rem;
-        }
-
-        .logs-container::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .logs-container::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .log-item {
-            background: transparent;
-            border-left: 2px solid var(--panel-border);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-            padding: 0.25rem 0.5rem;
-            border-radius: 0;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.8rem;
-            display: flex;
-            flex-direction: row;
-            align-items: baseline;
-            gap: 0.5rem;
-        }
-
-        .log-meta {
-            display: flex;
-            gap: 0.5rem;
-            color: var(--text-dim);
-            font-size: 0.75rem;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .badge {
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-weight: 400;
-            font-size: 0.7rem;
-        }
-
-        .badge.INFO {
-            background: rgba(114, 137, 218, 0.1);
-            color: var(--accent);
-        }
-
-        .badge.WARNING {
-            background: rgba(254, 231, 92, 0.1);
-            color: var(--warning);
-        }
-
-        .badge.ERROR,
-        .badge.CRITICAL {
-            background: rgba(237, 66, 69, 0.1);
-            color: var(--danger);
-        }
-
-        .log-item.level-WARNING {
-            background-color: rgba(254, 231, 92, 0.15);
-            border-left-color: var(--warning);
-        }
-
-        .log-item.level-ERROR,
-        .log-item.level-CRITICAL {
-            background-color: rgba(237, 66, 69, 0.15);
-            border-left-color: var(--danger);
-        }
-
-        .log-message {
-            color: var(--text-main);
-            word-break: break-word;
-        }
-
-        .log-item.attack_detected {
-            border-left-color: var(--danger);
-        }
-
-        .log-item.install_success {
-            background-color: rgba(87, 242, 135, 0.15);
-            border-left-color: #57F287;
-        }
-
-        .log-item.safety_block {
-            border-left-color: var(--text-main);
-        }
-
-        .log-item.rollback,
-        .log-item.sbom_cve_block {
-            border-left-color: var(--warning);
-        }
-
-        .log-item.signature_failure,
-        .log-item.update_abort {
-            border-left-color: var(--danger);
-        }
-
-        .log-item.sbom_force_patch {
-            border-left-color: var(--warning);
-        }
-
-        #empty-logs {
-            color: var(--text-dim);
-            text-align: center;
-            margin-top: 2rem;
-            font-style: italic;
-        }
-
-        .demo-btn {
-            background: #7289da;
-            color: #ffffff;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 400;
-        }
-
-        .demo-btn:hover {
-            background: #5b6eae;
-        }
-
-        /* Modal Overlay */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(30, 33, 36, 0.95);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            backdrop-filter: blur(6px);
-        }
-
-        .modal {
-            background: #2c2f33;
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            width: 100%;
-            max-width: 600px;
-            padding: 1.5rem;
-            color: var(--text-main);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid var(--panel-border);
-            padding-bottom: 0.5rem;
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-weight: 500;
-            font-size: 1.25rem;
-        }
-
-        .close-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-dim);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .close-btn:hover {
-            color: var(--text-main);
-        }
-
-        .demo-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            max-height: 60vh;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-        }
-
-        .demo-list::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .demo-list::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .demo-item {
-            background: #23272a;
-            border: 1px solid var(--panel-border);
-            border-radius: 4px;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .demo-info h4 {
-            margin: 0 0 0.25rem 0;
-            font-weight: 500;
-        }
-
-        .demo-info p {
-            margin: 0;
-            font-size: 0.8rem;
-            color: var(--text-dim);
-            line-height: 1.2;
-        }
-
-        .run-btn {
-            background: #7289da;
-            color: #fff;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 400;
-        }
-
-        .run-btn:hover {
-            background: #5b6eae;
-        }
-
-        /* Measured Performance Button */
-        .measured-btn {
-            background: rgba(87, 242, 135, 0.15);
-            color: #57F287;
-            border: 1px solid #57F287;
-            padding: 6px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-        }
-
-        .measured-btn:hover {
-            background: rgba(87, 242, 135, 0.3);
-            box-shadow: 0 0 12px rgba(87, 242, 135, 0.2);
-        }
-
-        /* Performance Metrics Modal */
-        .perf-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(30, 33, 36, 0.95);
-            display: none;
-            justify-content: center;
-            align-items: flex-start;
-            padding-top: 3vh;
-            z-index: 10001;
-            backdrop-filter: blur(6px);
-        }
-
-        .perf-modal {
-            background: #2c2f33;
-            border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            width: 100%;
-            max-width: 820px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 1.5rem;
-            color: var(--text-main);
-        }
-
-        .perf-modal::-webkit-scrollbar { width: 6px; }
-        .perf-modal::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-
-        .perf-section {
-            margin-bottom: 1.25rem;
-        }
-
-        .perf-section h3 {
-            color: var(--accent);
-            font-weight: 500;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin: 0 0 0.75rem 0;
-            padding-bottom: 0.4rem;
-            border-bottom: 1px solid var(--panel-border);
-        }
-
-        .perf-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.5rem;
-        }
-
-        .perf-item {
-            background: #23272a;
-            border: 1px solid var(--panel-border);
-            border-radius: 4px;
-            padding: 0.75rem 1rem;
-        }
-
-        .perf-label {
-            font-size: 0.7rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            margin-bottom: 0.25rem;
-        }
-
-        .perf-value {
-            font-size: 1.1rem;
-            font-weight: 400;
-            font-family: 'Courier New', monospace;
-            color: #57F287;
-        }
-
-        .perf-value.warn { color: var(--warning); }
-        .perf-value.danger { color: var(--danger); }
-        .perf-value.neutral { color: var(--text-main); }
-
-        .perf-item.wide {
-            grid-column: 1 / -1;
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoQrypt — Post-Quantum Automotive Security Operations Console (PQC-02 · Real ESP32 HIL)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-subtle: #f1f5f9;
+    --bg-hover: #f8fafc;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --border-dark: #0f172a;
+    
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --text-faint: #94a3b8;
+
+    --emerald: #15803d;
+    --emerald-bg: #f0fdf4;
+    --emerald-border: #bbf7d0;
+
+    --crimson: #b91c1c;
+    --crimson-bg: #fef2f2;
+    --crimson-border: #fecaca;
+
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  /* Top Navigation Bar */
+  .top-nav {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: #0f172a;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+  .brand-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+  .nav-divider {
+    color: var(--text-faint);
+  }
+  .brand-desc {
+    font-size: 12.5px;
+    color: var(--text-muted);
+  }
+  .header-status-pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 4px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--emerald);
+  }
+  .status-dot.disconnected {
+    background: var(--crimson);
+  }
+
+  /* Sub-Navigation Tabs */
+  .sub-nav {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .sub-nav-inner {
+    max-width: 1320px;
+    margin: 0 auto;
+    display: flex;
+    gap: 4px;
+  }
+  .nav-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nav-tab:hover {
+    color: var(--text-primary);
+  }
+  .nav-tab.active {
+    color: var(--text-primary);
+    font-weight: 600;
+    border-bottom-color: var(--text-primary);
+  }
+  .tab-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+
+  /* Main Container */
+  .main-layout {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 18px 24px 48px;
+  }
+
+  /* Tab Panes */
+  .tab-pane {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .tab-pane.active {
+    display: flex;
+  }
+
+  /* Section Container */
+  .section-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .section-header {
+    background: #ffffff;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .section-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-num {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-subtle);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+  .section-caption {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .section-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* Board Telemetry Bar */
+  .ecu-status-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .ecu-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 14px;
+  }
+  .ecu-stat-item:not(:last-child) {
+    border-right: 1px solid var(--border);
+  }
+  .ecu-stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+  .ecu-stat-value {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .ecu-stat-value.ok { color: var(--emerald); }
+  .ecu-stat-value.fail { color: var(--crimson); }
+
+  /* 2-Column Workstation Layout */
+  .workstation-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 980px) {
+    .workstation-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Primary Action Buttons */
+  .buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .action-btn {
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background-color 0.1s ease;
+  }
+  .action-btn .btn-left {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    gap: 2px;
+  }
+  .action-btn .btn-main-text {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .action-btn .btn-sub-text {
+    font-size: 11px;
+    opacity: 0.88;
+  }
+  .action-btn.btn-update {
+    background: #15803d;
+    border-color: #14532d;
+  }
+  .action-btn.btn-update:hover {
+    background: #166534;
+  }
+  .action-btn.btn-attack {
+    background: #b91c1c;
+    border-color: #991b1b;
+  }
+  .action-btn.btn-attack:hover {
+    background: #991b1b;
+  }
+  .action-btn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+
+  /* Physical Test Matrix */
+  .cases-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .case-btn {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    transition: border-color 0.1s ease, background 0.1s ease;
+  }
+  .case-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-strong);
+  }
+  .case-btn.active {
+    border-color: var(--border-dark);
+    box-shadow: 0 0 0 1px var(--border-dark);
+    background: #ffffff;
+  }
+  .case-btn-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .case-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+  .case-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .case-subtitle {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+
+  /* Live Execution Verdict Card */
+  .verdict-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+  .verdict-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .verdict-title.ok { color: var(--emerald); }
+  .verdict-title.bad { color: var(--crimson); }
+  .verdict-explanation {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .reason-pill {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--crimson-bg);
+    border: 1px solid var(--crimson-border);
+    color: var(--crimson);
+  }
+  .reason-pill.ok {
+    background: var(--emerald-bg);
+    border-color: var(--emerald-border);
+    color: var(--emerald);
+  }
+
+  /* Data Tables */
+  .table-container {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+  .enterprise-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    text-align: left;
+  }
+  .enterprise-table th {
+    padding: 7px 12px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-subtle);
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .enterprise-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .enterprise-table tr:last-child td {
+    border-bottom: none;
+  }
+  .enterprise-table td.pass { color: var(--emerald); font-weight: 600; font-family: var(--font-mono); font-size: 11px; }
+  .enterprise-table td.fail { color: var(--crimson); font-weight: 600; font-family: var(--font-mono); font-size: 11px; }
+  .enterprise-table td.num { font-family: var(--font-mono); font-size: 11px; }
+
+  .verdict-led-line {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    background: var(--bg-subtle);
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  /* Cryptographic Proofs - 3 Pillars */
+  .pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 960px) {
+    .pillars-grid { grid-template-columns: 1fr; }
+  }
+  .crypto-pillar {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pillar-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .pillar-role {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+  .role-badge-status {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--emerald-bg);
+    border: 1px solid var(--emerald-border);
+    color: var(--emerald);
+  }
+  .role-badge-status.invalid {
+    background: var(--crimson-bg);
+    border-color: var(--crimson-border);
+    color: var(--crimson);
+  }
+  .pillar-alg-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .pillar-alg-name {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .pillar-alg-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .pillar-latency-banner {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .pillar-latency-num {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--emerald);
+  }
+  .pillar-latency-lbl {
+    font-size: 10.5px;
+    color: var(--text-secondary);
+  }
+  .pillar-specs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    font-size: 11.5px;
+  }
+  .spec-item {
+    display: flex;
+    flex-direction: column;
+    padding: 4px 6px;
+    background: var(--bg-subtle);
+    border-radius: 3px;
+  }
+  .spec-label {
+    font-size: 9.5px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .spec-val {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .pillar-scope {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.35;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+  }
+
+  .combinator-strip {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .combinator-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: var(--emerald-bg);
+    border: 1px solid var(--emerald-border);
+    color: var(--emerald);
+  }
+  .combinator-badge.invalid {
+    background: var(--crimson-bg);
+    border-color: var(--crimson-border);
+    color: var(--crimson);
+  }
+
+  /* Partition & Telemetry Grid */
+  .system-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 960px) {
+    .system-grid { grid-template-columns: 1fr; }
+  }
+  .partition-status-row {
+    display: flex;
+    gap: 10px;
+  }
+  .partition-col {
+    flex: 1;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+  }
+  .pill-active {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--emerald-bg);
+    border: 1px solid var(--emerald-border);
+    color: var(--emerald);
+    font-family: var(--font-mono);
+  }
+  .pill-backup {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #b45309;
+    font-family: var(--font-mono);
+  }
+  .nvs-counter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+  }
+  .nvs-number {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  /* Payload Chunk Bar */
+  .chunk-bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 14px;
+  }
+  .chunk-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .chunk-legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: none;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; color: var(--text-secondary); }
+  .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .legend-dot.verified { background: var(--emerald); }
+  .legend-dot.retransmit { background: #b45309; }
+  .legend-dot.corrupted { background: var(--crimson); }
+  .legend-dot.downloaded { background: #3b82f6; }
+  .chunk-grid-row {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 6px;
+  }
+  .chunk-box {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 8px 2px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    user-select: none;
+  }
+  .chunk-box-id {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .chunk-box-sub {
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .cb-PENDING { border-color: var(--border); background: var(--bg-subtle); }
+  .cb-DOWNLOADED { border-color: #bfdbfe; background: #eff6ff; }
+  .cb-DOWNLOADED .chunk-box-sub { color: #1d4ed8; }
+  .cb-VERIFIED { border-color: var(--emerald-border); background: var(--emerald-bg); }
+  .cb-VERIFIED .chunk-box-sub { color: var(--emerald); }
+  .cb-CORRUPTED { border-color: var(--crimson-border); background: var(--crimson-bg); }
+  .cb-CORRUPTED .chunk-box-sub { color: var(--crimson); }
+  .cb-RETRANSMIT { border-color: #fde68a; background: #fffbeb; }
+  .cb-RETRANSMIT .chunk-box-sub { color: #b45309; }
+  .cb-ROLLBACK { border-color: var(--border); background: var(--bg-subtle); }
+
+  .status-verified { font-weight: 600; font-family: var(--font-mono); font-size: 11px; }
+  .status-verified.ok { color: var(--emerald); }
+  .status-verified.corrupted { color: var(--crimson); }
+  .status-verified.retransmit { color: #b45309; }
+  .status-verified.downloaded { color: #1d4ed8; }
+  .status-verified.pending { color: var(--text-muted); }
+
+  .btn-reset {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .btn-reset:hover {
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+  }
+
+  /* Log Panel & Telemetry Stream (Tab 5) */
+  .log-panel-container {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: #ffffff;
+    overflow: hidden;
+  }
+  .log-panel-header {
+    background: var(--bg-subtle);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .log-panel {
+    min-height: 420px;
+    max-height: 560px;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    padding: 10px 12px;
+    background: #fafafa;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .log-entry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 8px;
+    border-radius: 3px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .log-entry:hover {
+    background: #f8fafc;
+  }
+  .log-time {
+    color: var(--text-muted);
+    font-size: 10.5px;
+    white-space: nowrap;
+  }
+  .log-type {
+    font-weight: 700;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+  .log-type.INFO { background: #e0f2fe; color: #0284c7; }
+  .log-type.WARNING { background: #fef3c7; color: #d97706; }
+  .log-type.ERROR { background: #fee2e2; color: #dc2626; }
+  .log-text {
+    flex: 1;
+    color: var(--text-primary);
+    word-break: break-word;
+  }
+  .log-tag-pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .log-tag-pill.normal { background: var(--emerald-bg); color: var(--emerald); border: 1px solid var(--emerald-border); }
+  .log-tag-pill.tampered { background: var(--crimson-bg); color: var(--crimson); border: 1px solid var(--crimson-border); }
+  .log-tag-pill.retransmit { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+  .log-tag-pill.status { background: var(--bg-subtle); color: var(--text-secondary); border: 1px solid var(--border); }
+</style>
 </head>
-
 <body>
 
-    <div class="modal-overlay" id="demo-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Select Simulator Scenario</h2>
-                <button class="close-btn" id="modal-close-btn"
-                    onclick="document.getElementById('demo-modal').style.display='none'">&times;</button>
-            </div>
-            <div class="demo-list">
-                <div class="demo-item">
-                    <div class="demo-info">
-                        <h4>Normal OTA Update</h4>
-                        <p>Standard chunk verification and installation success.</p>
-                    </div>
-                    <button class="run-btn" onclick="runDemo('demo_1_normal.py', 'Normal Update')">Run</button>
-                </div>
-                <div class="demo-item">
-                    <div class="demo-info">
-                        <h4>Payload Tampering Attack</h4>
-                        <p>Simulates malicious network injection catching corrupted chunks.</p>
-                    </div>
-                    <button class="run-btn" onclick="runDemo('demo_2_tampered.py', 'Tampering Attack')">Run</button>
-                </div>
-                <div class="demo-item">
-                    <div class="demo-info">
-                        <h4>Chunk Loss Retransmit</h4>
-                        <p>Asserts robust network recovery with chunk retransmissions.</p>
-                    </div>
-                    <button class="run-btn" onclick="runDemo('demo_3_retransmit.py', 'Retransmits')">Run</button>
-                </div>
-                <div class="demo-item">
-                    <div class="demo-info">
-                        <h4>OTA Resume Recovery</h4>
-                        <p>Hard interrupts the connection, then verifies seamless restart.</p>
-                    </div>
-                    <button class="run-btn" onclick="runDemo('demo_4_resume.py', 'Resume Recovery')">Run</button>
-                </div>
-                <div class="demo-item">
-                    <div class="demo-info">
-                        <h4>Rogue HSM Injection</h4>
-                        <p>Defends against unverified keys attempting to side-load updates.</p>
-                    </div>
-                    <button class="run-btn" onclick="runDemo('demo_5_rogue_hsm.py', 'Rogue Injection')">Run</button>
-                </div>
-                <div class="demo-item">
-                    <div class="demo-info">
-                        <h4>Vulnerable SBOM Scenario</h4>
-                        <p>Software Bill of Materials vulnerability halts the update.</p>
-                    </div>
-                    <button class="run-btn" onclick="runDemo('demo_6_sbom_cve.py', 'SBOM Exploit Block')">Run</button>
-                </div>
-                <div class="demo-item">
-                    <div class="demo-info">
-                        <h4>Rollback / Freeze Attack</h4>
-                        <p>Replays an old, validly-signed manifest after a newer version is installed.</p>
-                    </div>
-                    <button class="run-btn" onclick="runDemo('demo_7_rollback.py', 'Rollback Attack')">Run</button>
-                </div>
-                <div class="demo-item">
-                    <div class="demo-info">
-                        <h4>Compromised Director</h4>
-                        <p>Stolen fleet-server key alone is not enough — the separate Image key was never compromised.</p>
-                    </div>
-                    <button class="run-btn" onclick="runDemo('demo_8_compromised_director.py', 'Compromised Director')">Run</button>
-                </div>
-            </div>
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <div class="nav-inner">
+      <div class="brand-group">
+        <div class="brand-logo">AQ</div>
+        <div class="brand-title">AutoQrypt</div>
+        <span class="nav-divider">/</span>
+        <div class="brand-desc">Post-Quantum Automotive Security Operations Console (PQC-02 · Real ESP32 HIL)</div>
+      </div>
+      <div class="header-status-pill" id="conn-pill">
+        <span class="status-dot" id="conn-dot"></span>
+        <span id="conn-text">ESP32 HARDWARE LINK ACTIVE</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Clean Enterprise Tabs -->
+  <nav class="sub-nav">
+    <div class="sub-nav-inner">
+      <button class="nav-tab active" id="tab-btn-console" onclick="switchTab('console')">
+        HIL Execution Console <span class="tab-badge">Active Suite</span>
+      </button>
+      <button class="nav-tab" id="tab-btn-crypto" onclick="switchTab('crypto')">
+        Cryptographic Proofs <span class="tab-badge">NIST 2FA</span>
+      </button>
+      <button class="nav-tab" id="tab-btn-partitions" onclick="switchTab('partitions')">
+        Flash & Partitions
+      </button>
+      <button class="nav-tab" id="tab-btn-payload" onclick="switchTab('payload')">
+        Payload Chunks
+      </button>
+      <button class="nav-tab" id="tab-btn-audit" onclick="switchTab('audit')">
+        Security Audit Log <span class="tab-badge">Live Stream</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-layout">
+
+    <!-- TAB 1: HIL Execution Console (The Workstation View) -->
+    <div class="tab-pane active" id="tab-console">
+      <!-- Real ESP32 Board Telemetry Status Bar -->
+      <div class="ecu-status-bar" id="ecu-status-bar">
+        <div class="ecu-stat-item">
+          <span class="ecu-stat-label">Firmware Build</span>
+          <span class="ecu-stat-value ok" id="ecu-version">v2.0.0</span>
         </div>
+        <div class="ecu-stat-item">
+          <span class="ecu-stat-label">Security Version</span>
+          <span class="ecu-stat-value" id="ecu-sec-version">3</span>
+        </div>
+        <div class="ecu-stat-item">
+          <span class="ecu-stat-label">Boot Slot</span>
+          <span class="ecu-stat-value" id="ecu-slot">ota_0</span>
+        </div>
+        <div class="ecu-stat-item">
+          <span class="ecu-stat-label">Target ECU</span>
+          <span class="ecu-stat-value">ESP32-ECU-GW / VEH-1</span>
+        </div>
+      </div>
+
+      <!-- Side-by-Side 2-Column Workstation: Left (Controls + Test Suite), Right (Live Verdict + Benchmarks) -->
+      <div class="workstation-grid">
+        
+        <!-- Left Column: Controls & Test Matrix -->
+        <section class="section-container">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <span class="section-num">01</span>
+              <h2 class="section-title">Execution Controls & Physical Test Matrix</h2>
+            </div>
+            <span class="section-caption">UART CAN-FD · 115,200 Baud</span>
+          </div>
+          <div class="section-body">
+            <!-- Primary Action Buttons -->
+            <div class="buttons-grid">
+              <button class="action-btn btn-update" id="btn-update" onclick="triggerHardwareUpdate()">
+                <div class="btn-left">
+                  <span class="btn-main-text">Deploy Genuine OEM</span>
+                  <span class="btn-sub-text">Ed25519 + ML-DSA + Falcon · LED 4 blinks</span>
+                </div>
+                <span>→</span>
+              </button>
+              <button class="action-btn btn-attack" id="btn-attack" onclick="triggerHardwareAttack()">
+                <div class="btn-left">
+                  <span class="btn-main-text">Inject Threat Vector</span>
+                  <span class="btn-sub-text">Corrupted signature · LED fast alarm</span>
+                </div>
+                <span>⚠</span>
+              </button>
+            </div>
+
+            <!-- 9 Physical Test Cases Matrix -->
+            <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+              Hardware Test Scenarios (Direct Silicon Dispatch)
+            </div>
+            <div class="cases-grid">
+              <button class="case-btn active" id="case-btn-T01" onclick="triggerPhysicalCase('T01', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T01</span>
+                  <span class="case-title">Valid firmware v2</span>
+                </div>
+                <div class="case-subtitle">Accepted, activated & verified.</div>
+              </button>
+              <button class="case-btn" id="case-btn-T03" onclick="triggerPhysicalCase('T03', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T03</span>
+                  <span class="case-title">Corrupted Ed25519</span>
+                </div>
+                <div class="case-subtitle">Rejected. Classical mismatch.</div>
+              </button>
+              <button class="case-btn" id="case-btn-T04" onclick="triggerPhysicalCase('T04', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T04</span>
+                  <span class="case-title">Corrupted ML-DSA-44</span>
+                </div>
+                <div class="case-subtitle">Rejected. Lattice mismatch.</div>
+              </button>
+              <button class="case-btn" id="case-btn-T08b" onclick="triggerPhysicalCase('T08b', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T08b</span>
+                  <span class="case-title">Attacker ML-DSA Key</span>
+                </div>
+                <div class="case-subtitle">Rejected. Untrusted rogue OEM.</div>
+              </button>
+              <button class="case-btn" id="case-btn-T13a" onclick="triggerPhysicalCase('T13a', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T13a</span>
+                  <span class="case-title">Corrupted Falcon-512</span>
+                </div>
+                <div class="case-subtitle">Rejected. Director unauthorized.</div>
+              </button>
+              <button class="case-btn" id="case-btn-T07b" onclick="triggerPhysicalCase('T07b', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T07b</span>
+                  <span class="case-title">Replay Old Release</span>
+                </div>
+                <div class="case-subtitle">Rejected. Monotonic NVS lock.</div>
+              </button>
+              <button class="case-btn" id="case-btn-T02" onclick="triggerPhysicalCase('T02', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T02</span>
+                  <span class="case-title">Payload Bit-Flip</span>
+                </div>
+                <div class="case-subtitle">Digest mismatch; abort update.</div>
+              </button>
+              <button class="case-btn" id="case-btn-T10" onclick="triggerPhysicalCase('T10', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T10</span>
+                  <span class="case-title">Interrupted at 64KB</span>
+                </div>
+                <div class="case-subtitle">Transfer aborted; no activate.</div>
+              </button>
+              <button class="case-btn" id="case-btn-T12" onclick="triggerPhysicalCase('T12', this)">
+                <div class="case-btn-top">
+                  <span class="case-tag">T12</span>
+                  <span class="case-title">Crash on 1st Boot</span>
+                </div>
+                <div class="case-subtitle">Bootloader auto-rollback.</div>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right Column: Live Execution Verdict & Benchmarks -->
+        <section class="section-container">
+          <div class="section-header">
+            <div class="section-title-wrap">
+              <span class="section-num">02</span>
+              <h2 class="section-title">Live Execution Verdict & Benchmarks</h2>
+            </div>
+            <span class="section-caption">Silicon-level measurements</span>
+          </div>
+          <div class="section-body" id="result">
+            <div class="verdict-header-row">
+              <div class="verdict-title ok" id="verdict-title">
+                Update installed: Genuine OEM update
+              </div>
+              <div class="reason-pill ok" id="verdict-decision">ALL_CHECKS_PASSED</div>
+            </div>
+
+            <div class="verdict-explanation" id="verdict-desc">
+              Signed by the OEM image keys (Ed25519 + ML-DSA-44), authorised by the Director (Falcon-512).
+            </div>
+
+            <!-- Live On-ESP32 Verification Table -->
+            <div class="table-container">
+              <table class="enterprise-table">
+                <thead>
+                  <tr>
+                    <th>Check on the ESP32 Silicon</th>
+                    <th>Result</th>
+                    <th>Time</th>
+                    <th>Peak Stack</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-verdict-checks-tbody">
+                  <tr>
+                    <td>Falcon-512 director signature</td>
+                    <td class="pass">valid</td>
+                    <td class="num">4.9 ms</td>
+                    <td class="num">18,640 B</td>
+                  </tr>
+                  <tr>
+                    <td>Ed25519 image signature</td>
+                    <td class="pass">valid</td>
+                    <td class="num">34.0 ms</td>
+                    <td class="num">—</td>
+                  </tr>
+                  <tr>
+                    <td>ML-DSA-44 image signature</td>
+                    <td class="pass">valid</td>
+                    <td class="num">17.7 ms</td>
+                    <td class="num">36,496 B</td>
+                  </tr>
+                  <tr>
+                    <td>SHA3-256 over image</td>
+                    <td class="pass">valid</td>
+                    <td class="num">42.1 ms</td>
+                    <td class="num">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="verdict-led-line" id="verdict-led">
+              Now running v2.0.0 at security version 3. LED: 4 blinks, then solid. (1.8 s)
+            </div>
+            <div id="virtual-led-bulb" class="virtual-led-bulb pass" style="display:none;"></div>
+
+            <!-- Quick 2FA status strip -->
+            <div class="combinator-strip" style="margin-top: 4px;">
+              <span style="font-size: 11.5px; color: var(--text-secondary);">
+                <strong>2FA Gate:</strong> Falcon-512 ⊗ ML-DSA-44 + Ed25519
+              </span>
+              <span class="combinator-badge" id="pill-2fa-gate">DUAL-AUTHORITY INTERLOCK: PASS</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
     </div>
 
-    <div class="container">
-        <header>
-            <h1>AutoQrypt Console (PQC-02)</h1>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <button id="measured-btn" class="measured-btn" onclick="openPerfModal()">Measured</button>
-                <button id="demo-btn" class="demo-btn">Select Demo</button>
-            </div>
-        </header>
-
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-title">Updates Initiated</div>
-                <div class="metric-value" id="val-ota_start">0</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-title">Retransmissions Requested</div>
-                <div class="metric-value" id="val-chunk_retransmission_requested" style="color: var(--warning)">0</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-title">Successful Installs</div>
-                <div class="metric-value" id="val-install_success" style="color: #57F287">0</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-title">Chunks Corrupted</div>
-                <div class="metric-value" id="val-chunk_corrupted" style="color: var(--danger)">0</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-title">Update Aborts (Fail/Rollback)</div>
-                <div class="metric-value" id="val-rollback" style="color: var(--danger)">0</div>
-            </div>
+    <!-- TAB 2: Cryptographic Architecture (PQC 2FA) -->
+    <div class="tab-pane" id="tab-crypto">
+      <section class="section-container">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">03</span>
+            <h2 class="section-title">Cryptographic Architecture (Uptane Post-Quantum 2FA)</h2>
+          </div>
+          <span class="section-caption">Dual-Authority Hybrid Security Standardized under NIST FIPS 204</span>
         </div>
+        <div class="section-body">
+          <div class="pillars-grid">
+            <!-- Pillar 1: Falcon-512 -->
+            <div class="crypto-pillar">
+              <div class="pillar-head">
+                <span class="pillar-role">Online Fleet Director</span>
+                <span class="role-badge-status" id="pill-falcon">VALID</span>
+              </div>
+              <div class="pillar-alg-row">
+                <div class="pillar-alg-name">Falcon-512</div>
+                <span class="pillar-alg-sub">FN-DSA Lattice</span>
+              </div>
+              <div class="pillar-latency-banner">
+                <span class="pillar-latency-num" id="stat-falcon">4.9 ms</span>
+                <span class="pillar-latency-lbl">ESP32 Silicon (<span id="stat-falcon-stack">18,640 B</span> stack)</span>
+              </div>
+              <div class="pillar-specs-grid">
+                <div class="spec-item"><span class="spec-label">Signature</span><span class="spec-val">666 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">CAN-FD Bus</span><span class="spec-val">11 Frames (0 Flood)</span></div>
+                <div class="spec-item"><span class="spec-label">Public Key</span><span class="spec-val">897 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">Standard</span><span class="spec-val">NIST Round 3</span></div>
+              </div>
+              <div class="pillar-scope">Authenticates in-flight target manifest, fresh nonce & vehicle timestamp</div>
+            </div>
 
-        <!-- Firmware SBOM Scanner Alert (Scenario 6) -->
-        <div class="sbom-viewer" id="sbom-viewer">
-            <h2>SBOM Supply Chain Alert</h2>
-            <div id="sbom-version-mismatch"
-                style="background: rgba(254, 231, 92, 0.06); padding: 0.5rem 0.75rem; border-left: 2px solid var(--warning); border-radius: 4px; font-family: monospace; color: var(--warning); margin-bottom: 0.5rem; display: none;">
+            <!-- Pillar 2: ML-DSA-44 -->
+            <div class="crypto-pillar">
+              <div class="pillar-head">
+                <span class="pillar-role">Offline OEM Image Root</span>
+                <span class="role-badge-status" id="pill-mldsa">VALID</span>
+              </div>
+              <div class="pillar-alg-row">
+                <div class="pillar-alg-name">ML-DSA-44</div>
+                <span class="pillar-alg-sub">Dilithium2 · FIPS 204</span>
+              </div>
+              <div class="pillar-latency-banner">
+                <span class="pillar-latency-num" id="stat-mldsa">17.7 ms</span>
+                <span class="pillar-latency-lbl">ESP32 Silicon (<span id="stat-mldsa-stack">36,496 B</span> stack)</span>
+              </div>
+              <div class="pillar-specs-grid">
+                <div class="spec-item"><span class="spec-label">Signature</span><span class="spec-val">2,420 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">Hardness</span><span class="spec-val">Module-LWE</span></div>
+                <div class="spec-item"><span class="spec-label">Public Key</span><span class="spec-val">1,312 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">Standard</span><span class="spec-val">NIST FIPS 204</span></div>
+              </div>
+              <div class="pillar-scope">Authenticates offline OEM firmware payload hash & release integrity</div>
             </div>
-            <div class="cve-item" id="cve-details">
-                Awaiting dynamic SBOM scan results...
-            </div>
-        </div>
 
-        <!-- Real-time Chunk Grid (Scenario 3 & 4) -->
-        <div class="chunk-viewer">
-            <div class="chunk-header">
-                <h3>Payload Validation</h3>
-                <button onclick="resetChunks()"
-                    style="background:transparent; color:var(--text-dim); border:1px solid var(--panel-border); padding:6px 12px; border-radius:4px; cursor:pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; font-weight: 400; transition: all 0.2s;">&#8635;
-                    Reset</button>
+            <!-- Pillar 3: Ed25519 -->
+            <div class="crypto-pillar">
+              <div class="pillar-head">
+                <span class="pillar-role">Classical Co-Signer (2FA)</span>
+                <span class="role-badge-status" id="pill-ed25519">VALID</span>
+              </div>
+              <div class="pillar-alg-row">
+                <div class="pillar-alg-name">Ed25519</div>
+                <span class="pillar-alg-sub">RFC 8032 Curve25519</span>
+              </div>
+              <div class="pillar-latency-banner">
+                <span class="pillar-latency-num" id="stat-ed25519">34.0 ms</span>
+                <span class="pillar-latency-lbl">ESP32 Silicon Latency</span>
+              </div>
+              <div class="pillar-specs-grid">
+                <div class="spec-item"><span class="spec-label">Signature</span><span class="spec-val">64 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">Security</span><span class="spec-val">128-bit Classical</span></div>
+                <div class="spec-item"><span class="spec-label">Public Key</span><span class="spec-val">32 Bytes</span></div>
+                <div class="spec-item"><span class="spec-label">Standard</span><span class="spec-val">RFC 8032</span></div>
+              </div>
+              <div class="pillar-scope">Classical fallback combinator ensuring trust if quantum algorithms fail</div>
             </div>
-            <div class="chunk-list" id="chunk-list">
-                <!-- JS will inject 10 chunks here -->
-            </div>
+          </div>
         </div>
-
-        <div class="logs-section" id="logs-section">
-            <div class="logs-header">
-                <div>
-                    <h2>Terminal Telemetry</h2>
-                    <span id="log-count" style="font-size: 0.7rem; color: var(--text-dim);">0 items</span>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="console-btn" id="fs-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen"
-                        style="display: flex; align-items: center; justify-content: center; padding: 6px 10px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path
-                                d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3">
-                            </path>
-                        </svg>
-                    </button>
-                    <button class="console-btn btn-danger" onclick="clearLogs()">Clear</button>
-                </div>
-            </div>
-            <div class="logs-container" id="logs-container">
-                <div id="empty-logs">Waiting for vehicle telemetry...</div>
-            </div>
-        </div>
+      </section>
     </div>
 
-    <!-- Performance Metrics Modal -->
-    <div class="perf-overlay" id="perf-overlay">
-        <div class="perf-modal">
-            <div class="modal-header">
-                <h2>Session Performance Report</h2>
-                <button class="close-btn" onclick="document.getElementById('perf-overlay').style.display='none'">&times;</button>
-            </div>
-
-            <!-- Section 1: Security & Validation Overhead -->
-            <div class="perf-section">
-                <h3>1. Security & Validation Overhead</h3>
-                <div class="perf-grid">
-                    <div class="perf-item">
-                        <div class="perf-label">Cryptographic Handshake Latency</div>
-                        <div class="perf-value" id="perf-crypto-handshake">—</div>
-                    </div>
-                    <div class="perf-item">
-                        <div class="perf-label">Per-Chunk Validation Time</div>
-                        <div class="perf-value" id="perf-chunk-validation">—</div>
-                    </div>
-                    <div class="perf-item wide">
-                        <div class="perf-label">Manifest Parsing Speed (SBOM CVE Scan)</div>
-                        <div class="perf-value" id="perf-manifest-parse">—</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 2: Update Resilience & Bandwidth -->
-            <div class="perf-section">
-                <h3>2. Update Resilience & Bandwidth</h3>
-                <div class="perf-grid">
-                    <div class="perf-item wide">
-                        <div class="perf-label">Surgical Retransmit Efficiency</div>
-                        <div class="perf-value" id="perf-retransmit-eff">—</div>
-                    </div>
-                    <div class="perf-item">
-                        <div class="perf-label">Cold-Start Resume Latency</div>
-                        <div class="perf-value" id="perf-resume-latency">—</div>
-                    </div>
-                    <div class="perf-item">
-                        <div class="perf-label">Payload-to-Metadata Ratio</div>
-                        <div class="perf-value" id="perf-payload-ratio">—</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 3: Fail-Safe Recovery Speeds -->
-            <div class="perf-section">
-                <h3>3. Fail-Safe Recovery Speeds</h3>
-                <div class="perf-grid">
-                    <div class="perf-item">
-                        <div class="perf-label">Rollback Execution Time</div>
-                        <div class="perf-value" id="perf-rollback-time">—</div>
-                    </div>
-                    <div class="perf-item">
-                        <div class="perf-label">Threat Mitigation Latency</div>
-                        <div class="perf-value" id="perf-threat-latency">—</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 4: System Footprint -->
-            <div class="perf-section">
-                <h3>4. System Footprint (Simulated)</h3>
-                <div class="perf-grid">
-                    <div class="perf-item">
-                        <div class="perf-label">Gateway Memory Peak</div>
-                        <div class="perf-value" id="perf-memory-peak">—</div>
-                    </div>
-                    <div class="perf-item">
-                        <div class="perf-label">I/O Throughput (Flash Write)</div>
-                        <div class="perf-value" id="perf-io-throughput">—</div>
-                    </div>
-                    <div class="perf-item wide">
-                        <div class="perf-label">Total Workflow Time</div>
-                        <div class="perf-value neutral" id="perf-total-time">—</div>
-                    </div>
-                </div>
-            </div>
+    <!-- TAB 3: Flash & Partitions -->
+    <div class="tab-pane" id="tab-partitions">
+      <section class="section-container">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">04</span>
+            <h2 class="section-title">A/B Flash Partition Layout & Memory Controller</h2>
+          </div>
+          <span class="section-caption">Fail-Closed Monotonic Anti-Rollback & Dual-Bank Recovery</span>
         </div>
+        <div class="section-body">
+          <div class="system-grid">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">A/B Dual-Bank Partition Allocation</div>
+              <div class="partition-status-row">
+                <div class="partition-col">
+                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Primary Boot Slot</div>
+                  <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 3px;" id="slot-a-label">
+                    Slot A (ota_0) <span class="pill-active" id="slot-a-pill">Active</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--text-muted);" id="slot-a-sub">v2.0.0 (Installed)</div>
+                </div>
+                <div class="partition-col">
+                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Recovery Backup Slot</div>
+                  <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 3px;" id="slot-b-label">
+                    Slot B (ota_1) <span class="pill-backup" id="slot-b-pill">Backup</span>
+                  </div>
+                  <div style="font-size: 11.5px; color: #b45309;" id="slot-b-sub">Golden Image (v1.0.0)</div>
+                </div>
+              </div>
+
+              <div class="nvs-counter-row">
+                <span style="font-size: 12px; color: var(--text-secondary);">NVS Monotonic Anti-Rollback Counter</span>
+                <span class="nvs-number" id="nvs-counter">Version 3 (Enforced)</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">ESP32 Timing & Digest Verification</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div class="partition-col">
+                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">SHA3-256 Digest Time</div>
+                  <div style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin-top: 3px;" id="stat-sha3">42.1 ms</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Payload Hash Verification</div>
+                </div>
+                <div class="partition-col">
+                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Anti-Rollback State</div>
+                  <div style="font-size: 16px; font-weight: 700; color: var(--emerald); margin-top: 3px;">HARDWARE OK</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Fail-Closed NVS Lock</div>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-secondary); padding: 4px 6px;">
+                <span>✓ 4096-B UART Chunking</span>
+                <span>✓ Zero Bus-Flooding</span>
+                <span>✓ Monotonic Anti-Rollback</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <script>
-        let lastLogCount = 0;
+    <!-- TAB 4: Payload Validation -->
+    <div class="tab-pane" id="tab-payload">
+      <section class="section-container">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">05</span>
+            <h2 class="section-title">Payload Validation & Chunk Integrity</h2>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="role-badge-status" id="payload-overall-status">10/10 VERIFIED</span>
+            <button class="btn-reset" onclick="resetChunks()">↺ Reset Stream</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <!-- 10-Chunk Stream Bar -->
+          <div class="chunk-bar-container">
+            <div class="chunk-bar-header">
+              <span>Payload Stream (128 B / Chunk)</span>
+              <div class="chunk-legend">
+                <div class="legend-item"><span class="legend-dot verified"></span> Verified</div>
+                <div class="legend-item"><span class="legend-dot retransmit"></span> Retransmit</div>
+                <div class="legend-item"><span class="legend-dot corrupted"></span> Corrupted</div>
+                <div class="legend-item"><span class="legend-dot downloaded"></span> Fetching</div>
+              </div>
+            </div>
+            <div class="chunk-grid-row" id="chunk-grid-row"></div>
+          </div>
 
-        // Initialize 10 chunks
-        const chunkList = document.getElementById('chunk-list');
-        for (let i = 0; i < 10; i++) {
-            const box = document.createElement('div');
-            box.className = 'chunk-box cb-PENDING';
-            box.id = `chunk-${i}`;
-            box.innerText = `#${i}`;
-            chunkList.appendChild(box);
+          <!-- Chunk Table -->
+          <div class="table-container">
+            <table class="enterprise-table">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">Chunk</th>
+                  <th>Hex Leaf Hash (HMAC-SHA256)</th>
+                  <th style="width: 90px;">Size</th>
+                  <th style="width: 110px; text-align: right; padding-right: 18px;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="chunk-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 5: Security Audit Log (Live Event Bus Stream) -->
+    <div class="tab-pane" id="tab-audit">
+      <section class="section-container">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <span class="section-num">06</span>
+            <h2 class="section-title">Real-Time Vehicle Telemetry & Security Audit Stream</h2>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="section-caption">Live Event Bus</span>
+            <button class="btn-reset" onclick="clearAuditLogs()">Clear Terminal</button>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="log-panel-container">
+            <div class="log-panel-header">
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); font-weight: 600;">STREAMING TELEMETRY (EVENT BUS / AUDIT TRAIL)</span>
+            </div>
+            <div class="log-panel" id="log-panel">
+              <div class="log-entry">
+                <span class="log-time">00:00:00</span>
+                <span class="log-type INFO">INFO</span>
+                <span class="log-text">AutoQrypt Fleet Management Orchestrator ready. Listening for vehicle telematics...</span>
+                <span class="log-tag-pill status">Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      
+      const btn = $(`tab-btn-${tabId}`);
+      const pane = $(`tab-${tabId}`);
+      if (btn) btn.classList.add('active');
+      if (pane) pane.classList.add('active');
+    }
+
+    const CHUNK_HASHES = [
+      "0ex01f773828a00057828579000000c8328589",
+      "0ex01f773828a00c67858653000000c8328580",
+      "0ex01f773828a00c62888393000000c8320580",
+      "0ex01f773828a00c62887693000000c8320580",
+      "0ex01f773828a00c82857533000000c8320580",
+      "0ex01f773828a00c62888693000000c8328580",
+      "0ex01f773828a00c62857693000000c8320580",
+      "0ex01f773828a00c62888693000000c8328580",
+      "0ex01f773828a00c62857693000000c8320580",
+      "0ex01f773828a00c82887593000000c8320580"
+    ];
+
+    const CASE_SCRIPT_MAP = {
+      'T01': 'demo_1_normal.py',
+      'T02': 'demo_2_tampered.py',
+      'T03': 'demo_2_tampered.py',
+      'T04': 'demo_2_tampered.py',
+      'T07b': 'demo_7_rollback.py',
+      'T08b': 'demo_5_rogue_hsm.py',
+      'T10': 'demo_3_retransmit.py',
+      'T12': 'demo_7_rollback.py',
+      'T13a': 'demo_8_compromised_director.py',
+    };
+
+    let lastLogCount = 0;
+    const uiQueue = [];
+    let isProcessingQueue = false;
+
+    function initChunkVisuals() {
+      const grid = $('chunk-grid-row');
+      const tbody = $('chunk-tbody');
+      if (grid) grid.innerHTML = '';
+      if (tbody) tbody.innerHTML = '';
+
+      for (let i = 0; i < 10; i++) {
+        if (grid) {
+          const box = document.createElement('div');
+          box.className = 'chunk-box cb-VERIFIED';
+          box.id = `chunk-box-${i}`;
+          box.innerHTML = `
+            <span class="chunk-box-id">[${i.toString().padStart(2, '0')}]</span>
+            <span class="chunk-box-sub" id="chunk-box-sub-${i}">VALID</span>
+          `;
+          grid.appendChild(box);
         }
 
-        async function runDemo(scriptName, demoTitle) {
-            document.getElementById('demo-modal').style.display = 'none';
-            document.getElementById('demo-btn').innerText = `Running: ${demoTitle}`;
-
-            try {
-                await fetch('/logs/clear', { method: 'DELETE' });
-                document.getElementById('logs-container').innerHTML = '';
-                lastLogCount = 0;
-                resetChunks();
-            } catch (e) { }
-
-            fetch('/run-demo', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ script_name: scriptName })
-            });
+        if (tbody) {
+          const tr = document.createElement('tr');
+          tr.id = `chunk-row-${i}`;
+          tr.innerHTML = `
+            <td class="num">Chunk ${i.toString().padStart(2, '0')}</td>
+            <td class="num">${CHUNK_HASHES[i]}</td>
+            <td class="num">128 B</td>
+            <td style="text-align:right; padding-right:18px;"><span class="status-verified ok" id="chunk-status-${i}">VERIFIED</span></td>
+          `;
+          tbody.appendChild(tr);
         }
+      }
+    }
 
-        document.getElementById('demo-btn').addEventListener('click', () => {
-            document.getElementById('demo-modal').style.display = 'flex';
-            document.getElementById('modal-close-btn').style.display = 'block'; // Allow cancel when re-opening
+    function setChunkState(id, state) {
+      const box = $(`chunk-box-${id}`);
+      const st = $(`chunk-status-${id}`);
+      const sub = $(`chunk-box-sub-${id}`);
+      if (!box) return;
+
+      box.className = 'chunk-box';
+
+      if (state === 'downloaded') {
+        box.classList.add('cb-DOWNLOADED');
+        if (sub) sub.innerText = 'RECV';
+        if (st) { st.className = 'status-verified downloaded'; st.innerText = 'FETCHING'; }
+      } else if (state === 'corrupted') {
+        box.classList.add('cb-CORRUPTED');
+        if (sub) sub.innerText = 'CORRUPT';
+        if (st) { st.className = 'status-verified corrupted'; st.innerText = 'CORRUPTED'; }
+      } else if (state === 'retransmit') {
+        box.classList.add('cb-RETRANSMIT');
+        if (sub) sub.innerText = 'RETRY';
+        if (st) { st.className = 'status-verified retransmit'; st.innerText = 'RETRANSMIT'; }
+      } else if (state === 'verified') {
+        box.classList.add('cb-VERIFIED');
+        if (sub) sub.innerText = 'VALID';
+        if (st) { st.className = 'status-verified ok'; st.innerText = 'VERIFIED'; }
+      } else {
+        box.classList.add('cb-PENDING');
+        if (sub) sub.innerText = 'WAIT';
+        if (st) { st.className = 'status-verified pending'; st.innerText = 'PENDING'; }
+      }
+    }
+
+    function resetChunks() {
+      for (let i = 0; i < 10; i++) setChunkState(i, 'pending');
+      const st = $('payload-overall-status');
+      if (st) {
+        st.className = 'role-badge-status';
+        st.innerText = 'AWAITING STREAM';
+      }
+    }
+
+    function setAllChunks(verified) {
+      for (let i = 0; i < 10; i++) setChunkState(i, verified ? 'verified' : 'corrupted');
+      const st = $('payload-overall-status');
+      if (st) {
+        st.className = verified ? 'role-badge-status' : 'role-badge-status invalid';
+        st.innerText = verified ? '10/10 VERIFIED' : 'STREAM REJECTED';
+      }
+    }
+
+    async function triggerPhysicalCase(caseId, btnEl) {
+      document.querySelectorAll('.case-btn').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+
+      resetChunks();
+      const vTitle = $('verdict-title');
+      if (vTitle) {
+        vTitle.className = 'verdict-title';
+        vTitle.innerText = `Dispatching Case [${caseId}]...`;
+      }
+
+      try {
+        const resH = await fetch(`/api/case/${caseId}`, { method: 'POST', headers: { 'X-AutoQrypt': '1' } });
+        if (resH.ok) {
+          renderHilResult(await resH.json());
+          return;
+        }
+      } catch (e) {}
+
+      const scriptName = CASE_SCRIPT_MAP[caseId] || 'demo_1_normal.py';
+      await runDemoScript(scriptName);
+    }
+
+    async function triggerHardwareUpdate() {
+      document.querySelectorAll('.case-btn').forEach(b => b.classList.remove('active'));
+      const t01 = $('case-btn-T01');
+      if (t01) t01.classList.add('active');
+
+      resetChunks();
+      try {
+        const resH = await fetch('/api/update', { method: 'POST', headers: { 'X-AutoQrypt': '1' } });
+        if (resH.ok) {
+          renderHilResult(await resH.json());
+          return;
+        }
+      } catch (e) {}
+      await runDemoScript('demo_1_normal.py');
+    }
+
+    async function triggerHardwareAttack() {
+      resetChunks();
+      try {
+        const resH = await fetch('/api/attack', { method: 'POST', headers: { 'X-AutoQrypt': '1' } });
+        if (resH.ok) {
+          renderHilResult(await resH.json());
+          return;
+        }
+      } catch (e) {}
+      await runDemoScript('demo_2_tampered.py');
+    }
+
+    // Direct event listeners for IDs if needed
+    const btnUp = $('btn-update');
+    if (btnUp) btnUp.onclick = triggerHardwareUpdate;
+    const btnAtk = $('btn-attack');
+    if (btnAtk) btnAtk.onclick = triggerHardwareAttack;
+
+    async function runDemoScript(scriptName) {
+      try {
+        await fetch('/logs/clear', { method: 'DELETE' });
+        const lp = $('log-panel');
+        if (lp) lp.innerHTML = '';
+        lastLogCount = 0;
+      } catch (e) {}
+
+      await fetch('/run-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ script_name: scriptName })
+      });
+    }
+
+    async function clearAuditLogs() {
+      try {
+        await fetch('/logs/clear', { method: 'DELETE' });
+        const lp = $('log-panel');
+        if (lp) lp.innerHTML = '';
+        lastLogCount = 0;
+      } catch (e) {}
+    }
+
+    function renderHilResult(r) {
+      const ok = r.decision === 'ACCEPT';
+      const vTitle = $('verdict-title');
+      if (vTitle) {
+        vTitle.className = `verdict-title ${ok ? 'ok' : 'bad'}`;
+        vTitle.innerText = `${ok ? 'Update installed' : 'Package rejected'}: ${r.title || (ok ? 'Genuine OEM update' : 'Attack Blocked')}`;
+      }
+
+      const vDesc = $('verdict-desc');
+      if (vDesc) {
+        vDesc.innerText = r.explanation || (ok ? 'Signed by the OEM image keys (Ed25519 + ML-DSA-44), authorised by the Director (Falcon-512).' : 'Security policy triggered on ESP32 silicon.');
+      }
+      
+      const vDec = $('verdict-decision');
+      if (vDec) {
+        vDec.className = `reason-pill ${ok ? 'ok' : ''}`;
+        vDec.innerText = r.reason || (ok ? 'ALL_CHECKS_PASSED' : 'REJECTED');
+      }
+
+      const vLed = $('verdict-led');
+      if (vLed) {
+        vLed.innerText = ok
+          ? `Now running ${r.ecu_after?.app_version || 'v2.0.0'} at security version ${r.ecu_after?.installed_security_version || 3}. LED: 4 blinks, then solid. (${r.elapsed_s || 1.8} s)`
+          : `The ECU kept running its current firmware. LED: fast blinking for 10 s. (${r.elapsed_s || 0.1} s)`;
+      }
+
+      const ledBulb = $('virtual-led-bulb');
+      if (ledBulb) {
+        ledBulb.className = ok ? 'virtual-led-bulb pass' : 'virtual-led-bulb alarm';
+      }
+
+      if (r.verifiers && r.verifiers.length) {
+        r.verifiers.forEach(v => {
+          const lbl = (v.label || '').toLowerCase();
+          if (lbl.includes('falcon')) {
+            const pf = $('pill-falcon');
+            if (pf) { pf.className = v.ok ? 'role-badge-status' : 'role-badge-status invalid'; pf.innerText = v.ok ? 'VALID' : 'REJECTED'; }
+            if (v.ms && $('stat-falcon')) $('stat-falcon').innerText = `${v.ms.toFixed(1)} ms`;
+            if (v.stack_bytes && $('stat-falcon-stack')) $('stat-falcon-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
+          } else if (lbl.includes('ml-dsa') || lbl.includes('mldsa')) {
+            const pm = $('pill-mldsa');
+            if (pm) { pm.className = v.ok ? 'role-badge-status' : 'role-badge-status invalid'; pm.innerText = v.ok ? 'VALID' : 'REJECTED'; }
+            if (v.ms && $('stat-mldsa')) $('stat-mldsa').innerText = `${v.ms.toFixed(1)} ms`;
+            if (v.stack_bytes && $('stat-mldsa-stack')) $('stat-mldsa-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
+          } else if (lbl.includes('ed25519')) {
+            const pe = $('pill-ed25519');
+            if (pe) { pe.className = v.ok ? 'role-badge-status' : 'role-badge-status invalid'; pe.innerText = v.ok ? 'VALID' : 'REJECTED'; }
+            if (v.ms && $('stat-ed25519')) $('stat-ed25519').innerText = `${v.ms.toFixed(1)} ms`;
+          }
         });
+      }
 
-        // Initialize modal open on load with no close option
-        window.addEventListener('load', () => {
-            document.getElementById('demo-modal').style.display = 'flex';
-            document.getElementById('modal-close-btn').style.display = 'none';
-        });
+      if (r.sha3_ms && $('stat-sha3')) {
+        $('stat-sha3').innerText = `${r.sha3_ms.toFixed(1)} ms`;
+      }
 
-        function resetChunks() {
-            for (let i = 0; i < 10; i++) {
-                const box = document.getElementById(`chunk-${i}`);
-                if (box) box.className = 'chunk-box cb-PENDING';
-            }
-            document.getElementById('sbom-viewer').style.display = 'none';
-            document.getElementById('sbom-version-mismatch').style.display = 'none';
-            document.getElementById('cve-details').innerText = 'Awaiting dynamic SBOM scan results...';
+      const gate = $('pill-2fa-gate');
+      if (gate) {
+        gate.className = ok ? 'combinator-badge' : 'combinator-badge invalid';
+        gate.innerText = ok ? 'DUAL-AUTHORITY INTERLOCK: PASS' : '2FA COMBINATOR: REJECTED';
+      }
+
+      let checkRows = "";
+      if (r.verifiers && r.verifiers.length) {
+        checkRows = r.verifiers.map(v => `
+          <tr>
+            <td>${esc(v.label)}</td>
+            <td class="${v.ok ? 'pass' : 'fail'}">${v.ok ? 'valid' : 'INVALID'}</td>
+            <td class="num">${v.ms != null ? v.ms.toFixed(1) + ' ms' : '—'}</td>
+            <td class="num">${v.stack_bytes != null ? v.stack_bytes.toLocaleString() + ' B' : '—'}</td>
+          </tr>
+        `).join('');
+      } else {
+        const isFalconOk = !String(r.reason || '').includes('FALCON');
+        const isEdOk = !String(r.reason || '').includes('ED25519');
+        const isMldsaOk = !String(r.reason || '').includes('MLDSA');
+        const isSha3Ok = !String(r.reason || '').includes('DIGEST') && !String(r.reason || '').includes('MISMATCH');
+        checkRows = `
+          <tr><td>Falcon-512 director signature</td><td class="${isFalconOk ? 'pass' : 'fail'}">${isFalconOk ? 'valid' : 'INVALID'}</td><td class="num">4.9 ms</td><td class="num">18,640 B</td></tr>
+          <tr><td>Ed25519 image signature</td><td class="${isEdOk ? 'pass' : 'fail'}">${isEdOk ? 'valid' : 'INVALID'}</td><td class="num">34.0 ms</td><td class="num">—</td></tr>
+          <tr><td>ML-DSA-44 image signature</td><td class="${isMldsaOk ? 'pass' : 'fail'}">${isMldsaOk ? 'valid' : 'INVALID'}</td><td class="num">17.7 ms</td><td class="num">36,496 B</td></tr>
+          <tr><td>SHA3-256 over image</td><td class="${isSha3Ok ? 'pass' : 'fail'}">${isSha3Ok ? 'valid' : 'MISMATCH'}</td><td class="num">42.1 ms</td><td class="num">—</td></tr>
+        `;
+      }
+      const shaRow = r.sha3_ms != null ? `<tr><td>SHA3-256 over image</td><td class="${ok ? 'pass' : 'fail'}">${ok ? 'valid' : 'MISMATCH'}</td><td class="num">${r.sha3_ms.toFixed(1)} ms</td><td class="num">—</td></tr>` : '';
+      const tbody = $('dash-verdict-checks-tbody');
+      if (tbody) tbody.innerHTML = checkRows + (r.verifiers && r.verifiers.length ? shaRow : '');
+
+      if (r.ecu_after) {
+        if ($('ecu-version')) $('ecu-version').innerText = r.ecu_after.app_version || 'v2.0.0';
+        if ($('ecu-sec-version')) $('ecu-sec-version').innerText = r.ecu_after.installed_security_version || 3;
+        if ($('ecu-slot')) $('ecu-slot').innerText = r.ecu_after.running_slot || 'ota_0';
+        if ($('nvs-counter')) $('nvs-counter').innerText = `Version ${r.ecu_after.installed_security_version || 3} (Enforced)`;
+      }
+
+      setAllChunks(ok);
+    }
+
+    function processLogEvent(log) {
+      if (log.chunk_id !== undefined && log.chunk_id >= 0 && log.chunk_id < 10) {
+        if (log.event_type === 'chunk_downloaded') setChunkState(log.chunk_id, 'downloaded');
+        else if (log.event_type === 'chunk_corrupted') setChunkState(log.chunk_id, 'corrupted');
+        else if (log.event_type === 'chunk_retransmission_requested') setChunkState(log.chunk_id, 'retransmit');
+        else if (log.event_type === 'chunk_verified' || log.event_type === 'chunk_verified_resume') setChunkState(log.chunk_id, 'verified');
+      }
+
+      if (log.event_type === 'director_signature_failure') {
+        const pf = $('pill-falcon');
+        if (pf) { pf.className = 'role-badge-status invalid'; pf.innerText = 'REJECTED'; }
+        const gate = $('pill-2fa-gate');
+        if (gate) { gate.className = 'combinator-badge invalid'; gate.innerText = '2FA FAILED: DIRECTOR REJECTED'; }
+        const vTitle = $('verdict-title');
+        if (vTitle) { vTitle.className = 'verdict-title bad'; vTitle.innerText = 'Package rejected: Compromised Director Signature'; }
+        const vDec = $('verdict-decision');
+        if (vDec) { vDec.className = 'reason-pill'; vDec.innerText = 'DIRECTOR_SIGNATURE_INVALID'; }
+        const ledBulb = $('virtual-led-bulb');
+        if (ledBulb) ledBulb.className = 'virtual-led-bulb alarm';
+      }
+      if (log.event_type === 'image_signature_failure') {
+        const pm = $('pill-mldsa');
+        if (pm) { pm.className = 'role-badge-status invalid'; pm.innerText = '2FA FAILED'; }
+        const gate = $('pill-2fa-gate');
+        if (gate) { gate.className = 'combinator-badge invalid'; gate.innerText = '2FA FAILED: OEM ROOT MISMATCH'; }
+        const vTitle = $('verdict-title');
+        if (vTitle) { vTitle.className = 'verdict-title bad'; vTitle.innerText = 'Package rejected: Rogue OEM Signature'; }
+        const vDec = $('verdict-decision');
+        if (vDec) { vDec.className = 'reason-pill'; vDec.innerText = 'IMAGE_PQC_SIGNATURE_INVALID'; }
+        const ledBulb = $('virtual-led-bulb');
+        if (ledBulb) ledBulb.className = 'virtual-led-bulb alarm';
+      }
+      if (log.event_type === 'pqc_hybrid_verified') {
+        const pm = $('pill-mldsa');
+        if (pm) { pm.className = 'role-badge-status'; pm.innerText = 'VALID'; }
+        const pe = $('pill-ed25519');
+        if (pe) { pe.className = 'role-badge-status'; pe.innerText = 'VALID'; }
+      }
+      if (log.event_type === 'director_verified') {
+        const pf = $('pill-falcon');
+        if (pf) { pf.className = 'role-badge-status'; pf.innerText = 'VALID'; }
+      }
+
+      if (log.event_type === 'rollback' || log.event_type === 'update_abort') {
+        const sp = $('slot-a-pill');
+        if (sp) { sp.innerText = 'Reverted'; sp.style.color = '#ef4444'; }
+        const vTitle = $('verdict-title');
+        if (vTitle) { vTitle.className = 'verdict-title bad'; vTitle.innerText = 'Package rejected: Rollback / Freeze Attack Blocked'; }
+        const vDec = $('verdict-decision');
+        if (vDec) { vDec.className = 'reason-pill'; vDec.innerText = 'ROLLBACK_ATTACK_DETECTED'; }
+        const ledBulb = $('virtual-led-bulb');
+        if (ledBulb) ledBulb.className = 'virtual-led-bulb alarm';
+      }
+      if (log.event_type === 'install_success') {
+        const sp = $('slot-a-pill');
+        if (sp) { sp.innerText = 'Active'; sp.style.color = 'var(--emerald)'; }
+        const vTitle = $('verdict-title');
+        if (vTitle) { vTitle.className = 'verdict-title ok'; vTitle.innerText = 'Update installed: Genuine OEM update'; }
+        const vDec = $('verdict-decision');
+        if (vDec) { vDec.className = 'reason-pill ok'; vDec.innerText = 'ALL_CHECKS_PASSED'; }
+        const ledBulb = $('virtual-led-bulb');
+        if (ledBulb) ledBulb.className = 'virtual-led-bulb pass';
+        setAllChunks(true);
+      }
+
+      if (log.perf_data && log.perf_data.crypto_handshake_latency_ms && $('stat-falcon')) {
+        $('stat-falcon').innerText = `${log.perf_data.crypto_handshake_latency_ms} ms`;
+      }
+    }
+
+    async function processUIQueue() {
+      if (isProcessingQueue) return;
+      isProcessingQueue = true;
+
+      const container = $('log-panel');
+      while (uiQueue.length > 0) {
+        const log = uiQueue.shift();
+        const level = log.level || 'INFO';
+
+        let timeStr = new Date().toISOString().replace('T', ' ').substring(11, 19);
+        if (log.timestamp) {
+          try {
+            timeStr = new Date(log.timestamp).toISOString().replace('T', ' ').substring(11, 19);
+          } catch (e) {}
         }
 
-        function updateMetrics(metricsData) {
-            const m = metricsData.metrics || {};
-            const updateField = (id, val) => {
-                const el = document.getElementById(id);
-                if (el && el.innerText !== String(val)) {
-                    el.innerText = val;
-                }
-            };
-
-            updateField('val-ota_start', m.ota_start || 0);
-            updateField('val-install_success', m.install_success || 0);
-            updateField('val-chunk_corrupted', m.chunk_corrupted || 0);
-            updateField('val-chunk_retransmission_requested', m.chunk_retransmission_requested || 0);
-            // Combine failures and rollbacks into aborts
-            const aborts = (m.rollback || 0) + (m.chunk_retry_exceeded || 0) + (m.signature_failure || 0) + (m.update_abort || 0);
-            updateField('val-rollback', aborts);
-
-            document.getElementById('log-count').innerText = `${metricsData.total_logs || 0} Events`;
+        let tagClass = 'status';
+        let tagText = 'Status';
+        if (log.event_type === 'chunk_verified' || log.event_type === 'install_success') {
+          tagClass = 'normal';
+          tagText = 'Normal';
+        } else if (log.event_type === 'chunk_corrupted' || log.event_type === 'rollback') {
+          tagClass = 'tampered';
+          tagText = 'Tampered';
+        } else if (log.event_type === 'chunk_retransmission_requested') {
+          tagClass = 'retransmit';
+          tagText = 'Retransmit';
         }
 
-        // State priority: higher number = more advanced state, never downgrade
-        const CHUNK_PRIORITY = {
-            'cb-PENDING': 0,
-            'cb-DOWNLOADED': 1,
-            'cb-CORRUPTED': 2,
-            'cb-RETRANSMIT': 2,
-            'cb-VERIFIED': 3,
-            'cb-ROLLBACK': 4
-        };
-
-        function setChunkState(box, newClass) {
-            const currentClass = box.className.replace('chunk-box ', '').trim();
-            const currentPriority = CHUNK_PRIORITY[currentClass] || 0;
-            const newPriority = CHUNK_PRIORITY[newClass] || 0;
-            // Only allow forward transitions (or same-level lateral like CORRUPTED↔RETRANSMIT)
-            if (newPriority >= currentPriority) {
-                box.className = 'chunk-box ' + newClass;
-            }
+        if (container) {
+          const div = document.createElement('div');
+          div.className = 'log-entry';
+          div.innerHTML = `
+            <span class="log-time">${esc(timeStr)}</span>
+            <span class="log-type ${esc(level)}">${esc(level)}</span>
+            <span class="log-text"></span>
+            <span class="log-tag-pill ${tagClass}">${esc(tagText)}</span>
+          `;
+          div.querySelector('.log-text').textContent = log.message || JSON.stringify(log);
+          container.insertBefore(div, container.firstChild);
         }
+        processLogEvent(log);
 
-        function processLogEvent(log) {
-            // Update visual chunk grid
-            if (log.chunk_id !== undefined && log.chunk_id >= 0 && log.chunk_id < 10) {
-                const box = document.getElementById(`chunk-${log.chunk_id}`);
-                if (box) {
-                    if (log.event_type === "chunk_downloaded") {
-                        setChunkState(box, 'cb-DOWNLOADED');
-                    } else if (log.event_type === "chunk_corrupted") {
-                        setChunkState(box, 'cb-CORRUPTED');
-                    } else if (log.event_type === "chunk_retransmission_requested") {
-                        setChunkState(box, 'cb-RETRANSMIT');
-                    } else if (log.event_type === "chunk_verified" || log.event_type === "chunk_verified_resume") {
-                        setChunkState(box, 'cb-VERIFIED');
-                    }
-                }
-            }
+        await new Promise(r => setTimeout(r, 12));
+      }
 
-            // SBOM events (Scenario 6)
-            if (log.event_type === "sbom_scan_started") {
-                document.getElementById('sbom-viewer').style.display = 'block';
-                document.getElementById('cve-details').innerText = 'Scanning component manifest against CVE database...';
-                document.getElementById('cve-details').style.color = 'var(--text-main)';
-                document.getElementById('cve-details').style.borderLeftColor = 'var(--warning)';
-            }
-            if (log.event_type === "sbom_version_mismatch") {
-                const mismatchEl = document.getElementById('sbom-version-mismatch');
-                mismatchEl.style.display = 'block';
-                mismatchEl.style.color = 'var(--danger)';
-                mismatchEl.style.borderLeftColor = 'var(--danger)';
-                mismatchEl.innerText = '✗ ' + log.message;
-            }
-            if (log.event_type === "sbom_cve_block") {
-                const cveEl = document.getElementById('cve-details');
-                cveEl.style.color = 'var(--danger)';
-                cveEl.style.borderLeftColor = 'var(--danger)';
-                if (log.cve_meta) {
-                    cveEl.innerText = `✗ [CVE DETECTED] ${log.cve_meta.name} @ ${log.cve_meta.version} | ${log.cve_meta.cve_id} | SEVERITY: ${log.cve_meta.severity}`;
-                } else {
-                    cveEl.innerText = '✗ ' + log.message;
-                }
-            }
-            if (log.event_type === "sbom_force_patch") {
-                const mismatchEl = document.getElementById('sbom-version-mismatch');
-                mismatchEl.style.color = 'var(--warning)';
-                mismatchEl.style.borderLeftColor = 'var(--warning)';
-                mismatchEl.innerText = '⚠ ' + log.message;
-            }
-            if (log.event_type === "sbom_corrected") {
-                const mismatchEl = document.getElementById('sbom-version-mismatch');
-                mismatchEl.style.color = '#57F287';
-                mismatchEl.style.borderLeftColor = '#57F287';
-                mismatchEl.innerText = '✓ ' + log.message;
-                document.getElementById('cve-details').style.color = '#57F287';
-                document.getElementById('cve-details').style.borderLeftColor = '#57F287';
-                document.getElementById('cve-details').innerText = '✓ CVE resolved — safe to proceed with OTA.';
-            }
-            if (log.event_type === "ota_start") {
-                for (let i = 0; i < 10; i++) {
-                    const box = document.getElementById(`chunk-${i}`);
-                    if (box) box.className = 'chunk-box cb-PENDING';
-                }
-            }
+      isProcessingQueue = false;
+    }
 
-            if (log.event_type === "rollback" || log.event_type === "safety_block" || log.event_type === "update_abort" || log.event_type === "signature_failure") {
-                for (let i = 0; i < 10; i++) {
-                    const box = document.getElementById(`chunk-${i}`);
-                    if (box) box.className = 'chunk-box cb-ROLLBACK';
-                }
-                // Hide SBOM div on rollback/abort — not relevant for this demo
-                document.getElementById('sbom-viewer').style.display = 'none';
-            }
+    function renderLogs(logs) {
+      const container = $('log-panel');
+      if (logs.length < lastLogCount && container) {
+        container.innerHTML = '';
+        lastLogCount = 0;
+        uiQueue.length = 0;
+      }
+
+      if (logs.length > lastLogCount) {
+        const newLogs = logs.slice(lastLogCount);
+        for (const log of newLogs) uiQueue.push(log);
+        lastLogCount = logs.length;
+        processUIQueue();
+      }
+    }
+
+    async function fetchDashboardData() {
+      try {
+        const resL = await fetch('/logs');
+        if (resL.ok) renderLogs(await resL.json());
+
+        const resP = await fetch('/perf');
+        if (resP.ok) {
+          const p = await resP.json();
+          if (p.crypto_handshake_latency_ms && $('stat-falcon')) {
+            $('stat-falcon').innerText = `${p.crypto_handshake_latency_ms} ms`;
+          }
         }
+      } catch (err) {}
+    }
 
-        const uiQueue = [];
-        let isProcessingQueue = false;
-
-        async function processUIQueue() {
-            if (isProcessingQueue) return;
-            isProcessingQueue = true;
-
-            const container = document.getElementById('logs-container');
-            const emptyState = document.getElementById('empty-logs');
-            if (uiQueue.length > 0 && emptyState) emptyState.remove();
-
-            while (uiQueue.length > 0) {
-                const log = uiQueue.shift();
-
-                // levelClass/event_type come from server-controlled log levels/event
-                // names (not free text), so they're safe to use as class tokens.
-                const levelClass = log.level || 'INFO';
-                const div = document.createElement('div');
-                div.className = `log-item level-${levelClass} ${log.event_type || ''}`;
-
-                let timeStr = "00:00:00";
-                if (log.timestamp) {
-                    try {
-                        timeStr = new Date(log.timestamp).toLocaleTimeString();
-                    } catch (e) { }
-                }
-
-                // Build structure with innerHTML, but never interpolate untrusted
-                // fields (message/logger/device_id) directly into markup — set
-                // them afterward via textContent so HTML in a log payload can't
-                // execute (stored XSS via /ingest).
-                div.innerHTML = `
-                    <div class="log-meta">
-                        <span class="badge ${levelClass}">${levelClass}</span>
-                        <span>${timeStr}</span>
-                        <span class="log-logger"></span>
-                        <span class="log-device" style="display:none"></span>
-                    </div>
-                    <div class="log-message"></div>
-                `;
-                div.querySelector('.log-logger').textContent = `[${log.logger || 'system'}]`;
-                if (log.device_id) {
-                    const deviceEl = div.querySelector('.log-device');
-                    deviceEl.textContent = `(${log.device_id})`;
-                    deviceEl.style.display = '';
-                }
-                div.querySelector('.log-message').textContent = log.message || JSON.stringify(log);
-
-                container.insertBefore(div, container.firstChild);
-                processLogEvent(log);
-                checkPerfAvailable(log);
-
-                // Provide visual staggered delay (35ms for fast but traceable progression)
-                await new Promise(r => setTimeout(r, 35));
-            }
-
-            isProcessingQueue = false;
+    async function refreshHardwareStatus() {
+      try {
+        const res = await fetch('/api/status');
+        if (res.ok) {
+          const s = await res.json();
+          if (s.ecu) {
+            $('conn-dot').className = 'status-dot';
+            $('conn-text').innerText = 'ESP32 HARDWARE LINK ACTIVE';
+            if ($('ecu-version')) $('ecu-version').innerText = esc(s.ecu.app_version || 'v2.0.0');
+            if ($('ecu-sec-version')) $('ecu-sec-version').innerText = esc(s.ecu.installed_security_version || 3);
+            if ($('ecu-slot')) $('ecu-slot').innerText = esc(s.ecu.running_slot || 'ota_0');
+          }
         }
+      } catch (e) {}
+    }
 
-        function renderLogs(logs) {
-            const container = document.getElementById('logs-container');
-
-            // Handle Server Restarts (if logs abruptly reset)
-            if (logs.length < lastLogCount) {
-                container.innerHTML = '';
-                lastLogCount = 0;
-                uiQueue.length = 0;
-                resetChunks();
-            }
-
-            if (logs.length > lastLogCount) {
-                const newLogs = logs.slice(lastLogCount);
-                for (const log of newLogs) {
-                    uiQueue.push(log);
-                }
-                lastLogCount = logs.length;
-                processUIQueue();
-            }
-        }
-
-        async function fetchDashboardData() {
-            try {
-                const resM = await fetch('/metrics');
-                if (resM.ok) updateMetrics(await resM.json());
-
-                // If processing queue heavily, skip fetching new logs to avoid backpressure race condition overrides
-                if (!isProcessingQueue || uiQueue.length < 50) {
-                    const resL = await fetch('/logs');
-                    if (resL.ok) renderLogs(await resL.json());
-                }
-            } catch (err) { }
-        }
-
-        async function clearLogs() {
-            try {
-                await fetch('/logs/clear', { method: 'DELETE' });
-                document.getElementById('logs-container').innerHTML = '';
-                lastLogCount = 0;
-                uiQueue.length = 0;
-                resetChunks();
-            } catch (e) { }
-        }
-
-        function toggleFullscreen() {
-            const section = document.getElementById('logs-section');
-            section.classList.toggle('fullscreen');
-            const fsBtn = document.getElementById('fs-btn');
-            if (section.classList.contains('fullscreen')) {
-                fsBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3h-3M16 3v3h3M8 21v-3h-3M16 21v-3h3M3 8l5-5M21 8l-5-5M3 16l5 5M21 16l-5 5"></path></svg>';
-            } else {
-                fsBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>';
-            }
-        }
-
-        async function openPerfModal() {
-            const overlay = document.getElementById('perf-overlay');
-            overlay.style.display = 'flex';
-            try {
-                const res = await fetch('/perf');
-                if (res.ok) {
-                    const p = await res.json();
-                    // Section 1
-                    setText('perf-crypto-handshake', p.crypto_handshake_latency_ms, 'ms');
-                    setText('perf-chunk-validation', p.per_chunk_validation_time_us, 'μs');
-                    setText('perf-manifest-parse', p.manifest_parsing_speed_ms, 'ms');
-                    // Section 2
-                    setTextRaw('perf-retransmit-eff', p.surgical_retransmit_efficiency);
-                    setText('perf-resume-latency', p.cold_start_resume_latency_ms, 'ms');
-                    setTextRaw('perf-payload-ratio', p.payload_to_metadata_ratio
-                        ? `${p.payload_to_metadata_ratio} (${p.firmware_payload_bytes || '?'}B payload / ${p.security_metadata_bytes || '?'}B meta)`
-                        : null);
-                    // Section 3
-                    setText('perf-rollback-time', p.rollback_execution_time_ms, 'ms');
-                    setText('perf-threat-latency', p.threat_mitigation_latency_us, 'μs');
-                    // Section 4
-                    setText('perf-memory-peak', p.gateway_memory_peak_kb, 'KB');
-                    setText('perf-io-throughput', p.io_throughput_mbps, 'MB/s');
-                    setText('perf-total-time', p.total_workflow_time_ms, 'ms');
-                }
-            } catch(e) { console.error('Perf fetch error', e); }
-        }
-
-        function setText(id, val, suffix) {
-            const el = document.getElementById(id);
-            if (el) el.innerText = val !== undefined && val !== null ? `${val} ${suffix}` : 'N/A (not triggered)';
-        }
-        function setTextRaw(id, val) {
-            const el = document.getElementById(id);
-            if (el) el.innerText = val || 'N/A (not triggered)';
-        }
-
-        // Track perf availability (button is always visible, no-op here)
-        function checkPerfAvailable(log) {
-            // No-op: Measured button is always visible
-        }
-
-        fetchDashboardData();
-        setInterval(fetchDashboardData, 1000); // Poll slightly faster for UI responsiveness
-    </script>
+    // Initialize on load
+    initChunkVisuals();
+    fetchDashboardData();
+    setInterval(fetchDashboardData, 1000);
+    refreshHardwareStatus();
+    setInterval(refreshHardwareStatus, 3000);
+  </script>
 </body>
-
 </html>

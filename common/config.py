@@ -2,8 +2,23 @@ import os
 
 # Centralized config: load secrets/URLs from environment variables (e.g., K8s secrets), not source control.
 
+import socket
+
+def _get_default_ota_port():
+    env_p = os.environ.get("OTA_SERVER_PORT")
+    if env_p:
+        return int(env_p)
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(0.2)
+            if s.connect_ex(("127.0.0.1", 7000)) == 0:
+                return 7002
+    except Exception:
+        pass
+    return 7000
+
 OTA_SERVER_HOST = os.getenv("OTA_SERVER_HOST", "127.0.0.1")
-OTA_SERVER_PORT = int(os.getenv("OTA_SERVER_PORT", "7000"))
+OTA_SERVER_PORT = _get_default_ota_port()
 OTA_SERVER_URL = f"http://{OTA_SERVER_HOST}:{OTA_SERVER_PORT}"
 
 DASHBOARD_HOST = os.getenv("DASHBOARD_HOST", "127.0.0.1")

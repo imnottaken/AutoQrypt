@@ -83,7 +83,6 @@ def test_qpiai_qcloud():
     assert receipt.entropy_health_pass, "QpiAI Entropy health check failed!"
     assert len(pk) == 1312, f"Unexpected ML-DSA-44 pk length: {len(pk)}"
     assert is_valid, "ML-DSA-44 signature verification failed!"
-    return receipt
 
 
 def test_bloq_platform():
@@ -146,7 +145,6 @@ def test_bloq_platform():
     assert assignments["ECU-01-BRAKE"].selected_algorithm == "Falcon-512", "ECU-01-BRAKE must select Falcon-512!"
     assert assignments["ECU-02-BMS"].selected_algorithm == "ML-DSA-44", "ECU-02-BMS must select ML-DSA-44!"
     assert assignments["ECU-03-ADAS"].selected_algorithm == "ML-DSA-44+SPHINCS+", "ECU-03-ADAS must select Hybrid ML-DSA-44+SPHINCS+!"
-    return assignments
 
 
 if __name__ == "__main__":

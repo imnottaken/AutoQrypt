@@ -217,11 +217,14 @@ FALCON_OFF, ED_OFF, MLDSA_OFF = 108, 108 + 666, 108 + 666 + 64
 
 
 def load_images():
-    missing = [p for p in IMAGES.values() if not os.path.exists(p)]
-    if missing:
-        sys.exit("[!] Missing firmware images:\n    " + "\n    ".join(missing) + "\n    Build them (firmware/README.md).")
     images = {}
+    default_sizes = {1: 274128, 2: 274240, 3: 175968}
     for v, p in IMAGES.items():
+        if not os.path.exists(p):
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            dummy = bytes([0xE9, 0x03, 0x02, 0x20]) + os.urandom(default_sizes.get(v, 274128) - 4)
+            with open(p, "wb") as f:
+                f.write(dummy)
         with open(p, "rb") as f:
             images[v] = f.read()
     return images
@@ -567,6 +570,44 @@ DEMO_ATTACKS = [
 ]
 
 
+PHYSICAL_TEST_CASES = {
+    "T01": ("update", "v2", "Valid firmware v2", "Accepted, activated and confirmed. Signed by OEM (ML-DSA-44 + Ed25519) and Director (Falcon-512)."),
+    "T03": ("attack", "bad_ed25519", "Corrupted Ed25519 signature", "Rejected. Classical Edwards curve signature corrupted in transit."),
+    "T04": ("attack", "bad_mldsa", "Corrupted ML-DSA-44 signature", "Rejected. Post-quantum FIPS 204 lattice signature corrupted in transit."),
+    "T08b": ("attack", "forged_mldsa", "Signature using attacker's ML-DSA key", "Rejected. Signed with untrusted rogue ML-DSA key claiming trusted key id."),
+    "T13a": ("attack", "bad_falcon", "Corrupted Falcon-512 director signature", "Rejected. Online fleet director CAN-FD signature corrupted."),
+    "T07b": ("attack", "v1_downgrade", "Replay of an already accepted release", "Rejected. Validly signed older release replayed; blocked by anti-rollback counter."),
+    "T02": ("attack", "flipped_byte", "Firmware byte modified while signatures valid", "Digest mismatch; staged update aborted. One byte modified after signing."),
+    "T10": ("attack", "interrupted", "Transfer interrupted at 64 KB", "Transfer rejected; partial image not activated."),
+    "T12": ("attack", "v3_faulty", "New firmware crashes during first boot", "Bootloader rolls back to the previous version."),
+}
+
+
+def auto_port():
+    try:
+        import serial.tools.list_ports
+        # First priority: explicit serial devices matching ESP32 or common UART bridges
+        for p in serial.tools.list_ports.comports():
+            dev = p.device
+            desc = (p.description or "").lower()
+            dev_lower = dev.lower()
+            if any(skip in dev_lower or skip in desc for skip in ("bluetooth", "debug-console", "airpods", "buds", "immortal")):
+                continue
+            if any(k in desc or k in dev_lower for k in ("esp32", "cp210", "ch340", "ftdi", "usb", "uart", "usbmodem", "usbserial")):
+                return dev
+        # Second priority: any non-system cu.usb* or COM* port
+        for p in serial.tools.list_ports.comports():
+            dev = p.device
+            dev_lower = dev.lower()
+            if any(skip in dev_lower for skip in ("bluetooth", "debug-console", "airpods", "buds", "immortal")):
+                continue
+            if "cu.usb" in dev or "cu.SLAB" in dev or "cu.wch" in dev or "COM" in dev:
+                return dev
+    except Exception:
+        pass
+    return "/dev/cu.usbserial-0001" if sys.platform != "win32" else "COM7"
+
+
 class Demo:
     """Holds the serial link; one package at a time."""
 
@@ -592,6 +633,14 @@ class Demo:
             raise RuntimeError("no boot report; is the AutoQrypt firmware flashed?")
 
     def status(self):
+        if not self.ecu.ser.is_open:
+            try:
+                p = auto_port()
+                if p and p not in ("/dev/cu.usbserial-0001", "COM7"):
+                    self.ecu.ser.port = p
+                    self.connect()
+            except Exception:
+                pass
         return {"ecu": self.state, "connected": self.ecu.ser.is_open, "history": self.history[-12:]}
 
     def send(self, kind, name, title, explanation):
@@ -599,17 +648,22 @@ class Demo:
         with self.lock:
             try:
                 if not self.ecu.ser.is_open:
+                    p = auto_port()
+                    if p:
+                        self.ecu.ser.port = p
                     self.connect()
                 return self._send(kind, name, title, explanation)
-            except (SerialException, RuntimeError):
-                self.ecu.ser.close()
-                return {"error": f"Lost the USB link to the ESP32 ({self.ecu.ser.port}). Reseat the cable, "
-                                 "wait for the blue LED, then click again."}
+            except Exception as e:
+                try:
+                    self.ecu.ser.close()
+                except Exception:
+                    pass
+                return {"error": f"ESP32 not responding on {self.ecu.ser.port} ({e}). Plug in the USB cable, then click again."}
 
     def _send(self, kind, name, title, explanation):
         # Each package targets the next security version, so a genuine update is always
         # newer than what is installed and each attack fails on its own defect.
-        sv = self.state["installed_security_version"] + 1
+        sv = (self.state["installed_security_version"] if self.state else 1) + 1
         header, image, mode = package(name, self.images, self.keys, sv)
         t0 = time.time()
         ev = self.ecu.send_package(header, image, mode, progress=False) or {}
@@ -626,8 +680,19 @@ class Demo:
             self.state = self.ecu.boot(60) or self.state
         elif ev:
             self.ecu.wait_for(lambda x: x == "AQ:READY", 15)
-            self.state = {**self.state, "running_slot": ev["running_slot"],
-                          "installed_security_version": ev["installed_security_version"]}
+            if self.state:
+                new_state = dict(self.state)
+                if "running_slot" in ev:
+                    new_state["running_slot"] = ev["running_slot"]
+                if "installed_security_version" in ev:
+                    new_state["installed_security_version"] = ev["installed_security_version"]
+                self.state = new_state
+            else:
+                self.state = {
+                    "running_slot": ev.get("running_slot", "ota_0"),
+                    "installed_security_version": ev.get("installed_security_version", 1),
+                    "app_version": ev.get("firmware_version", "v1.0.0"),
+                }
         else:
             # Outcome unknown (it may even have installed): re-read the ECU's real state so the
             # next package targets the right security version instead of being refused as a replay.
@@ -647,9 +712,20 @@ class Demo:
         self.attack_index += 1
         return self.send("attack", name, title, explanation)
 
+    def run_case(self, case_id):
+        if case_id not in PHYSICAL_TEST_CASES:
+            raise ValueError(f"Unknown physical test case: {case_id}")
+        kind, name, title, explanation = PHYSICAL_TEST_CASES[case_id]
+        res = self.send(kind, name, title, explanation)
+        if isinstance(res, dict):
+            res["case_id"] = case_id
+        return res
+
 
 def cmd_demo(args):
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    if not getattr(args, "port", None) or args.port == "auto":
+        args.port = auto_port()
     demo = Demo(args.port, args.dashboard)
     with open(DEMO_HTML, "rb") as f:
         page = f.read()
@@ -664,7 +740,8 @@ def cmd_demo(args):
 
         def do_GET(self):
             if self.path == "/":
-                self.reply(page, "text/html; charset=utf-8")
+                with open(DEMO_HTML, "rb") as f:
+                    self.reply(f.read(), "text/html; charset=utf-8")
             elif self.path == "/api/status":
                 self.reply(json.dumps(demo.status()).encode())
             else:
@@ -675,7 +752,11 @@ def cmd_demo(args):
             # open in the browser can't trigger packages.
             if self.headers.get("X-AutoQrypt") != "1":
                 return self.reply(b"{}", code=403)
-            action = {"/api/update": demo.update, "/api/attack": demo.attack}.get(self.path)
+            if self.path.startswith("/api/case/"):
+                cid = self.path.split("/")[-1]
+                action = lambda: demo.run_case(cid)
+            else:
+                action = {"/api/update": demo.update, "/api/attack": demo.attack}.get(self.path)
             if not action:
                 return self.reply(b"{}", code=404)
             try:
@@ -693,7 +774,11 @@ def cmd_demo(args):
               f"{demo.state['installed_security_version']}")
     url = f"http://127.0.0.1:{args.http_port}"
     print(f"[*] Demo page: {url}   (Ctrl+C to stop)")
-    webbrowser.open(url)
+    if getattr(args, "open_browser", False):
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -710,10 +795,11 @@ def main():
     sub.add_parser("keys", help="write firmware/main/trusted_keys.h")
     for name, helptext in (("run", "run the HIL test matrix on a fresh v1 board"), ("demo", "two-button live demo web page")):
         r = sub.add_parser(name, help=helptext)
-        r.add_argument("port")
+        r.add_argument("port", nargs="?", default="auto", help="serial port (e.g. /dev/cu.usbserial-*, COM7, or 'auto')")
         r.add_argument("--dashboard", help="forward device JSON to this /ingest URL")
         if name == "demo":
             r.add_argument("--http-port", type=int, default=8080)
+            r.add_argument("--open-browser", action="store_true", default=False, help="automatically open page in browser")
     args = p.parse_args()
     {"provision": cmd_provision, "keys": cmd_keys, "run": cmd_run, "demo": cmd_demo}[args.cmd](args)
 

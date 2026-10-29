@@ -220,6 +220,17 @@ def telegram_status(sync: int = 0):
     return get_telegram_status(force_sync=bool(sync))
 
 
+@app.get("/api/telegram/open")
+def telegram_open():
+    from fastapi.responses import RedirectResponse
+    st = get_telegram_status(force_sync=False)
+    url = st.get("bot_url")
+    if not url or url == "/api/telegram/open":
+        st = get_telegram_status(force_sync=True)
+        url = st.get("bot_url") or "https://telegram.org"
+    return RedirectResponse(url=url, status_code=302)
+
+
 @app.post("/api/telegram/test")
 def telegram_test():
     st = get_telegram_status()

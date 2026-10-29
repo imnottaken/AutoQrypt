@@ -818,6 +818,15 @@ def cmd_demo(args):
             elif self.path.startswith("/api/telegram/status"):
                 force_sync = "sync=1" in self.path
                 self.reply(json.dumps(get_telegram_status(force_sync=force_sync)).encode())
+            elif self.path.startswith("/api/telegram/open"):
+                st = get_telegram_status(force_sync=False)
+                url = st.get("bot_url")
+                if not url or url == "/api/telegram/open":
+                    st = get_telegram_status(force_sync=True)
+                    url = st.get("bot_url") or "https://telegram.org"
+                self.send_response(302)
+                self.send_header("Location", url)
+                self.end_headers()
             else:
                 self.reply(b"{}", code=404)
 

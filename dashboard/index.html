@@ -1726,19 +1726,19 @@
 
   <!-- Clean Minimal Telegram Alerts Modal -->
   <div class="modal-backdrop" id="tg-modal" onclick="if(event.target===this) toggleTelegramModal(false)">
-    <div class="modal-dialog" style="max-width: 460px;">
+    <div class="modal-dialog" style="max-width: 485px;">
       <div class="modal-header" style="padding: 14px 20px;">
         <h3 class="modal-title" style="font-size: 14px;">Telegram Alerts</h3>
         <button class="modal-close-btn" onclick="toggleTelegramModal(false)">✕</button>
       </div>
       <div class="modal-body" style="padding: 20px;">
         <div style="display:flex; gap:20px; align-items:stretch;">
-          <div style="background:#ffffff; border:1px solid var(--border); border-radius:8px; padding:6px 6px 8px; text-align:center; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:space-between; box-shadow:var(--shadow-card);">
+          <div style="background:#ffffff; border:1px solid var(--border); border-radius:8px; padding:8px 8px 10px; text-align:center; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:space-between; box-shadow:var(--shadow-card);">
             <div id="tg-qr-box" style="display:flex; align-items:center; justify-content:center;">
-              <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMYAAADGAQAAAACh4MLwAAABCElEQVR42u1YwQ3EIAyzrgMwEqszEgMg5WKH3q/PnvwA8Sn5WLEdR0U8nIVTOZVXKuDpq40rRkx+XFn54On8q0JsiSRmv2ZHwpu9XlywTQjS4E2E6G7YFtg6T2y8hn2T3tILxamV3sqnu3VmPt3jpAV9+vt00VuXF4AWInT4YOO8LVQ0Aqz0lmwqDrocIdsa9W2bdMkU4cWpBm+MZDbhKVit9MagT4QKfas8TaVBShO5TnorHrN1Up3XDNHoUMo3ZUQzmr11pDeyCScvYI8OwtsbptkeUumgvlnlqfa3inszve29l3sIaS1+3fbedVNst/diuwDNaL6VT8HxG3oZbnvv+bNwKu9XvvqQJyM9JGxLAAAAAElFTkSuQmCC" width="136" height="136" alt="QR Code" style="display:block; image-rendering:pixelated;">
+              <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK4AAACuAQAAAACHdwtDAAAA/UlEQVR42u1XwQ0DMQhDZYCMlNUZKQNEosbk7nXfypVadI8kL8vYmLN8qm2//bwM5Rnb5h5ZFxxe9liffAaSCUS+pi8DGMdlyZAYAYAQfMDjYiRRtOQXIKnuTDknpRMotruj1Am9sw4tSu+ciqR3jrlF3aFW46CiWlSc3BggVxs6naAvBOPUbVtJxcllnGg8wu70WNvkxwYDSKcTxl/UWGODZN4BmBE8BONYplh2xMDJHlIX07ydfT1vZZOtq6iAd2ZPWmXuNBg7+5I0i/Oclwlzp/eTDkGlTq6drdjgfHM1JxXHdHGqd7bWanlHNk96Z7PdZ8AQ72z/v9H7+Q1JKEWqCWBimwAAAABJRU5ErkJggg==" width="156" height="156" alt="QR Code" style="display:block; image-rendering:pixelated;">
             </div>
-            <div style="width:100%; border-top:1px solid var(--border); padding-top:6px; margin-top:2px;">
-              <a id="tg-enroll-link" href="#" target="_blank" style="font-size:11px; color:var(--blue); font-weight:600; text-decoration:none; display:block;">Open in Telegram ↗</a>
+            <div style="width:100%; border-top:1px solid var(--border); padding-top:7px; margin-top:4px;">
+              <a id="tg-enroll-link" href="/api/telegram/open" target="_blank" style="font-size:11.5px; color:var(--blue); font-weight:600; text-decoration:none; display:block;">Open in Telegram ↗</a>
             </div>
           </div>
 

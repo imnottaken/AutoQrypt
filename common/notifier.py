@@ -5,6 +5,7 @@ import html
 import json
 import os
 import sys
+import tempfile
 import threading
 import time
 from typing import Dict, List, Any, Optional
@@ -14,6 +15,15 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KEYSTORE_DIR = os.path.join(ROOT_DIR, "key_management", ".keystore")
 SUBSCRIBERS_FILE = os.path.join(KEYSTORE_DIR, "telegram_subscribers.json")
 STATE_FILE = os.path.join(KEYSTORE_DIR, "telegram_bot_state.json")
+
+FALLBACK_QR_URI = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK4AAACuAQAAAACHdwtDAAAA/UlEQVR42u1XwQ0DMQhDZYCMlNUZKQNEosbk"
+    "7nXfypVadI8kL8vYmLN8qm2//bwM5Rnb5h5ZFxxe9liffAaSCUS+pi8DGMdlyZAYAYAQfMDjYiRRtOQXIKnuTDknpRMotruj1Am9sw4tSu"
+    "+ciqR3jrlF3aFW46CiWlSc3BggVxs6naAvBOPUbVtJxcllnGg8wu70WNvkxwYDSKcTxl/UWGODZN4BmBE8BONYplh2xMDJHlIX07ydfT1v"
+    "ZZOtq6iAd2ZPWmXuNBg7+5I0i/Oclwlzp/eTDkGlTq6drdjgfHM1JxXHdHGqd7bWanlHNk96Z7PdZ8AQ72z/v9H7+Q1JKEWqCWBimwAAAA"
+    "BJRU5ErkJggg=="
+)
+FALLBACK_QR_HTML = f'<img src="{FALLBACK_QR_URI}" width="156" height="156" alt="QR Code" style="display:block; image-rendering:pixelated;">'
 
 try:
     from dotenv import load_dotenv
@@ -166,6 +176,17 @@ def _get_token() -> str:
     return token
 
 
+def _atomic_write_json(path: str, data: Any):
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix=".tmp")
+        with os.fdopen(fd, "w") as f:
+            json.dump(data, f, indent=2)
+        os.replace(tmp_path, path)
+    except Exception:
+        pass
+
+
 def _load_bot_state() -> Dict[str, Any]:
     if os.path.exists(STATE_FILE):
         try:
@@ -175,16 +196,11 @@ def _load_bot_state() -> Dict[str, Any]:
                 return data
         except Exception:
             pass
-    return {"last_update_id": 0, "last_report_html": "", "commands_registered": False}
+    return {"last_update_id": 0, "last_report_html": "", "commands_registered": False, "pending_alerts": []}
 
 
 def _save_bot_state(state: Dict[str, Any]):
-    try:
-        os.makedirs(KEYSTORE_DIR, exist_ok=True)
-        with open(STATE_FILE, "w") as f:
-            json.dump(state, f, indent=2)
-    except Exception:
-        pass
+    _atomic_write_json(STATE_FILE, state)
 
 
 def _load_saved_subscribers() -> Dict[str, Dict[str, Any]]:
@@ -216,12 +232,7 @@ def _load_saved_subscribers() -> Dict[str, Dict[str, Any]]:
 
 
 def _save_subscribers(subs: Dict[str, Dict[str, Any]]):
-    try:
-        os.makedirs(KEYSTORE_DIR, exist_ok=True)
-        with open(SUBSCRIBERS_FILE, "w") as f:
-            json.dump(subs, f, indent=2)
-    except Exception:
-        pass
+    _atomic_write_json(SUBSCRIBERS_FILE, subs)
 
 
 def _send_one(token: str, chat_id: str, text: str, parse_mode: Optional[str] = "HTML", reply_markup: Optional[dict] = None) -> bool:
@@ -230,30 +241,33 @@ def _send_one(token: str, chat_id: str, text: str, parse_mode: Optional[str] = "
         payload["parse_mode"] = parse_mode
     if reply_markup:
         payload["reply_markup"] = reply_markup
-    try:
-        resp = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload, timeout=4)
-        if resp.status_code == 200:
-            return True
-        if parse_mode:
-            payload.pop("parse_mode", None)
-            resp2 = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload, timeout=4)
-            return resp2.status_code == 200
-    except Exception:
-        pass
+    for attempt in range(2):
+        try:
+            resp = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload, timeout=3.5)
+            if resp.status_code == 200:
+                return True
+            if parse_mode and resp.status_code == 400:
+                payload.pop("parse_mode", None)
+                resp2 = requests.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload, timeout=3.5)
+                if resp2.status_code == 200:
+                    return True
+        except Exception:
+            if attempt == 0:
+                time.sleep(0.35)
     return False
 
 
 def _make_qr_svg(url: str) -> str:
     if not url:
-        return ""
+        return FALLBACK_QR_HTML
     try:
         import segno
         clean_url = url.split("?")[0]
         qr = segno.make(clean_url, error="m")
-        uri = qr.png_data_uri(scale=6, border=4, dark="#000000", light="#ffffff")
-        return f'<img src="{uri}" width="136" height="136" alt="QR Code" style="display:block; image-rendering:pixelated;">'
+        uri = qr.png_data_uri(scale=6, border=2, dark="#000000", light="#ffffff")
+        return f'<img src="{uri}" width="156" height="156" alt="QR Code" style="display:block; image-rendering:pixelated;">'
     except Exception:
-        return ""
+        return FALLBACK_QR_HTML
 
 
 def _ensure_bot_commands_menu(token: str, state: Dict[str, Any]):
@@ -503,8 +517,8 @@ def get_telegram_status(force_sync: bool = False) -> Dict[str, Any]:
 
     return {
         "configured": bool(token),
-        "bot_url": state.get("bot_url", ""),
-        "qr_svg": state.get("qr_svg", ""),
+        "bot_url": state.get("bot_url") or "/api/telegram/open",
+        "qr_svg": state.get("qr_svg") or FALLBACK_QR_HTML,
         "subscriber_count": len(subs),
         "subscribers": [
             {
@@ -519,7 +533,7 @@ def get_telegram_status(force_sync: bool = False) -> Dict[str, Any]:
 
 
 def send_telegram_alert(text: str, async_send: bool = True, force: bool = False, parse_mode: Optional[str] = "HTML") -> bool:
-    """Broadcasts a formatted VSOC incident report to all registered Telegram endpoints."""
+    """Broadcasts a formatted alert to all registered Telegram endpoints with automatic retry & offline queue fallback."""
     if not force and _in_test_harness():
         return False
 
@@ -535,6 +549,18 @@ def send_telegram_alert(text: str, async_send: bool = True, force: bool = False,
         subs = sync_subscribers(send_welcome=True)
         if not subs:
             return False
+        # Flush any queued offline alerts first
+        cur_state = _load_bot_state()
+        pending = list(cur_state.get("pending_alerts") or [])
+        if pending:
+            still_pending = []
+            for old_msg in pending[-5:]:
+                sent_old = any(_send_one(token, str(s.get("chat_id")), old_msg, parse_mode=parse_mode) for s in subs if s.get("chat_id"))
+                if not sent_old:
+                    still_pending.append(old_msg)
+            cur_state["pending_alerts"] = still_pending
+            _save_bot_state(cur_state)
+
         any_ok = False
         for s in subs:
             cid = s.get("chat_id")
@@ -542,6 +568,13 @@ def send_telegram_alert(text: str, async_send: bool = True, force: bool = False,
                 continue
             if _send_one(token, str(cid), text, parse_mode=parse_mode, reply_markup=REPLY_KEYBOARD):
                 any_ok = True
+        if not any_ok:
+            # Offline fallback: queue alert so it is not lost if network drops momentarily
+            cur_state = _load_bot_state()
+            q = list(cur_state.get("pending_alerts") or [])
+            q.append(text)
+            cur_state["pending_alerts"] = q[-10:]
+            _save_bot_state(cur_state)
         return any_ok
 
     if not async_send:

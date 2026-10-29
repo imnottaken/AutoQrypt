@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AutoQrpt · PQC-02 Motion Presentation Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ===========================================
+       VIEWPORT FITTING: MANDATORY BASE STYLES
+       =========================================== */
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background-color: #09090b;
+      color: #fafafa;
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    :root {
+      --title-size: clamp(2rem, 4.5vw, 3.8rem);
+      --h2-size: clamp(1.5rem, 3vw, 2.5rem);
+      --body-size: clamp(0.85rem, 1.2vw, 1.05rem);
+      --slide-padding: clamp(1.5rem, 4vw, 4rem);
+    }
+
+    /* Slide Stage & Motion-Graphics Transition Engine */
+    .deck-stage {
+      position: relative;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+      perspective: 1400px;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: var(--slide-padding);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate3d(60px, 0, -90px) rotateY(-4deg) scale(0.96);
+      filter: blur(10px);
+      transition:
+        transform 0.78s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .slide.is-prev {
+      opacity: 0;
+      transform: translate3d(-60px, 0, -90px) rotateY(4deg) scale(0.96);
+      filter: blur(10px);
+    }
+
+    .slide.is-active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate3d(0, 0, 0) rotateY(0deg) scale(1);
+      filter: blur(0px);
+      z-index: 10;
+    }
+
+    /* Staggered Motion Elements inside Active Slide */
+    .slide .mg-item {
+      opacity: 0;
+      transform: translateY(24px) scale(0.97);
+      filter: blur(6px);
+      transition:
+        opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .slide.is-active .mg-item {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0px);
+    }
+    .slide.is-active .mg-d1 { transition-delay: 0.10s; }
+    .slide.is-active .mg-d2 { transition-delay: 0.20s; }
+    .slide.is-active .mg-d3 { transition-delay: 0.30s; }
+    .slide.is-active .mg-d4 { transition-delay: 0.40s; }
+    .slide.is-active .mg-d5 { transition-delay: 0.50s; }
+
+    /* Animated Bars & Rings when Slide 5 becomes active */
+    .mg-bar {
+      width: 0%;
+      transition: width 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.25s;
+    }
+    .slide.is-active .mg-bar-15 { width: 15%; }
+    .slide.is-active .mg-bar-44 { width: 44%; }
+    .slide.is-active .mg-bar-52 { width: 52%; }
+    .slide.is-active .mg-bar-100 { width: 100%; }
+
+    .mg-ring {
+      stroke-dasharray: 251.2;
+      stroke-dashoffset: 251.2;
+      transition: stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s;
+    }
+    .slide.is-active .mg-ring {
+      stroke-dashoffset: 227;
+    }
+
+    /* Animated SVG Stream Pulses */
+    @keyframes edgePulse {
+      from { stroke-dashoffset: 120; }
+      to { stroke-dashoffset: 0; }
+    }
+    .edge-stream {
+      stroke-dasharray: 8 14;
+      animation: edgePulse 1.5s linear infinite;
+    }
+
+    /* Subtle Grid Background */
+    .bg-grid {
+      background-size: 44px 44px;
+      background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.15s !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-grid select-none">
+
+  <!-- Top Progress Beam & HUD Bar -->
+  <div class="fixed top-0 left-0 right-0 z-50">
+    <div class="h-1 w-full bg-zinc-900">
+      <div id="progress-bar" class="h-full bg-sky-400 transition-all duration-500" style="width: 14.28%"></div>
+    </div>
+    <div class="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between text-xs font-mono text-zinc-400">
+      <div class="flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-zinc-100 font-sans font-semibold">AutoQrpt</span>
+        <span class="text-zinc-600">·</span>
+        <span>PQC-02 MOTION DECK</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="slide-counter" class="text-zinc-300">01 / 07</span>
+        <button onclick="prevSlide()" class="px-2.5 py-1 rounded border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200">←</button>
+        <button onclick="nextSlide()" class="px-2.5 py-1 rounded border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200">→</button>
+        <button onclick="toggleFull()" class="px-2.5 py-1 rounded border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200">Fullscreen [F]</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="deck-stage">
+
+    <!-- =======================================================================
+         SLIDE 1: TITLE & MOTION VERIFICATION TREE
+         ======================================================================= -->
+    <section class="slide is-active" data-index="0">
+      <div class="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div class="lg:col-span-6">
+          <div class="mg-item mg-d1 inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 font-mono text-xs text-sky-300 mb-6">
+            <span>PROBLEM STATEMENT PQC-02 · AUTOMOTIVE OTA</span>
+          </div>
+          <h1 class="mg-item mg-d2 font-bold tracking-tight text-zinc-100 leading-[1.06]" style="font-size: var(--title-size)">
+            Post-Quantum OTA Security for Vehicles.
+          </h1>
+          <p class="mg-item mg-d3 mt-5 text-zinc-400 leading-relaxed max-w-lg" style="font-size: var(--body-size)">
+            Uptane dual-role separation, NIST FIPS 204 hybrid lattice signatures, and hardware NVS rollback counters verified in <strong class="text-zinc-100 font-mono">71.4 ms</strong> on bare-metal ESP32 silicon.
+          </p>
+          <div class="mg-item mg-d4 mt-10 pt-8 border-t border-zinc-800/80 grid grid-cols-3 gap-6">
+            <div>
+              <div class="font-mono text-3xl font-bold text-zinc-100">17.7 ms</div>
+              <div class="text-xs text-zinc-500 mt-1">ML-DSA-44 Verify</div>
+            </div>
+            <div>
+              <div class="font-mono text-3xl font-bold text-sky-400">666 B</div>
+              <div class="text-xs text-zinc-500 mt-1">Falcon-512 (11 Frames)</div>
+            </div>
+            <div>
+              <div class="font-mono text-3xl font-bold text-emerald-400">36.5 KB</div>
+              <div class="text-xs text-zinc-500 mt-1">Peak Stack (6.8% SRAM)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Animated SVG Verification Tree -->
+        <div class="lg:col-span-6 mg-item mg-d5">
+          <svg class="w-full h-auto" viewBox="0 0 480 390" fill="none">
+            <path d="M 80 56 C 80 104, 155 100, 155 148" stroke="#10b981" stroke-width="2.2" class="edge-stream" />
+            <path d="M 235 56 C 235 104, 155 100, 155 148" stroke="#10b981" stroke-width="2.2" class="edge-stream" />
+            <path d="M 395 56 C 395 104, 355 100, 355 148" stroke="#38bdf8" stroke-width="2.2" class="edge-stream" />
+            <path d="M 155 192 C 155 232, 245 225, 245 266" stroke="#10b981" stroke-width="2.2" class="edge-stream" />
+            <path d="M 355 192 C 355 232, 245 225, 245 266" stroke="#10b981" stroke-width="2.2" class="edge-stream" />
+            <path d="M 245 310 C 245 340, 135 330, 135 352" stroke="#10b981" stroke-width="2.5" class="edge-stream" />
+
+            <g transform="translate(12, 10)">
+              <rect width="136" height="46" rx="10" fill="#121215" stroke="#10b981" stroke-width="1.5" />
+              <text x="68" y="20" text-anchor="middle" fill="#f4f4f5" font-size="11" font-weight="600">ML-DSA-44</text>
+              <text x="68" y="36" text-anchor="middle" fill="#a1a1aa" font-size="10" font-family="Geist Mono">2,420 B · 17.7 ms</text>
+            </g>
+            <g transform="translate(172, 10)">
+              <rect width="126" height="46" rx="10" fill="#121215" stroke="#10b981" stroke-width="1.5" />
+              <text x="63" y="20" text-anchor="middle" fill="#f4f4f5" font-size="11" font-weight="600">Ed25519</text>
+              <text x="63" y="36" text-anchor="middle" fill="#a1a1aa" font-size="10" font-family="Geist Mono">64 B · 34.0 ms</text>
+            </g>
+            <g transform="translate(324, 10)">
+              <rect width="142" height="46" rx="10" fill="#121215" stroke="#38bdf8" stroke-width="1.5" />
+              <text x="71" y="20" text-anchor="middle" fill="#f4f4f5" font-size="11" font-weight="600">Falcon-512</text>
+              <text x="71" y="36" text-anchor="middle" fill="#a1a1aa" font-size="10" font-family="Geist Mono">666 B · 4.9 ms</text>
+            </g>
+            <g transform="translate(65, 148)">
+              <rect width="180" height="44" rx="10" fill="#121215" stroke="#10b981" stroke-width="1.5" />
+              <text x="90" y="19" text-anchor="middle" fill="#f4f4f5" font-size="11" font-weight="600">OEM Hybrid 2FA Gate</text>
+              <text x="90" y="34" text-anchor="middle" fill="#10b981" font-size="10" font-family="Geist Mono">2/2 SIGNATURES VALID</text>
+            </g>
+            <g transform="translate(268, 148)">
+              <rect width="174" height="44" rx="10" fill="#121215" stroke="#10b981" stroke-width="1.5" />
+              <text x="87" y="19" text-anchor="middle" fill="#f4f4f5" font-size="11" font-weight="600">NVS Monotonic Gate</text>
+              <text x="87" y="34" text-anchor="middle" fill="#10b981" font-size="10" font-family="Geist Mono">SV 2 &gt; SV 1 · 0.3 ms</text>
+            </g>
+            <g transform="translate(140, 266)">
+              <rect width="210" height="44" rx="22" fill="#09090b" stroke="#10b981" stroke-width="1.8" />
+              <text x="105" y="19" text-anchor="middle" fill="#fafafa" font-size="11" font-weight="600">ESP32-LX6 · SHA3-256 Stream</text>
+              <text x="105" y="34" text-anchor="middle" fill="#10b981" font-size="10" font-family="Geist Mono">DIGEST MATCH · 14.8 ms</text>
+            </g>
+            <g transform="translate(40, 344)">
+              <rect width="190" height="42" rx="10" fill="rgba(16,185,129,0.14)" stroke="#10b981" stroke-width="1.5" />
+              <text x="95" y="18" text-anchor="middle" fill="#f4f4f5" font-size="11" font-weight="600">Slot B (ota_1) Activated</text>
+              <text x="95" y="33" text-anchor="middle" fill="#10b981" font-size="10" font-family="Geist Mono">Atomic Swap · v2.0.0</text>
+            </g>
+            <g transform="translate(260, 344)" opacity="0.4">
+              <rect width="190" height="42" rx="10" fill="#121215" stroke="#27272a" stroke-width="1.5" />
+              <text x="95" y="18" text-anchor="middle" fill="#f4f4f5" font-size="11" font-weight="600">Slot A (ota_0) Retained</text>
+              <text x="95" y="33" text-anchor="middle" fill="#71717a" font-size="10" font-family="Geist Mono">Zero-Downtime Fallback</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 2: THE 20-YEAR SDV QUANTUM PROBLEM
+         ======================================================================= -->
+    <section class="slide" data-index="1">
+      <div class="max-w-6xl mx-auto w-full">
+        <div class="mg-item mg-d1 font-mono text-xs text-red-400 mb-2">01 // THE 20-YEAR SDV HORIZON</div>
+        <h2 class="mg-item mg-d2 font-bold tracking-tight text-zinc-100 mb-10" style="font-size: var(--h2-size)">
+          Why Classical OTA Signatures Fail on Modern Vehicles
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="mg-item mg-d2 rounded-2xl border border-zinc-800 bg-zinc-900/45 p-7 border-t-2 border-t-red-500">
+            <div class="font-mono text-xs text-red-400 mb-2">THREAT 01 · SHOR'S CRQC</div>
+            <h3 class="text-xl font-bold text-zinc-100 mb-3">20-Year Road Lifespan</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Software-Defined Vehicles operate for 15–20 years. Adversaries archiving wireless OTA traffic today can forge classical RSA/ECDSA signatures once quantum computers scale.
+            </p>
+          </div>
+
+          <div class="mg-item mg-d3 rounded-2xl border border-zinc-800 bg-zinc-900/45 p-7 border-t-2 border-t-amber-400">
+            <div class="font-mono text-xs text-amber-400 mb-2">THREAT 02 · SINGLE-PRIMITIVE RISK</div>
+            <h3 class="text-xl font-bold text-zinc-100 mb-3">Pure PQC Is Untested Alone</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Automotive safety standards resist replacing battle-tested classical curves with a single post-quantum primitive. AutoQrpt enforces a strict PQ/T Hybrid 2FA lock where both must pass.
+            </p>
+          </div>
+
+          <div class="mg-item mg-d4 rounded-2xl border border-zinc-800 bg-zinc-900/45 p-7 border-t-2 border-t-sky-400">
+            <div class="font-mono text-xs text-sky-400 mb-2">THREAT 03 · SILICON CONSTRAINTS</div>
+            <h3 class="text-xl font-bold text-zinc-100 mb-3">520 KB SRAM &amp; 64B CAN-FD</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed">
+              Naive PQC implementations overflow microcontroller task stacks and flood 64-byte CAN-FD frames. AutoQrpt verifies inside 36.5 KB stack and compresses Director auth into 11 frames.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 3: UPTANE TWO-ROLE SPLIT + PQ/T HYBRID 2FA
+         ======================================================================= -->
+    <section class="slide" data-index="2">
+      <div class="max-w-6xl mx-auto w-full">
+        <div class="mg-item mg-d1 font-mono text-xs text-sky-400 mb-2">02 // CRYPTOGRAPHIC ARCHITECTURE</div>
+        <h2 class="mg-item mg-d2 font-bold tracking-tight text-zinc-100 mb-10" style="font-size: var(--h2-size)">
+          Two Roles. Three Signatures. Zero Trust in the Cloud.
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="mg-item mg-d2 rounded-2xl border border-purple-500/35 bg-zinc-900/50 p-6 flex flex-col justify-between">
+            <div>
+              <div class="font-mono text-xs text-purple-400 mb-2">STAGE 01 · ENTROPY</div>
+              <h3 class="text-lg font-bold text-zinc-100">QpiAI 8-Qubit QRNG</h3>
+              <p class="text-xs text-zinc-400 mt-2 leading-relaxed">
+                8-qubit Hadamard superposition circuit (1,024 shots, Shannon entropy 7.815 bits) mixed with os.urandom(32) via SHA3-256.
+              </p>
+            </div>
+            <div class="mt-6 pt-3 border-t border-zinc-800 font-mono text-xs text-purple-300">256-bit Root Seed</div>
+          </div>
+
+          <div class="mg-item mg-d3 rounded-2xl border border-sky-500/35 bg-zinc-900/50 p-6 flex flex-col justify-between">
+            <div>
+              <div class="font-mono text-xs text-sky-400 mb-2">STAGE 02 · OFFLINE HSM</div>
+              <h3 class="text-lg font-bold text-zinc-100">Air-Gapped Image Role</h3>
+              <p class="text-xs text-zinc-400 mt-2 leading-relaxed">
+                Signs "AQ-IMAGE-V1" || manifest with both NIST FIPS 204 ML-DSA-44 (2,420 B) and RFC 8032 Ed25519 (64 B).
+              </p>
+            </div>
+            <div class="mt-6 pt-3 border-t border-zinc-800 font-mono text-xs text-sky-300">2,484 B Dual Signature</div>
+          </div>
+
+          <div class="mg-item mg-d4 rounded-2xl border border-emerald-500/35 bg-zinc-900/50 p-6 flex flex-col justify-between">
+            <div>
+              <div class="font-mono text-xs text-emerald-400 mb-2">STAGE 03 · ONLINE HSM</div>
+              <h3 class="text-lg font-bold text-zinc-100">Fleet Director Role</h3>
+              <p class="text-xs text-zinc-400 mt-2 leading-relaxed">
+                Signs "AQ-DIRECTOR-V1" || "VEH-1" || manifest with compact Falcon-512 so cloud breaches can never sign code.
+              </p>
+            </div>
+            <div class="mt-6 pt-3 border-t border-zinc-800 font-mono text-xs text-emerald-300">666 B (11 CAN-FD Frames)</div>
+          </div>
+
+          <div class="mg-item mg-d5 rounded-2xl border border-amber-500/35 bg-zinc-900/50 p-6 flex flex-col justify-between">
+            <div>
+              <div class="font-mono text-xs text-amber-400 mb-2">STAGE 04 · ESP32-LX6</div>
+              <h3 class="text-lg font-bold text-zinc-100">Atomic A/B Swap</h3>
+              <p class="text-xs text-zinc-400 mt-2 leading-relaxed">
+                Checks NVS counter + all 3 signatures before erasing Slot B, streams 4 KB chunks with SHA3-256, and swaps slots.
+              </p>
+            </div>
+            <div class="mt-6 pt-3 border-t border-zinc-800 font-mono text-xs text-amber-300">71.4 ms Total Verify</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 4: THE 3,262-BYTE WIRE FRAME (.AQPK)
+         ======================================================================= -->
+    <section class="slide" data-index="3">
+      <div class="max-w-6xl mx-auto w-full">
+        <div class="mg-item mg-d1 font-mono text-xs text-sky-400 mb-2">03 // DETERMINISTIC WIRE FORMAT</div>
+        <h2 class="mg-item mg-d2 font-bold tracking-tight text-zinc-100 mb-8" style="font-size: var(--h2-size)">
+          Inside the 3,262-Byte <code class="font-mono text-sky-400">.aqpk</code> Package Header
+        </h2>
+
+        <!-- Animated Segmented Byte Strip -->
+        <div class="mg-item mg-d3 grid grid-cols-12 gap-2 font-mono mb-8">
+          <div class="col-span-2 rounded-xl border border-purple-400/50 bg-purple-500/15 p-4">
+            <div class="text-[10px] text-purple-300">0x0000..0x006F</div>
+            <div class="text-sm font-bold text-white mt-1">AQPK + AQM1</div>
+            <div class="text-xs text-purple-300 mt-2">4 B + 108 B</div>
+          </div>
+          <div class="col-span-3 rounded-xl border border-sky-400/50 bg-sky-500/15 p-4">
+            <div class="text-[10px] text-sky-300">0x0070..0x0309</div>
+            <div class="text-sm font-bold text-white mt-1">Falcon-512 Director</div>
+            <div class="text-xs text-sky-300 mt-2">666 B (11 Frames)</div>
+          </div>
+          <div class="col-span-2 rounded-xl border border-amber-400/50 bg-amber-500/15 p-4">
+            <div class="text-[10px] text-amber-300">0x030A..0x0349</div>
+            <div class="text-sm font-bold text-white mt-1">Ed25519 Image</div>
+            <div class="text-xs text-amber-300 mt-2">64 B (1 Frame)</div>
+          </div>
+          <div class="col-span-5 rounded-xl border border-emerald-400/50 bg-emerald-500/15 p-4">
+            <div class="text-[10px] text-emerald-300">0x034A..0x0CBE</div>
+            <div class="text-sm font-bold text-white mt-1">NIST FIPS 204 ML-DSA-44 Image</div>
+            <div class="text-xs text-emerald-300 mt-2">2,420 B (38 CAN-FD Frames)</div>
+          </div>
+        </div>
+
+        <div class="mg-item mg-d4 grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-xs">
+          <div class="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 space-y-2.5">
+            <div class="text-zinc-100 font-sans font-semibold text-sm mb-2">108-Byte Manifest Fields</div>
+            <div class="flex justify-between text-zinc-400"><span>Target ECU ID</span><span class="text-zinc-200">"ESP32-ECU-GW" (16 B)</span></div>
+            <div class="flex justify-between text-zinc-400"><span>Monotonic Counter</span><span class="text-emerald-400">uint32 security_version</span></div>
+            <div class="flex justify-between text-zinc-400"><span>Pinned Key IDs</span><span class="text-zinc-200">3 × 8 B SHA3-256(pk)[:8]</span></div>
+            <div class="flex justify-between text-zinc-400"><span>Payload Integrity</span><span class="text-sky-400">32 B FIPS 202 SHA3-256</span></div>
+          </div>
+
+          <div class="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 space-y-2.5">
+            <div class="text-zinc-100 font-sans font-semibold text-sm mb-2">Lockstep Flash Streaming</div>
+            <div class="flex justify-between text-zinc-400"><span>Pre-Erase Gate</span><span class="text-emerald-400">3/3 Sigs Verified in RAM First</span></div>
+            <div class="flex justify-between text-zinc-400"><span>Flow Control</span><span class="text-zinc-200">AQ:SEND → 4,096 B → AQ:ACK</span></div>
+            <div class="flex justify-between text-zinc-400"><span>Target Partition</span><span class="text-zinc-200">ota_1 @ 0x190000 (1.5 MB)</span></div>
+            <div class="flex justify-between text-zinc-400"><span>Boot Confirmation</span><span class="text-amber-400">Watchdog Auto-Rollback Guard</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 5: MEASURED ESP32-LX6 SILICON TELEMETRY (ANIMATED CHARTS)
+         ======================================================================= -->
+    <section class="slide" data-index="4">
+      <div class="max-w-6xl mx-auto w-full">
+        <div class="mg-item mg-d1 font-mono text-xs text-emerald-400 mb-2">04 // PHYSICAL HARDWARE BENCHMARKS</div>
+        <h2 class="mg-item mg-d2 font-bold tracking-tight text-zinc-100 mb-8" style="font-size: var(--h2-size)">
+          Measured on Physical ESP32-LX6 Silicon (240 MHz)
+        </h2>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Animated Latency Bars -->
+          <div class="mg-item mg-d3 lg:col-span-7 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 space-y-5">
+            <div class="flex justify-between items-center">
+              <span class="text-sm font-semibold text-zinc-100">10-Run On-Device Verification Median</span>
+              <span class="font-mono text-xs text-emerald-400">Total Pipeline: 71.4 ms</span>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1.5">
+                <span class="text-zinc-200">Falcon-512 Director Verify</span>
+                <span class="text-sky-400">4.9 ms (4,914 µs · 5,100 B stack)</span>
+              </div>
+              <div class="h-2.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+                <div class="h-full bg-sky-400 rounded-full mg-bar mg-bar-15"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1.5">
+                <span class="text-zinc-200">SHA3-256 Streaming Digest</span>
+                <span class="text-purple-400">14.8 ms (Streamed · 0 B heap)</span>
+              </div>
+              <div class="h-2.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+                <div class="h-full bg-purple-400 rounded-full mg-bar mg-bar-44"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1.5">
+                <span class="text-zinc-200">ML-DSA-44 Image Verify (FIPS 204)</span>
+                <span class="text-emerald-400">17.7 ms (17,657 µs · 36,496 B stack)</span>
+              </div>
+              <div class="h-2.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+                <div class="h-full bg-emerald-400 rounded-full mg-bar mg-bar-52"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1.5">
+                <span class="text-zinc-200">Ed25519 Classical Image Verify</span>
+                <span class="text-amber-400">34.0 ms (33,978 µs · 2,304 B stack)</span>
+              </div>
+              <div class="h-2.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+                <div class="h-full bg-amber-400 rounded-full mg-bar mg-bar-100"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Animated SRAM Ring Gauge -->
+          <div class="mg-item mg-d4 lg:col-span-5 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 flex flex-col justify-between">
+            <div>
+              <div class="text-sm font-semibold text-zinc-100">520 KB SRAM Memory Envelope</div>
+              <div class="text-xs text-zinc-400 mt-1">Measured via FreeRTOS uxTaskGetStackHighWaterMark()</div>
+            </div>
+
+            <div class="flex items-center gap-6 my-4">
+              <div class="relative w-32 h-32 shrink-0">
+                <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" stroke="#27272a" stroke-width="10" fill="none" />
+                  <circle cx="50" cy="50" r="40" stroke="#10b981" stroke-width="10" stroke-linecap="round" fill="none" class="mg-ring" />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center font-mono">
+                  <span class="text-lg font-bold text-zinc-100">6.85%</span>
+                  <span class="text-[10px] text-zinc-400">SRAM PEAK</span>
+                </div>
+              </div>
+
+              <div class="space-y-2.5 font-mono text-xs">
+                <div>
+                  <div class="text-zinc-500 text-[10px]">ML-DSA-44 STACK PEAK</div>
+                  <div class="text-zinc-100 font-bold">36,496 Bytes</div>
+                </div>
+                <div>
+                  <div class="text-zinc-500 text-[10px]">FREE SRAM HEADROOM</div>
+                  <div class="text-emerald-400 font-bold">483.5 KB Remaining</div>
+                </div>
+                <div>
+                  <div class="text-zinc-500 text-[10px]">HEAP FRAGMENTATION</div>
+                  <div class="text-sky-400">0 Bytes (Static Task)</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-zinc-800 font-mono text-xs text-zinc-400 flex justify-between">
+              <span>Source: measurements/hil_results.json</span>
+              <span class="text-emerald-400">17/17 Tests Passed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 6: ADVERSARIAL THREAT MATRIX & FAIL-CLOSED ISOLATION
+         ======================================================================= -->
+    <section class="slide" data-index="5">
+      <div class="max-w-6xl mx-auto w-full">
+        <div class="mg-item mg-d1 font-mono text-xs text-red-400 mb-2">05 // FAIL-CLOSED HARDWARE VERIFICATION</div>
+        <h2 class="mg-item mg-d2 font-bold tracking-tight text-zinc-100 mb-8" style="font-size: var(--h2-size)">
+          Every Tampered or Replayed Package Blocked in Silicon
+        </h2>
+
+        <div class="space-y-3 font-mono text-xs">
+          <div class="mg-item mg-d2 rounded-xl border border-emerald-500/30 bg-emerald-950/15 px-5 py-3.5 flex items-center justify-between">
+            <span class="text-zinc-100 font-semibold">01_genuine_oem_release_v2.0.aqpk</span>
+            <span class="text-zinc-400 font-sans">Dual-signed OEM release + Falcon-512 Director</span>
+            <span class="text-emerald-400 font-bold">ACCEPT → Slot ota_1</span>
+          </div>
+
+          <div class="mg-item mg-d2 rounded-xl border border-amber-500/30 bg-amber-950/15 px-5 py-3.5 flex items-center justify-between">
+            <span class="text-zinc-100 font-semibold">02_faulty_release_v3.0_boot_crash.aqpk</span>
+            <span class="text-zinc-400 font-sans">Valid signatures, panics before boot confirmation</span>
+            <span class="text-amber-400 font-bold">WATCHDOG AUTO-ROLLBACK</span>
+          </div>
+
+          <div class="mg-item mg-d3 rounded-xl border border-red-500/30 bg-zinc-900/50 px-5 py-3.5 flex items-center justify-between">
+            <span class="text-zinc-100 font-semibold">03_tampered_firmware_bitflip.aqpk</span>
+            <span class="text-zinc-400 font-sans">1 bit flipped inside 274 KB payload after signing</span>
+            <span class="text-red-400 font-bold">REJECT · IMAGE_DIGEST_MISMATCH</span>
+          </div>
+
+          <div class="mg-item mg-d4 rounded-xl border border-red-500/30 bg-zinc-900/50 px-5 py-3.5 flex items-center justify-between">
+            <span class="text-zinc-100 font-semibold">04_forged_mldsa44_quantum_attack.aqpk</span>
+            <span class="text-zinc-400 font-sans">Ed25519 passes, signed with rogue ML-DSA-44 key</span>
+            <span class="text-red-400 font-bold">REJECT · IMAGE_MLDSA44_SIGNATURE_INVALID</span>
+          </div>
+
+          <div class="mg-item mg-d5 rounded-xl border border-red-500/30 bg-zinc-900/50 px-5 py-3.5 flex items-center justify-between">
+            <span class="text-zinc-100 font-semibold">05_downgrade_replay_v1.0.0.aqpk</span>
+            <span class="text-zinc-400 font-sans">Validly signed older v1.0.0 release replayed</span>
+            <span class="text-red-400 font-bold">REJECT · ROLLBACK_ATTACK_DETECTED</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         SLIDE 7: LIVE HIL PORTAL LAUNCHPAD
+         ======================================================================= -->
+    <section class="slide" data-index="6">
+      <div class="max-w-4xl mx-auto w-full text-center">
+        <div class="mg-item mg-d1 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 font-mono text-xs text-emerald-300 mb-6">
+          <span>LIVE HARDWARE-IN-THE-LOOP DEMO</span>
+        </div>
+        <h2 class="mg-item mg-d2 font-bold tracking-tight text-zinc-100" style="font-size: var(--title-size)">
+          Test Live Firmware Bundles on the Gateway.
+        </h2>
+        <p class="mg-item mg-d3 mt-4 text-zinc-400 max-w-xl mx-auto leading-relaxed" style="font-size: var(--body-size)">
+          Upload any <code class="font-mono text-sky-400">.aqpk</code> bundle from <code class="font-mono text-zinc-200">demo_packages/</code>—or flip 1 byte in RAM live on stage—and watch the 5-stage branching verification tree respond in real time.
+        </p>
+        <div class="mg-item mg-d4 mt-8 flex justify-center gap-4">
+          <a
+            href="/#test-bench"
+            class="h-12 px-7 rounded-xl bg-zinc-100 text-zinc-950 font-semibold text-sm inline-flex items-center gap-2 hover:bg-white transition-all"
+          >
+            <span>Open Live HIL Deployment Portal →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const counter = document.getElementById('slide-counter');
+    const bar = document.getElementById('progress-bar');
+    let cur = 0;
+
+    function goTo(idx) {
+      if (idx < 0 || idx >= slides.length) return;
+      cur = idx;
+      slides.forEach((s, i) => {
+        s.classList.remove('is-active', 'is-prev');
+        if (i === cur) s.classList.add('is-active');
+        else if (i < cur) s.classList.add('is-prev');
+      });
+      counter.textContent = `0${cur + 1} / 0${slides.length}`;
+      bar.style.width = `${((cur + 1) / slides.length) * 100}%`;
+    }
+
+    function nextSlide() { goTo(cur + 1); }
+    function prevSlide() { goTo(cur - 1); }
+    function toggleFull() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFull();
+      }
+    });
+  </script>
+</body>
+</html>

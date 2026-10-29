@@ -116,14 +116,287 @@
     gap: 8px;
     box-shadow: var(--shadow-card);
   }
+  .status-dot-wrap {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .status-dot-ping {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--emerald);
+    opacity: 0.75;
+    animation: radarPing 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .status-dot-ping.disconnected {
+    background: var(--crimson);
+  }
   .status-dot {
+    position: relative;
     width: 7px;
     height: 7px;
     border-radius: 50%;
     background: var(--emerald);
+    z-index: 2;
   }
   .status-dot.disconnected {
     background: var(--crimson);
+  }
+
+  @keyframes radarPing {
+    0% { transform: scale(1); opacity: 0.8; }
+    70% { transform: scale(2.6); opacity: 0; }
+    100% { transform: scale(2.6); opacity: 0; }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0.18); }
+    50% { box-shadow: 0 0 0 8px rgba(29, 78, 216, 0.05); }
+  }
+  @keyframes fadeInSlideUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Executive Overview Hero Card */
+  .overview-hero {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .overview-hero::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #0f172a 0%, #2563eb 50%, #15803d 100%);
+  }
+  .overview-tagline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .tag-chip {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .overview-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+  }
+  .overview-desc {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .overview-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border);
+  }
+  .badge-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    background: var(--bg-subtle);
+    padding: 3px 9px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .badge-icon {
+    font-size: 12px;
+  }
+  .btn-info-modal {
+    margin-left: auto;
+    background: #0f172a;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 12px;
+    font-family: var(--font-sans);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+  }
+  .btn-info-modal:hover {
+    background: #1e293b;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Modal Dialog for Architecture Specs */
+  .modal-backdrop {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .modal-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-dialog {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    max-width: 760px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2), 0 8px 10px -6px rgba(0,0,0,0.1);
+    transform: translateY(12px);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .modal-backdrop.open .modal-dialog {
+    transform: translateY(0);
+  }
+  .modal-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: #ffffff;
+    z-index: 2;
+  }
+  .modal-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .modal-close-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text-muted);
+  }
+  .modal-close-btn:hover {
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+  }
+  .modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .modal-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    border-left: 3px solid var(--text-primary);
+    padding-left: 8px;
+    margin-bottom: 6px;
+  }
+  .modal-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 640px) {
+    .modal-grid-2 { grid-template-columns: 1fr; }
+  }
+  .modal-callout {
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+  .modal-callout strong {
+    color: var(--text-primary);
+  }
+
+  /* Enterprise Footer */
+  .app-footer {
+    background: #ffffff;
+    border-top: 1px solid var(--border);
+    padding: 16px 24px;
+    margin-top: 40px;
+    color: var(--text-muted);
+    font-size: 11.5px;
+  }
+  .footer-inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .footer-col {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .footer-logo {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+  .footer-specs {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
   }
 
   /* Sub-Navigation Tabs */
@@ -839,7 +1112,10 @@
         <div class="brand-desc">Post-Quantum Automotive Security Operations Console (PQC-02 · Real ESP32 HIL)</div>
       </div>
       <div class="header-status-pill" id="conn-pill">
-        <span class="status-dot" id="conn-dot"></span>
+        <span class="status-dot-wrap">
+          <span class="status-dot-ping" id="conn-ping"></span>
+          <span class="status-dot" id="conn-dot"></span>
+        </span>
         <span id="conn-text">ESP32 HARDWARE LINK ACTIVE</span>
       </div>
     </div>
@@ -863,6 +1139,36 @@
     <!-- SCREEN 1: START OF THE PAGE (DISPATCH & SCENARIO SELECTION)  -->
     <!-- ============================================================ -->
     <div class="view-container" id="screen-dispatch">
+
+      <!-- Executive System Overview (What We Are Building) -->
+      <section class="overview-hero">
+        <div class="overview-tagline">
+          <span class="tag-chip">NIST FIPS 204</span>
+          <span class="tag-chip">UPTANE IEEE-ISTO 6100</span>
+          <span class="tag-chip">AUTOMOTIVE SILICON PQC GATEWAY</span>
+        </div>
+        <h1 class="overview-title">Post-Quantum Automotive Firmware Authentication & Anti-Rollback Defense</h1>
+        <p class="overview-desc">
+          AutoQrypt protects connected vehicle ECUs from quantum adversaries and malicious downgrade attacks. Co-signed by an <strong>Offline OEM Root</strong> (NIST ML-DSA-44 lattice + Ed25519) and an <strong>Online Fleet Director</strong> (Falcon-512), updates are verified directly on physical ESP32 silicon before entering active flash memory.
+        </p>
+        <div class="overview-badges">
+          <div class="badge-item">
+            <span class="badge-icon">⚡</span>
+            <span><strong>Sub-20ms</strong> Silicon Verification</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-icon">🔒</span>
+            <span><strong>Hardware NVS</strong> Monotonic Lock</span>
+          </div>
+          <div class="badge-item">
+            <span class="badge-icon">🛡️</span>
+            <span><strong>Dual-Bank A/B</strong> Fail-Safe Bootloader</span>
+          </div>
+          <button class="btn-info-modal" onclick="toggleArchModal(true)">
+            <span>System Architecture & Specs</span> →
+          </button>
+        </div>
+      </section>
 
       <!-- Target Board Telemetry Ribbon -->
       <div class="ecu-status-bar" id="ecu-status-bar">
@@ -1254,9 +1560,80 @@
 
   </main>
 
+  <!-- Enterprise Architecture & Threat Model Modal -->
+  <div class="modal-backdrop" id="arch-modal" onclick="if(event.target===this) toggleArchModal(false)">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">AutoQrypt™ System Architecture & Cryptographic Threat Model</h3>
+        <button class="modal-close-btn" onclick="toggleArchModal(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div class="modal-section-title">The Automotive Security Problem (PQC-02)</div>
+          <p>
+            Connected autonomous vehicles rely on Over-The-Air (OTA) updates to patch safety-critical ECUs (Brakes, BMS, Powertrain, ADAS). Modern quantum computers will break classical asymmetric cryptography (RSA, ECDSA, Ed25519) via Shor's algorithm. Adversaries can record encrypted OTA broadcasts today (<em>Harvest-Now-Decrypt-Later</em>) or deploy compromised Director servers to flash backdoored or downgraded firmware.
+          </p>
+        </div>
+
+        <div class="modal-grid-2">
+          <div class="modal-callout">
+            <strong>Threat 1: Quantum Key Forgery</strong><br>
+            Adversaries forge signatures of legitimate OEMs.<br>
+            <span style="color:var(--emerald); font-weight:600;">Mitigation:</span> NIST FIPS 204 ML-DSA-44 lattice mathematics resistant to quantum cryptanalysis.
+          </div>
+          <div class="modal-callout">
+            <strong>Threat 2: Director Server Compromise</strong><br>
+            A compromised cloud server tries to push arbitrary code.<br>
+            <span style="color:var(--emerald); font-weight:600;">Mitigation:</span> Uptane 2-Role split: Online Director cannot sign without Offline OEM Root key.
+          </div>
+          <div class="modal-callout">
+            <strong>Threat 3: Downgrade Replay Attack</strong><br>
+            Attacker replays a genuine but vulnerable old firmware.<br>
+            <span style="color:var(--emerald); font-weight:600;">Mitigation:</span> Physical hardware NVS monotonic version counter fails closed on any rollback.
+          </div>
+          <div class="modal-callout">
+            <strong>Threat 4: In-Flight Bus Bit-Flips</strong><br>
+            CAN-FD transmission corruption or malicious MITM bit-flips.<br>
+            <span style="color:var(--emerald); font-weight:600;">Mitigation:</span> 4,096-byte chunked streaming with incremental SHA3-256 absorption and inactive slot staging.
+          </div>
+        </div>
+
+        <div>
+          <div class="modal-section-title">Hardware-in-the-Loop (HIL) Silicon Execution Target</div>
+          <p>
+            This operations console communicates directly with an <strong>Espressif ESP32-WROOM-32</strong> microcontroller (Xtensa Dual-Core LX6 @ 240 MHz, 520 KB SRAM, 4 MB Flash) communicating via UART CAN-FD at 921,600 Baud. All timing latencies (Falcon: ~4.9 ms, ML-DSA: ~17.7 ms, Ed25519: ~34.0 ms) are measured directly on physical silicon via hardware cycle counters.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enterprise System Footer -->
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <span class="footer-logo">AQ</span>
+        <span class="footer-copy">AutoQrypt™ Post-Quantum Automotive Security Operations Platform · Problem Statement PQC-02</span>
+      </div>
+      <div class="footer-col footer-specs">
+        <span>Target: <strong>ESP32 Xtensa Dual-Core @ 240 MHz</strong></span>
+        <span>Bus: <strong>CAN-FD UART · 921,600 Baud</strong></span>
+        <span>Standard: <strong>NIST FIPS 204 / IEEE-ISTO 6100</strong></span>
+      </div>
+    </div>
+  </footer>
+
   <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+    function toggleArchModal(show) {
+      const m = $('arch-modal');
+      if (m) {
+        if (show) m.classList.add('open');
+        else m.classList.remove('open');
+      }
+    }
 
     function showScreen(screenId) {
       const sDispatch = $('screen-dispatch');

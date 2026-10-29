@@ -53,6 +53,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from key_management.hsm import SimulatedHSM  # noqa: E402
+from common.notifier import notify_hil_result, send_telegram_alert  # noqa: E402
 
 KEYS_HEADER = os.path.join(ROOT, "firmware", "main", "trusted_keys.h")
 IMAGES = {v: os.path.join(ROOT, "firmware", d, "autoqrypt-ecu-surrogate.bin")
@@ -554,6 +555,12 @@ def cmd_run(args):
     n_pass = sum(t["pass"] for t in results)
     print(f"\n[*] {n_pass}/{len(results)} tests passed. Rejected packages never changed the running slot: {rejected_inactive}")
     print(f"[*] Results written to {os.path.relpath(RESULTS, ROOT)}")
+    send_telegram_alert(
+        f"{'✅' if n_pass == len(results) and rejected_inactive else '🚨'} AutoQrypt ESP32 HIL Matrix Complete\n"
+        f"• Passed: {n_pass}/{len(results)} hardware test cases\n"
+        f"• Slot Isolation Preserved: {'YES' if rejected_inactive else 'NO'}\n"
+        f"• Port: {args.port}"
+    )
     sys.exit(0 if n_pass == len(results) and rejected_inactive else 1)
 
 
@@ -677,7 +684,17 @@ class Demo:
             "sha3_ms": round(ev["image_sha3_us"] / 1000, 1) if "image_sha3_us" in ev else None,
         }
         if entry["decision"] == "ACCEPT":
-            self.state = self.ecu.boot(60) or self.state
+            reboot_state = self.ecu.boot(60)
+            if reboot_state:
+                self.state = reboot_state
+                if not reboot_state.get("confirmed_on_this_boot") and reboot_state.get("last_invalid_version"):
+                    entry["decision"] = "ROLLBACK"
+                    entry["reason"] = f"BOOTLOADER_ROLLBACK_FROM_{reboot_state['last_invalid_version']}"
+                    entry["explanation"] = (
+                        f"Signatures verified and {reboot_state['last_invalid_version']} booted, but crashed before "
+                        f"confirming itself. Hardware bootloader automatically rolled back to {reboot_state.get('app_version', 'v2.0.0')} "
+                        f"on {reboot_state.get('running_slot', 'ota_1')}."
+                    )
         elif ev:
             self.ecu.wait_for(lambda x: x == "AQ:READY", 15)
             if self.state:
@@ -701,6 +718,7 @@ class Demo:
         entry["elapsed_s"] = round(time.time() - t0, 1)
         entry["ecu_after"] = self.state
         self.history.append(entry)
+        notify_hil_result(entry)
         return entry
 
     def update(self):

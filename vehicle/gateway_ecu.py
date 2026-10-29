@@ -1,6 +1,7 @@
 import requests
 from common.logger import SecurityLogger
 from common.models import Manifest, DirectorInstruction
+from common.notifier import notify_simulated_ota
 from signing.authority import SigningAuthority, compute_image_digest
 from merkle.tree import MerkleTreeBuilder
 from vehicle.chunk_manager import ChunkManager
@@ -109,7 +110,7 @@ class GatewayECU:
             self.perf["threat_mitigation_latency_us"] = round((threat_halt_time - threat_detect_time) / 1000, 2)
             time.sleep(0.5)
             self.logger.critical("UPDATE ABORTED — Rolling back to Golden Image v1.0.0. ECU integrity preserved.", event_type="update_abort", device_id=self.device_id)
-            self._emit_perf_report(workflow_start)
+            self._emit_perf_report(workflow_start, success=False, reason="DIRECTOR_SIGNATURE_VERIFICATION_FAILURE")
             return
 
         self.logger.info("Director instruction verified — authorized to install this image now.", event_type="director_verified", device_id=self.device_id)
@@ -150,7 +151,7 @@ class GatewayECU:
             self.perf["threat_mitigation_latency_us"] = round((threat_halt_time - threat_detect_time) / 1000, 2)
             time.sleep(0.5)
             self.logger.critical(f"UPDATE ABORTED — Rolling back to Golden Image {self.installer.golden_image_ver} on {self.installer.active_partition}. ECU integrity preserved.", event_type="update_abort", device_id=self.device_id)
-            self._emit_perf_report(workflow_start)
+            self._emit_perf_report(workflow_start, success=False, reason=failure_reason)
             return
 
         self.hybrid_verified = True
@@ -175,7 +176,7 @@ class GatewayECU:
             self.perf["rollback_execution_time_ms"] = round((rollback_end - rollback_start) * 1000, 2)
             threat_halt_time = time.perf_counter_ns()
             self.perf["threat_mitigation_latency_us"] = round((threat_halt_time - threat_detect_time) / 1000, 2)
-            self._emit_perf_report(workflow_start)
+            self._emit_perf_report(workflow_start, success=False, reason="DIRECTOR_IMAGE_MISMATCH")
             return
 
         # 2c. Rollback / Freeze-Attack Protection
@@ -200,7 +201,7 @@ class GatewayECU:
             self.perf["rollback_execution_time_ms"] = round((rollback_end - rollback_start) * 1000, 2)
             threat_halt_time = time.perf_counter_ns()
             self.perf["threat_mitigation_latency_us"] = round((threat_halt_time - threat_detect_time) / 1000, 2)
-            self._emit_perf_report(workflow_start)
+            self._emit_perf_report(workflow_start, success=False, reason="ROLLBACK_ATTACK_DETECTED")
             return
 
         # 3. SBOM Manifest Validation (Zone 3)
@@ -254,7 +255,7 @@ class GatewayECU:
             self.perf["rollback_execution_time_ms"] = round((rollback_end - rollback_start) * 1000, 2)
             threat_halt_time = time.perf_counter_ns()
             self.perf["threat_mitigation_latency_us"] = round((threat_halt_time - threat_detect_time) / 1000, 2)
-            self._emit_perf_report(workflow_start)
+            self._emit_perf_report(workflow_start, success=False, reason="SBOM_CVE_BLOCK")
             return
 
         # 3b. Merkle Root Binding Check
@@ -280,7 +281,7 @@ class GatewayECU:
             self.perf["rollback_execution_time_ms"] = round((rollback_end - rollback_start) * 1000, 2)
             threat_halt_time = time.perf_counter_ns()
             self.perf["threat_mitigation_latency_us"] = round((threat_halt_time - threat_detect_time) / 1000, 2)
-            self._emit_perf_report(workflow_start)
+            self._emit_perf_report(workflow_start, success=False, reason="MERKLE_ROOT_MISMATCH")
             return
 
         # 4. Chunk Management Zone: fetch each chunk and verify it against the
@@ -296,7 +297,7 @@ class GatewayECU:
         if not success:
             # We don't rollback if interrupted.
             if force_interrupt_at > -1:
-                self._emit_perf_report(workflow_start)
+                self._emit_perf_report(workflow_start, success=False, reason="OTA_INTERRUPTED")
                 return
             threat_detect_time = time.perf_counter_ns()
             rollback_start = time.perf_counter()
@@ -305,7 +306,7 @@ class GatewayECU:
             self.perf["rollback_execution_time_ms"] = round((rollback_end - rollback_start) * 1000, 2)
             threat_halt_time = time.perf_counter_ns()
             self.perf["threat_mitigation_latency_us"] = round((threat_halt_time - threat_detect_time) / 1000, 2)
-            self._emit_perf_report(workflow_start)
+            self._emit_perf_report(workflow_start, success=False, reason="CHUNK_DIGEST_MISMATCH")
             return
 
         # Final gate: every chunk must be present and re-verify against the authenticated leaf hashes.
@@ -338,8 +339,10 @@ class GatewayECU:
             # Safety interlock blocked the flash (battery/engine/gear). Nothing was
             # written, so there's nothing to roll back — just abort the workflow.
             self.logger.critical("UPDATE ABORTED — Safety interlocks not satisfied.", event_type="update_abort", device_id=self.device_id)
+            self._emit_perf_report(workflow_start, success=False, reason="SAFETY_INTERLOCK_BLOCKED")
+            return
 
-        self._emit_perf_report(workflow_start)
+        self._emit_perf_report(workflow_start, success=True, reason="ALL_CHECKS_PASSED")
 
     def _abort(self, reason: str, event_type: str, message: str, workflow_start: float):
         """Common rejection path: log, roll back, report. Callers `return self._abort(...)`."""
@@ -349,9 +352,9 @@ class GatewayECU:
         self.installer.rollback(reason=reason)
         self.perf["rollback_execution_time_ms"] = round((time.perf_counter() - rb) * 1000, 2)
         self.perf["threat_mitigation_latency_us"] = round((time.perf_counter_ns() - t0) / 1000, 2)
-        self._emit_perf_report(workflow_start)
+        self._emit_perf_report(workflow_start, success=False, reason=reason)
 
-    def _emit_perf_report(self, workflow_start: float):
+    def _emit_perf_report(self, workflow_start: float, success: bool = False, reason: str = "UNKNOWN"):
         """Emit all collected performance metrics as a single telemetry event."""
         # Python heap peak of this simulated gateway (tracemalloc). This simulation does not run on
         # the ESP32, so it reports no stack or SRAM figures of its own; real ones come from the
@@ -363,6 +366,10 @@ class GatewayECU:
                                         "ML-DSA-44 verify task stack peak 36,496 B = 6.85% of 520 KiB; "
                                         "source measurements/hil_results.json")
         self.perf["active_partition_slot"] = self.installer.active_partition
+        self.perf["installed_version"] = self.installer.golden_image_ver
+        self.perf["installed_build"] = self.installer.golden_image_build
+        self.perf["decision"] = "ACCEPT" if success else "REJECT"
+        self.perf["reason"] = reason
         self.perf["pqt_hybrid_status"] = "ML-DSA-44 + Ed25519 (2FA Verified)" if self.hybrid_verified else "NOT VERIFIED (hybrid check failed or not reached)"
         
         # Total workflow time
@@ -373,4 +380,15 @@ class GatewayECU:
             event_type="perf_report",
             device_id=self.device_id,
             perf_data=self.perf
+        )
+        notify_simulated_ota(
+            device_id=self.device_id,
+            target_version="v2.0.0",
+            success=success,
+            reason=reason,
+            active_slot=self.installer.active_partition,
+            installed_version=self.installer.golden_image_ver,
+            installed_build=self.installer.golden_image_build,
+            hybrid_verified=self.hybrid_verified,
+            total_ms=self.perf["total_workflow_time_ms"],
         )

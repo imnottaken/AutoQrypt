@@ -687,12 +687,14 @@ class Demo:
                 self.state = dict(reboot_state)
                 if not reboot_state.get("confirmed_on_this_boot") and reboot_state.get("last_invalid_version"):
                     entry["decision"] = "ROLLBACK"
+                    entry["rollback_triggered"] = True
                     entry["reason"] = f"BOOTLOADER_ROLLBACK_FROM_{reboot_state['last_invalid_version']}"
-                    entry["explanation"] = (
+                    entry["rollback_detail"] = (
                         f"Signatures verified and {reboot_state['last_invalid_version']} booted, but crashed before "
                         f"confirming itself. Hardware bootloader automatically rolled back to {reboot_state.get('app_version', 'v2.0.0')} "
                         f"on {reboot_state.get('running_slot', 'ota_1')}."
                     )
+                    entry["explanation"] = entry["rollback_detail"]
             else:
                 next_slot = "ota_1" if self.state.get("running_slot") == "ota_0" else "ota_0"
                 self.state = {"app_version": "v2.0.0", "running_slot": next_slot, "installed_security_version": sv}
@@ -741,12 +743,14 @@ class Demo:
                 self.state = reboot_state
                 if not reboot_state.get("confirmed_on_this_boot") and reboot_state.get("last_invalid_version"):
                     entry["decision"] = "ROLLBACK"
+                    entry["rollback_triggered"] = True
                     entry["reason"] = f"BOOTLOADER_ROLLBACK_FROM_{reboot_state['last_invalid_version']}"
-                    entry["explanation"] = (
+                    entry["rollback_detail"] = (
                         f"Signatures verified and {reboot_state['last_invalid_version']} booted, but crashed before "
                         f"confirming itself. Hardware bootloader automatically rolled back to {reboot_state.get('app_version', 'v2.0.0')} "
                         f"on {reboot_state.get('running_slot', 'ota_1')}."
                     )
+                    entry["explanation"] = entry["rollback_detail"]
         elif ev:
             self.ecu.wait_for(lambda x: x == "AQ:READY", 15)
             if self.state:
@@ -773,14 +777,39 @@ class Demo:
         notify_hil_result(entry)
         return entry
 
-    def update(self):
+    def update(self, image_type="v2"):
+        if image_type == "v3_faulty":
+            return self.send("update", "v3_faulty", "Faulty Release (Rollback Demo)",
+                             "Validly signed image that crashes before confirmation; ESP32 rolls back to previous slot.")
         return self.send("update", "v2", "Genuine OEM update",
                          "Signed by the OEM image keys (Ed25519 + ML-DSA-44), authorised by the Director (Falcon-512).")
 
-    def attack(self):
-        name, title, explanation = DEMO_ATTACKS[self.attack_index % len(DEMO_ATTACKS)]
-        self.attack_index += 1
+    def attack(self, attack_name=None):
+        if attack_name:
+            match = next((item for item in DEMO_ATTACKS if item[0] == attack_name), None)
+            if match:
+                name, title, explanation = match
+            else:
+                name, title, explanation = attack_name, f"Attack: {attack_name}", "Targeted security test vector."
+        else:
+            name, title, explanation = DEMO_ATTACKS[self.attack_index % len(DEMO_ATTACKS)]
+            self.attack_index += 1
         return self.send("attack", name, title, explanation)
+
+    def reset_state(self):
+        with self.lock:
+            self.history = []
+            self.attack_index = 0
+            self.state = {
+                "app_version": "v1.0.0",
+                "installed_security_version": 1,
+                "running_slot": "ota_0",
+                "anti_rollback_state": "ok",
+                "target_id": TARGET_ID,
+                "vehicle_id": VEHICLE_ID,
+                "mode": "ESP32-ECU-GW",
+            }
+            return {"status": "ok", "state": self.state}
 
     def run_case(self, case_id):
         if case_id not in PHYSICAL_TEST_CASES:
@@ -798,8 +827,6 @@ def cmd_demo(args):
     if not getattr(args, "port", None) or args.port == "auto":
         args.port = auto_port()
     demo = Demo(args.port, args.dashboard)
-    with open(DEMO_HTML, "rb") as f:
-        page = f.read()
 
     class Handler(BaseHTTPRequestHandler):
         def reply(self, body, ctype="application/json", code=200):
@@ -809,8 +836,24 @@ def cmd_demo(args):
             self.end_headers()
             self.wfile.write(body)
 
+        def do_HEAD(self):
+            if self.path in ("/", "/app", "/demo", "/test-bench") or not self.path.startswith("/api"):
+                try:
+                    size = os.path.getsize(DEMO_HTML)
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Content-Length", str(size))
+                    self.end_headers()
+                except Exception:
+                    self.send_response(500)
+                    self.end_headers()
+            elif self.path == "/api/status":
+                self.reply(b"", code=200)
+            else:
+                self.reply(b"", code=404)
+
         def do_GET(self):
-            if self.path == "/":
+            if self.path in ("/", "/app", "/demo", "/test-bench") or not self.path.startswith("/api"):
                 with open(DEMO_HTML, "rb") as f:
                     self.reply(f.read(), "text/html; charset=utf-8")
             elif self.path == "/api/status":
@@ -835,6 +878,13 @@ def cmd_demo(args):
             # open in the browser can't trigger packages.
             if self.headers.get("X-AutoQrypt") != "1":
                 return self.reply(b"{}", code=403)
+            payload = {}
+            cl = self.headers.get("Content-Length")
+            if cl and int(cl) > 0:
+                try:
+                    payload = json.loads(self.rfile.read(int(cl)).decode())
+                except Exception:
+                    payload = {}
             if self.path == "/api/telegram/test":
                 st = get_telegram_status()
                 ok = send_telegram_alert(
@@ -849,9 +899,13 @@ def cmd_demo(args):
             if self.path.startswith("/api/case/"):
                 cid = self.path.split("/")[-1]
                 action = lambda: demo.run_case(cid)
+            elif self.path == "/api/update":
+                action = lambda: demo.update(image_type=payload.get("image", "v2"))
+            elif self.path == "/api/attack":
+                action = lambda: demo.attack(attack_name=payload.get("attack"))
+            elif self.path == "/api/reset":
+                action = lambda: demo.reset_state()
             else:
-                action = {"/api/update": demo.update, "/api/attack": demo.attack}.get(self.path)
-            if not action:
                 return self.reply(b"{}", code=404)
             try:
                 result = action()

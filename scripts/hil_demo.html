@@ -215,7 +215,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
 
     // =========================================================================
     // 1. ICONS & BRAND ASSETS
@@ -571,59 +571,56 @@
         <div className="relative z-10 bg-grid-subtle">
 
           {/* =================================================================
-              SECTION 1: HERO + FLOATING 3-STAGE LIVE PIPELINE STACK (No Big Box)
+              SECTION 1: HERO + INTERACTIVE CRYPTOGRAPHIC DECISION TREE
               ================================================================= */}
           <section className="min-h-screen pt-24 pb-16 px-6 lg:px-12 flex items-center">
-            <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
               
-              {/* Left 7 Cols: Staggered Hero Typography */}
-              <div className="lg:col-span-7">
-                <div className="anim-hero-1 flex flex-wrap items-center gap-2 mb-5">
-                  <Badge variant="sky">NIST FIPS 204 ML-DSA-44</Badge>
-                  <Badge variant="emerald">Uptane Two-Role Split</Badge>
-                  <Badge variant="default">ESP32-LX6 @ 240 MHz</Badge>
+              {/* Left 6 Cols: Clean, Uncluttered Hero Copy */}
+              <div className="lg:col-span-6">
+                <div className="anim-hero-1 mb-5">
+                  <Badge variant="sky">PQC-02 · Automotive OTA Gateway</Badge>
                 </div>
 
-                <h1 className="anim-hero-2 text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-zinc-100 leading-[1.08]">
+                <h1 className="anim-hero-2 text-4xl sm:text-5xl lg:text-[3.4rem] font-bold tracking-tight text-zinc-100 leading-[1.08]">
                   Post-Quantum OTA Security for Vehicles.
                 </h1>
 
-                <p className="anim-hero-3 mt-5 text-sm sm:text-base text-zinc-400 max-w-2xl leading-relaxed">
-                  Vehicles stay on the road for 15–20 years—well into the quantum era. AutoQrpt secures automotive ECU firmware updates with hybrid lattice cryptography, compact CAN-FD framing, and hardware anti-rollback counters.
+                <p className="anim-hero-3 mt-5 text-sm sm:text-base text-zinc-400 max-w-lg leading-relaxed">
+                  Dual-role firmware authentication and hardware rollback defense for connected vehicles, verified in 71.4 ms on bare-metal ESP32 silicon.
                 </p>
 
-                <div className="anim-hero-4 mt-8 flex flex-wrap items-center gap-3">
+                <div className="anim-hero-4 mt-8 flex items-center gap-4">
                   <Button size="lg" variant="primary" onClick={() => setCurrentView("testbench")}>
-                    <span>Open Live HIL Test Bench</span>
+                    <span>Open HIL Test Bench</span>
                     <IconArrowRight className="w-4 h-4" />
                   </Button>
                   <a
                     href="#telemetry"
-                    className="h-11 px-5 rounded-xl border border-zinc-800 bg-zinc-900/70 hover:bg-zinc-800 text-xs sm:text-sm font-medium text-zinc-300 inline-flex items-center transition-colors"
+                    className="text-xs sm:text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors px-2"
                   >
-                    View Silicon Benchmarks
+                    Silicon benchmarks ↓
                   </a>
                 </div>
 
-                {/* Unboxed Floating Telemetry Strip */}
-                <div className="anim-hero-4 mt-12 pt-8 border-t border-zinc-800/70 grid grid-cols-3 gap-6 max-w-lg">
+                <div className="anim-hero-4 mt-12 pt-8 border-t border-zinc-800/60 grid grid-cols-3 gap-6 max-w-md">
                   <div>
-                    <div className="font-mono text-2xl sm:text-3xl font-bold text-zinc-100 tabular-nums">17.7 ms</div>
-                    <div className="text-xs text-zinc-500 mt-1">ML-DSA-44 Verify</div>
+                    <div className="font-mono text-2xl font-bold text-zinc-100 tabular-nums">17.7 ms</div>
+                    <div className="text-xs text-zinc-500 mt-0.5">ML-DSA-44 Verify</div>
                   </div>
                   <div>
-                    <div className="font-mono text-2xl sm:text-3xl font-bold text-sky-400 tabular-nums">666 B</div>
-                    <div className="text-xs text-zinc-500 mt-1">Falcon-512 (11 Frames)</div>
+                    <div className="font-mono text-2xl font-bold text-sky-400 tabular-nums">666 B</div>
+                    <div className="text-xs text-zinc-500 mt-0.5">Falcon-512 (11 Frames)</div>
                   </div>
                   <div>
-                    <div className="font-mono text-2xl sm:text-3xl font-bold text-emerald-400 tabular-nums">36.5 KB</div>
-                    <div className="text-xs text-zinc-500 mt-1">Peak SRAM (6.8%)</div>
+                    <div className="font-mono text-2xl font-bold text-emerald-400 tabular-nums">36.5 KB</div>
+                    <div className="text-xs text-zinc-500 mt-0.5">Peak SRAM (6.8%)</div>
                   </div>
                 </div>
               </div>
 
-              {/* Right 5 Cols: Interactive Cryptographic Verification Tree / DAG */}
-              <div className="lg:col-span-5 anim-hero-5 relative flex flex-col items-center">
+              {/* Right 6 Cols: Interactive Cryptographic Verification Tree / DAG */}
+              <div className="lg:col-span-6 anim-hero-5 relative flex flex-col items-center">
                 
                 {/* Scenario Switcher Pill Above the Tree */}
                 <div className="w-full flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -813,27 +810,21 @@
 
           {/* =================================================================
               SECTION 2: HOW IT WORKS (Interactive Vertical Rail + Wire Stream)
-              Scroll Animation: Slide Left & Slide Right
               ================================================================= */}
-          <section id="architecture" className="py-24 px-6 lg:px-12 border-t border-zinc-800/80">
-            <div className="max-w-7xl mx-auto">
+          <section id="architecture" className="py-28 px-6 lg:px-12 border-t border-zinc-800/70">
+            <div className="max-w-6xl mx-auto">
               
-              <div className="reveal-slide-up flex flex-col md:flex-row md:items-end justify-between gap-4 mb-14">
-                <div>
-                  <Badge variant="sky" className="mb-2">END-TO-END ARCHITECTURE</Badge>
-                  <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-zinc-100">
-                    How AutoQrpt Secures Every Update
-                  </h2>
-                </div>
-                <p className="text-xs sm:text-sm text-zinc-400 max-w-md">
-                  Uptane dual-role separation combined with a post-quantum + classical hybrid 2FA lock.
-                </p>
+              <div className="reveal-slide-up mb-12">
+                <p className="font-mono text-xs text-sky-400 mb-2">ARCHITECTURE</p>
+                <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-zinc-100">
+                  How AutoQrpt Secures Every Update
+                </h2>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
                 
-                {/* Left 6 Cols: Interactive Vertical Stepper Rail */}
-                <div className="lg:col-span-6 reveal-slide-left space-y-3">
+                {/* Left 6 Cols: Clean Vertical Stepper Rail */}
+                <div className="lg:col-span-6 reveal-slide-left space-y-2">
                   {archSteps.map((s, idx) => {
                     const isAct = activeArchStep === idx;
                     return (
@@ -842,8 +833,8 @@
                         onClick={() => setActiveArchStep(idx)}
                         className={`cursor-pointer rounded-xl px-5 py-4 transition-all duration-300 border-l-2 ${
                           isAct
-                            ? "border-sky-400 bg-zinc-900/70"
-                            : "border-zinc-800 bg-transparent hover:bg-zinc-900/30"
+                            ? "border-sky-400 bg-zinc-900/60"
+                            : "border-zinc-800/80 bg-transparent hover:bg-zinc-900/25"
                         }`}
                       >
                         <div className="flex items-center justify-between gap-3">
@@ -855,17 +846,13 @@
                               {s.title}
                             </h3>
                           </div>
-                          <Badge variant={s.badge}>{s.tag}</Badge>
+                          <span className="font-mono text-xs text-zinc-500">{s.statValue}</span>
                         </div>
 
                         {isAct && (
-                          <div className="mt-3 pl-7">
-                            <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">{s.desc}</p>
-                            <div className="mt-3 flex items-center gap-4 font-mono text-xs">
-                              <span className="text-zinc-500">{s.statLabel}:</span>
-                              <span className="text-sky-300 font-medium">{s.statValue}</span>
-                            </div>
-                          </div>
+                          <p className="mt-2.5 pl-7 text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                            {s.desc}
+                          </p>
                         )}
                       </div>
                     );
@@ -874,13 +861,12 @@
 
                 {/* Right 6 Cols: Interactive 3,262-Byte Wire Frame Spotlight */}
                 <div className="lg:col-span-6 reveal-slide-right">
-                  <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-6 sm:p-8">
+                  <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/35 p-6 sm:p-8">
                     <div className="flex items-center justify-between text-xs font-mono text-zinc-400 mb-4">
                       <span>3,262-BYTE WIRE HEADER ("AQPK")</span>
-                      <span className="text-sky-400">{archSteps[activeArchStep].statValue}</span>
+                      <span className="text-sky-400">{archSteps[activeArchStep].tag}</span>
                     </div>
 
-                    {/* Proportional Morphing Segmented Strip */}
                     <div className="grid grid-cols-12 gap-1.5 font-mono">
                       {[
                         { name: "AQM1", size: "112 B", span: "col-span-2", color: "bg-purple-500/20 border-purple-400/50 text-purple-200" },
@@ -893,7 +879,7 @@
                           <div
                             key={i}
                             className={`${seg.span} rounded-lg border p-3 transition-all duration-500 ${seg.color} ${
-                              active ? "scale-[1.03] ring-1 ring-white/40 opacity-100" : "opacity-55"
+                              active ? "scale-[1.03] ring-1 ring-white/40 opacity-100" : "opacity-50"
                             }`}
                           >
                             <div className="text-[10px] truncate">{seg.name}</div>
@@ -903,18 +889,18 @@
                       })}
                     </div>
 
-                    <div className="mt-6 pt-5 border-t border-zinc-800/80 space-y-2.5 font-mono text-xs">
+                    <div className="mt-6 pt-5 border-t border-zinc-800/70 space-y-2 font-mono text-xs">
                       <div className="flex justify-between text-zinc-400">
-                        <span>Image Role Signs</span>
+                        <span>Image Role</span>
                         <span className="text-zinc-200">"AQ-IMAGE-V1" || manifest[108]</span>
                       </div>
                       <div className="flex justify-between text-zinc-400">
-                        <span>Director Role Signs</span>
+                        <span>Director Role</span>
                         <span className="text-zinc-200">"AQ-DIRECTOR-V1" || "VEH-1" || manifest[108]</span>
                       </div>
                       <div className="flex justify-between text-zinc-400">
-                        <span>Chunk Transfer</span>
-                        <span className="text-emerald-400">4,096 B Lockstep (AQ:SEND → AQ:ACK)</span>
+                        <span>Payload Stream</span>
+                        <span className="text-emerald-400">4,096 B Lockstep Chunks</span>
                       </div>
                     </div>
                   </div>
@@ -923,49 +909,39 @@
               </div>
 
               {/* =============================================================
-                  SECTION 3: THREAT DEFENSE (Staggered Horizontal Strips)
+                  SECTION 3: THREAT DEFENSE (Clean Horizontal Rows)
                   ============================================================= */}
               <div id="threats" className="mt-28">
-                <div className="reveal-slide-up flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
-                  <div>
-                    <Badge variant="red" className="mb-2">THREAT MATRIX</Badge>
-                    <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
-                      Four Attack Vectors, Closed in Silicon
-                    </h2>
-                  </div>
-                  <p className="text-xs sm:text-sm text-zinc-400">
-                    Click any vector to launch that live fault injection in the HIL Test Bench.
-                  </p>
+                <div className="reveal-slide-up mb-8">
+                  <p className="font-mono text-xs text-red-400 mb-2">THREAT MATRIX</p>
+                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
+                    Four Attack Vectors, Closed in Silicon
+                  </h2>
                 </div>
 
-                <div className="space-y-3">
+                <div className="divide-y divide-zinc-800/70 border-y border-zinc-800/70">
                   {threats.map((t, i) => (
                     <div
                       key={t.num}
-                      style={{ transitionDelay: `${i * 90}ms` }}
+                      style={{ transitionDelay: `${i * 80}ms` }}
                       onClick={() => onQuickAttack(t.attackId)}
-                      className="reveal-strip group cursor-pointer rounded-2xl border border-zinc-800/80 bg-zinc-900/35 hover:bg-zinc-900/80 hover:border-zinc-700 px-6 py-5 transition-all duration-300 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center"
+                      className="reveal-strip group cursor-pointer py-5 px-2 hover:bg-zinc-900/40 transition-colors grid grid-cols-1 lg:grid-cols-12 gap-3 items-center"
                     >
-                      <div className="lg:col-span-4 flex items-center gap-3.5">
+                      <div className="lg:col-span-3 flex items-center gap-3">
                         <span className="font-mono text-xs text-zinc-500">{t.num}</span>
-                        <div>
-                          <h3 className="text-base font-semibold text-zinc-100 group-hover:text-white transition-colors">
-                            {t.title}
-                          </h3>
-                          <div className="mt-1">
-                            <Badge variant={t.variant}>{t.badge}</Badge>
-                          </div>
-                        </div>
+                        <h3 className="text-sm sm:text-base font-semibold text-zinc-100 group-hover:text-white">
+                          {t.title}
+                        </h3>
                       </div>
 
-                      <p className="lg:col-span-5 text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                      <p className="lg:col-span-5 text-xs sm:text-sm text-zinc-400">
                         {t.desc}
                       </p>
 
-                      <div className="lg:col-span-3 flex lg:flex-col lg:items-end justify-between gap-1">
-                        <span className="text-xs text-emerald-400 font-medium">{t.fix}</span>
-                        <span className="font-mono text-xs text-zinc-400 group-hover:text-zinc-100 inline-flex items-center gap-1 transition-transform group-hover:translate-x-1">
-                          Simulate in HIL →
+                      <div className="lg:col-span-4 flex items-center justify-between lg:justify-end gap-5">
+                        <span className="font-mono text-xs text-emerald-400">{t.fix}</span>
+                        <span className="font-mono text-xs text-zinc-400 group-hover:text-zinc-100 transition-transform group-hover:translate-x-1 shrink-0">
+                          Test →
                         </span>
                       </div>
                     </div>
@@ -979,19 +955,14 @@
           {/* =================================================================
               SECTION 4: SILICON TELEMETRY GRAPHS (Animated Bars, Ring & Matrix)
               ================================================================= */}
-          <section id="telemetry" className="pt-24 pb-0 px-6 lg:px-12 border-t border-zinc-800/80 overflow-hidden">
-            <div id="telemetry-graphs" className={`max-w-7xl mx-auto ${telemetryInView ? "telemetry-active" : ""}`}>
+          <section id="telemetry" className="pt-28 pb-0 px-6 lg:px-12 border-t border-zinc-800/70 overflow-hidden">
+            <div id="telemetry-graphs" className={`max-w-6xl mx-auto ${telemetryInView ? "telemetry-active" : ""}`}>
               
-              <div className="reveal-slide-up flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
-                <div>
-                  <Badge variant="emerald" className="mb-2">HARDWARE BENCHMARKS</Badge>
-                  <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-zinc-100">
-                    Measured on ESP32-LX6 Silicon (240 MHz)
-                  </h2>
-                </div>
-                <p className="text-xs sm:text-sm text-zinc-400 max-w-md">
-                  Real cycle counts, FreeRTOS stack watermarks, and CAN-FD 64-byte frame distributions.
-                </p>
+              <div className="reveal-slide-up mb-10">
+                <p className="font-mono text-xs text-emerald-400 mb-2">HARDWARE BENCHMARKS</p>
+                <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-zinc-100">
+                  Measured on ESP32-LX6 Silicon (240 MHz)
+                </h2>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -1205,98 +1176,198 @@
     }
 
     // =========================================================================
-    // 5. HIL TEST BENCH CONSOLE (SHADCN DASHBOARD)
+    // 5. HIL TEST BENCH CONSOLE (SINGLE UNIFIED FIRMWARE UPLOADER)
     // =========================================================================
     function TestBenchPage({ setCurrentView, ecuState, refreshStatus, initialAttack }) {
-      const [updateType, setUpdateType] = useState("v2");
-      const [attackVector, setAttackVector] = useState(initialAttack || "flipped_byte");
       const [busy, setBusy] = useState(false);
+      const [dragActive, setDragActive] = useState(false);
+      const [stagedFile, setStagedFile] = useState(null); // { name, bytes: Uint8Array, meta }
+      const [tamperedInMem, setTamperedInMem] = useState(false);
+      const [diskPackages, setDiskPackages] = useState([]);
       const [waypointStatuses, setWaypointStatuses] = useState(["idle", "idle", "idle", "idle", "idle"]);
+      const [selectedGate, setSelectedGate] = useState(0); // 0..4 interactive node inspector
       const [lastResult, setLastResult] = useState(null);
       const [history, setHistory] = useState([]);
+      const fileInputRef = useRef(null);
 
-      useEffect(() => {
-        if (initialAttack) setAttackVector(initialAttack);
-      }, [initialAttack]);
+      // Parse 3,262-byte AQPK header in browser for instant pre-flight inspection
+      const parseAqpkHeader = (u8, filename) => {
+        const dec = new TextDecoder("utf-8", { fatal: false });
+        if (u8.length < 4) {
+          return { validMagic: false, magic: "SHORT", size: u8.length, filename };
+        }
+        const magic = dec.decode(u8.slice(0, 4));
+        if (magic !== "AQPK" || u8.length < 3262) {
+          return {
+            validMagic: magic === "AQPK",
+            truncated: u8.length < 3262,
+            magic,
+            size: u8.length,
+            filename,
+          };
+        }
+        const manifest = u8.slice(4, 112);
+        const mMagic = dec.decode(manifest.slice(0, 4));
+        const target = dec.decode(manifest.slice(8, 24)).replace(/\0+$/, "");
+        const version = dec.decode(manifest.slice(24, 40)).replace(/\0+$/, "");
+        const dv = new DataView(manifest.buffer, manifest.byteOffset, manifest.byteLength);
+        const sv = dv.getUint32(40, true);
+        const imgSize = dv.getUint32(44, true);
+        const toHex = (arr) => Array.from(arr).map(b => b.toString(16).padStart(2, "0")).join("");
+        const edKid = toHex(manifest.slice(52, 60));
+        const mldsaKid = toHex(manifest.slice(60, 68));
+        const falconKid = toHex(manifest.slice(68, 76));
+        const sha3Hex = toHex(manifest.slice(76, 108));
+        return {
+          validMagic: magic === "AQPK" && mMagic === "AQM1",
+          truncated: false,
+          magic: `${magic} / ${mMagic}`,
+          target,
+          version,
+          sv,
+          imgSize,
+          payloadReceived: u8.length - 3262,
+          edKid,
+          mldsaKid,
+          falconKid,
+          sha3Hex,
+          size: u8.length,
+          filename,
+        };
+      };
 
-      useEffect(() => {
-        fetch("/api/status")
-          .then(res => res.json())
-          .then(data => { if (data.history) setHistory(data.history); })
-          .catch(console.error);
-      }, []);
+      const loadFileBytes = async (fileObj) => {
+        const buf = await fileObj.arrayBuffer();
+        const u8 = new Uint8Array(buf);
+        setTamperedInMem(false);
+        setStagedFile({
+          name: fileObj.name,
+          bytes: u8,
+          meta: parseAqpkHeader(u8, fileObj.name),
+        });
+      };
 
-      const attackVectors = [
-        { id: "flipped_byte", label: "Tampered firmware bit (SHA3-256 mismatch)" },
-        { id: "forged_mldsa", label: "Forged ML-DSA-44 signature (Rogue key)" },
-        { id: "v1_downgrade", label: "Monotonic downgrade replay (v1.0.0)" },
-        { id: "other_vehicle", label: "Wrong vehicle target (VEH-2)" },
-        { id: "tampered_manifest", label: "Edited manifest security version" },
-        { id: "bad_falcon", label: "Corrupted Falcon-512 director signature" },
-        { id: "bad_ed25519", label: "Corrupted Ed25519 classical signature" },
-        { id: "rogue_key_id", label: "Untrusted ML-DSA-44 key ID" },
-      ];
+      const loadDiskPackage = async (fname) => {
+        try {
+          const res = await fetch(`/api/packages/${encodeURIComponent(fname)}`);
+          if (!res.ok) return;
+          const buf = await res.arrayBuffer();
+          const u8 = new Uint8Array(buf);
+          setTamperedInMem(false);
+          setStagedFile({
+            name: fname,
+            bytes: u8,
+            meta: parseAqpkHeader(u8, fname),
+          });
+        } catch (err) {
+          console.error(err);
+        }
+      };
 
       const syncStatus = async () => {
         if (refreshStatus) refreshStatus();
-        const statRes = await fetch("/api/status");
-        const statData = await statRes.json();
-        if (statData.history) setHistory(statData.history);
+        try {
+          const [statRes, pkgRes] = await Promise.all([
+            fetch("/api/status"),
+            fetch("/api/packages")
+          ]);
+          const statData = await statRes.json();
+          if (statData.history) setHistory(statData.history);
+          if (pkgRes.ok) {
+            const pkgData = await pkgRes.json();
+            if (pkgData.packages) setDiskPackages(pkgData.packages);
+          }
+        } catch (e) {
+          console.error(e);
+        }
       };
 
-      const handleUpdate = async () => {
-        setBusy(true);
-        setWaypointStatuses(["active", "idle", "idle", "idle", "idle"]);
-        try {
-          const res = await fetch("/api/update", {
-            method: "POST",
-            headers: { "X-AutoQrypt": "1", "Content-Type": "application/json" },
-            body: JSON.stringify({ image: updateType })
-          });
-          const result = await res.json();
-          setLastResult(result);
+      useEffect(() => {
+        syncStatus().then(() => {
+          const mapAttackToFile = {
+            forged_mldsa: "04_forged_mldsa44_quantum_attack.aqpk",
+            v1_downgrade: "05_downgrade_replay_v1.0.0.aqpk",
+            other_vehicle: "06_wrong_vehicle_VEH2_target.aqpk",
+            flipped_byte: "03_tampered_firmware_bitflip.aqpk",
+          };
+          const defaultFile = (initialAttack && mapAttackToFile[initialAttack]) || "01_genuine_oem_release_v2.0.aqpk";
+          loadDiskPackage(defaultFile);
+        });
+      }, [initialAttack]);
 
-          if (result.decision === "ACCEPT" && !result.rollback_triggered) {
-            setWaypointStatuses(["passed", "passed", "passed", "passed", "passed"]);
-          } else if (result.rollback_triggered) {
-            setWaypointStatuses(["passed", "passed", "passed", "passed", "failed"]);
-          } else {
-            setWaypointStatuses(["failed", "idle", "idle", "idle", "idle"]);
+      const computeFinalWaypoints = (result) => {
+        if (result.decision === "ACCEPT" && !result.rollback_triggered) {
+          return { statuses: ["passed", "passed", "passed", "passed", "passed"], focusGate: 4 };
+        }
+        if (result.rollback_triggered || (result.reason || "").includes("BOOTLOADER_ROLLBACK")) {
+          return { statuses: ["passed", "passed", "passed", "passed", "failed"], focusGate: 4 };
+        }
+        const reason = result.reason || "";
+        if (reason.includes("MAGIC") || reason.includes("TRUNCATED") || reason.includes("TARGET") || reason.includes("KEY_ID")) {
+          return { statuses: ["failed", "idle", "idle", "idle", "idle"], focusGate: 0 };
+        }
+        if (reason.includes("ROLLBACK")) {
+          return { statuses: ["passed", "failed", "idle", "idle", "idle"], focusGate: 1 };
+        }
+        if (reason.includes("DIRECTOR") || reason.includes("FALCON")) {
+          return { statuses: ["passed", "passed", "failed", "idle", "idle"], focusGate: 2 };
+        }
+        if (reason.includes("IMAGE_MLDSA") || reason.includes("IMAGE_ED25519") || reason.includes("SIGNATURE")) {
+          return { statuses: ["passed", "passed", "passed", "failed", "idle"], focusGate: 3 };
+        }
+        return { statuses: ["passed", "passed", "passed", "passed", "failed"], focusGate: 4 };
+      };
+
+      const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+      const handleDeployStaged = async () => {
+        if (!stagedFile) return;
+        setBusy(true);
+        setLastResult(null);
+        setWaypointStatuses(["active", "idle", "idle", "idle", "idle"]);
+        setSelectedGate(0);
+        try {
+          const resPromise = fetch("/api/upload", {
+            method: "POST",
+            headers: {
+              "X-AutoQrypt": "1",
+              "Content-Type": "application/octet-stream",
+              "X-Filename": stagedFile.name + (tamperedInMem ? " (1-byte hex tampered)" : ""),
+            },
+            body: stagedFile.bytes,
+          }).then(r => r.json());
+
+          const result = await resPromise;
+          const { statuses: finalSt, focusGate } = computeFinalWaypoints(result);
+
+          // Animate step-by-step along the branching tree up to the gate that finishes or trips
+          for (let g = 0; g <= focusGate; g++) {
+            setSelectedGate(g);
+            setWaypointStatuses(prev => prev.map((_, i) => (i < g ? "passed" : i === g ? "active" : "idle")));
+            await sleep(150);
           }
+
+          setWaypointStatuses(finalSt);
+          setSelectedGate(focusGate);
+          setLastResult(result);
           await syncStatus();
         } finally {
           setBusy(false);
         }
       };
 
-      const handleAttack = async () => {
-        setBusy(true);
-        setWaypointStatuses(["active", "idle", "idle", "idle", "idle"]);
-        try {
-          const res = await fetch("/api/attack", {
-            method: "POST",
-            headers: { "X-AutoQrypt": "1", "Content-Type": "application/json" },
-            body: JSON.stringify({ attack: attackVector })
-          });
-          const result = await res.json();
-          setLastResult(result);
-
-          const reason = result.reason || "";
-          if (reason.includes("MANIFEST") || reason.includes("TARGET") || reason.includes("KEY_ID")) {
-            setWaypointStatuses(["failed", "idle", "idle", "idle", "idle"]);
-          } else if (reason.includes("ROLLBACK")) {
-            setWaypointStatuses(["passed", "failed", "idle", "idle", "idle"]);
-          } else if (reason.includes("DIRECTOR") || reason.includes("FALCON")) {
-            setWaypointStatuses(["passed", "passed", "failed", "idle", "idle"]);
-          } else if (reason.includes("IMAGE") || reason.includes("MLDSA") || reason.includes("ED25519")) {
-            setWaypointStatuses(["passed", "passed", "passed", "failed", "idle"]);
-          } else {
-            setWaypointStatuses(["passed", "passed", "passed", "passed", "failed"]);
-          }
-          await syncStatus();
-        } finally {
-          setBusy(false);
-        }
+      const handleFlipByteInMemory = () => {
+        if (!stagedFile) return;
+        const copy = new Uint8Array(stagedFile.bytes);
+        const offset = copy.length > 4000 ? 4000 : Math.floor(copy.length / 2);
+        copy[offset] ^= 0x01;
+        const nextTampered = !tamperedInMem;
+        setTamperedInMem(nextTampered);
+        setStagedFile({
+          ...stagedFile,
+          bytes: copy,
+          meta: parseAqpkHeader(copy, stagedFile.name),
+        });
       };
 
       const handleReset = async () => {
@@ -1307,205 +1378,456 @@
         setLastResult(null);
         setWaypointStatuses(["idle", "idle", "idle", "idle", "idle"]);
         await syncStatus();
+        await loadDiskPackage("01_genuine_oem_release_v2.0.aqpk");
       };
 
       const waypoints = [
-        { num: "01", name: "Header Ingest", detail: "CAN-FD reassembly & vehicle ID" },
-        { num: "02", name: "Anti-Rollback", detail: "NVS monotonic SV counter" },
-        { num: "03", name: "Director Auth", detail: "Falcon-512 signature check" },
-        { num: "04", name: "OEM Dual-Sign", detail: "Ed25519 + ML-DSA-44 check" },
-        { num: "05", name: "Flash Commit", detail: "SHA3-256 & A/B slot swap" },
+        {
+          num: "01",
+          name: "Header Ingest",
+          sub: "AQPK + Key IDs",
+          inspect: stagedFile?.meta
+            ? `Magic: ${stagedFile.meta.magic} · Target: ${stagedFile.meta.target || "—"} · Ed25519/ML-DSA/Falcon Key IDs Pinned`
+            : "Checks 4B 'AQPK' frame magic, 108B 'AQM1' manifest, target ECU ID, and 3x8B SHA3-256 key ID pins."
+        },
+        {
+          num: "02",
+          name: "Anti-Rollback",
+          sub: "NVS Counter",
+          inspect: stagedFile?.meta
+            ? `Incoming SV: ${stagedFile.meta.sv ?? "—"} vs Installed NVS Counter: SV ${ecuState?.installed_security_version ?? 1} (Requires SV > ${ecuState?.installed_security_version ?? 1})`
+            : "Compares manifest security_version against hardware NVS 'sec_vault' monotonic counter at 0x9000 (< 0.4 ms)."
+        },
+        {
+          num: "03",
+          name: "Director Auth",
+          sub: "Falcon-512 (666 B)",
+          inspect: "Verifies 'AQ-DIRECTOR-V1' || 'VEH-1' || manifest using NIST Round 3 Falcon-512 (4.9 ms, 5,100 B stack, 11 CAN-FD frames)."
+        },
+        {
+          num: "04",
+          name: "OEM Dual-Sign",
+          sub: "ML-DSA-44 + Ed25519",
+          inspect: "Verifies 'AQ-IMAGE-V1' || manifest with both NIST FIPS 204 ML-DSA-44 (17.7 ms, 36.5 KB stack) and RFC 8032 Ed25519 (34.0 ms)."
+        },
+        {
+          num: "05",
+          name: "Flash Commit",
+          sub: "SHA3-256 + Swap",
+          inspect: stagedFile?.meta
+            ? `Streams 4,096 B chunks -> SHA3-256 (${(stagedFile.meta.sha3Hex || "").slice(0, 16)}…) -> Atomic A/B Boot Slot Swap`
+            : "Streams 4,096-byte chunks into inactive slot, verifies FIPS 202 SHA3-256 digest (14.8 ms), and swaps active boot partition."
+        },
       ];
 
       return (
-        <div className="relative z-10 min-h-screen pt-24 pb-20 px-6 lg:px-12 max-w-7xl mx-auto">
+        <div className="relative z-10 min-h-screen pt-24 pb-20 px-6 lg:px-12 max-w-5xl mx-auto">
           
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
+          {/* Clean Header + Inline ECU Status */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-zinc-800/80">
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
-                  Hardware-in-the-Loop Test Bench
-                </h1>
-                <Badge variant="sky">LIVE CONSOLE</Badge>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-100">
+                OTA Firmware Deployment
+              </h1>
+              <div className="flex flex-wrap items-center gap-4 font-mono text-xs text-zinc-400 mt-2 tabular-nums">
+                <span>Firmware: <strong className="text-zinc-100">{ecuState?.app_version || "v1.0.0"}</strong></span>
+                <span className="text-zinc-700">·</span>
+                <span>Slot: <strong className="text-sky-400">{ecuState?.running_slot || "ota_0"}</strong></span>
+                <span className="text-zinc-700">·</span>
+                <span>NVS Counter: <strong className="text-emerald-400">SV {ecuState?.installed_security_version ?? 1}</strong></span>
               </div>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-                Dispatch genuine dual-signed updates and inject targeted faults against {ecuState?.mode || "ESP32-ECU-GW"}.
-              </p>
             </div>
-            <div className="flex items-center gap-2.5">
-              <Button size="sm" variant="secondary" onClick={handleReset}>
-                Reset Factory State
-              </Button>
-              <Button size="sm" variant="secondary" onClick={() => setCurrentView("landing")}>
-                ← Overview
-              </Button>
-            </div>
+            <Button size="sm" variant="secondary" onClick={handleReset}>
+              Reset to v1.0.0
+            </Button>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-            <Card className="p-4">
-              <div className="text-xs font-mono text-zinc-500">RUNNING FIRMWARE</div>
-              <div className="text-xl font-bold font-mono text-zinc-100 mt-1 tabular-nums">
-                {ecuState?.app_version || "v1.0.0"}
-              </div>
-              <div className="text-[11px] font-mono text-zinc-400 mt-1">
-                Active Slot: <span className="text-sky-400">{ecuState?.running_slot || "ota_0"}</span>
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="text-xs font-mono text-zinc-500">SECURITY COUNTER</div>
-              <div className="text-xl font-bold font-mono text-emerald-400 mt-1 tabular-nums">
-                SV: {ecuState?.installed_security_version ?? 1}
-              </div>
-              <div className="text-[11px] font-mono text-zinc-400 mt-1">
-                NVS Anti-Rollback: <span className="text-emerald-400">Armed</span>
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="text-xs font-mono text-zinc-500">HYBRID 2FA SUITE</div>
-              <div className="text-base font-semibold text-zinc-100 mt-1 truncate">
-                FIPS 204 ML-DSA-44
-              </div>
-              <div className="text-[11px] font-mono text-zinc-400 mt-1 truncate">
-                + Ed25519 + Falcon-512
-              </div>
-            </Card>
-
-            <Card className="p-4">
-              <div className="text-xs font-mono text-zinc-500">TASK STACK PEAK</div>
-              <div className="text-xl font-bold font-mono text-zinc-100 mt-1 tabular-nums">
-                36.5 KB
-              </div>
-              <div className="text-[11px] font-mono text-zinc-400 mt-1 tabular-nums">
-                6.85% of 520 KB SRAM
-              </div>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <Card className="p-6 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Badge variant="emerald">GENUINE PIPELINE</Badge>
-                  <span className="font-mono text-xs text-zinc-500">2FA Dual-Signed</span>
+          {/* SINGLE UNIFIED FIRMWARE UPLOADER CARD */}
+          <Card className="mt-6 p-6 sm:p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              
+              {/* Left 6 Cols: Drag & Drop + Quick Package Picker */}
+              <div className="lg:col-span-6">
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                  onDragLeave={() => setDragActive(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragActive(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      loadFileBytes(e.dataTransfer.files[0]);
+                    }
+                  }}
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                  className={`cursor-pointer rounded-xl border border-dashed p-7 text-center transition-all ${
+                    dragActive
+                      ? "border-sky-400 bg-sky-500/10"
+                      : "border-zinc-700/80 bg-zinc-950/50 hover:border-zinc-500 hover:bg-zinc-950"
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".aqpk,.bin,application/octet-stream"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        loadFileBytes(e.target.files[0]);
+                      }
+                    }}
+                  />
+                  <div className="text-sm font-medium text-zinc-200">
+                    Drop <code className="font-mono text-sky-400">.aqpk</code> firmware bundle or click to browse
+                  </div>
+                  <div className="font-mono text-xs text-zinc-500 mt-1.5">
+                    {stagedFile
+                      ? `${stagedFile.name} (${stagedFile.bytes.length.toLocaleString()} B)`
+                      : "Drag any package from demo_packages/"}
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-zinc-100">Send Genuine Update</h3>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Transmits dual-signed OEM binary with Falcon-512 Director authorization.
-                </p>
 
                 <div className="mt-4">
-                  <label className="text-xs font-mono text-zinc-400 block mb-1.5">Target Release Image:</label>
+                  <div className="flex items-center justify-between text-xs text-zinc-500 mb-1.5">
+                    <span>Or select from <code className="font-mono text-zinc-400">demo_packages/</code></span>
+                    {stagedFile && (
+                      <a
+                        href={`/api/packages/${encodeURIComponent(stagedFile.name)}`}
+                        download={stagedFile.name}
+                        className="font-mono text-zinc-400 hover:text-zinc-200 underline underline-offset-4"
+                      >
+                        Download file
+                      </a>
+                    )}
+                  </div>
                   <select
-                    value={updateType}
-                    onChange={(e) => setUpdateType(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-emerald-500"
+                    value={stagedFile ? stagedFile.name : ""}
+                    onChange={(e) => loadDiskPackage(e.target.value)}
+                    className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-zinc-600"
                   >
-                    <option value="v2">v2.0.x Genuine Feature Release (Ed25519 + ML-DSA-44)</option>
-                    <option value="v3_faulty">v3.0.0 Boot Crash Demo (Valid signatures, triggers rollback)</option>
-                  </select>
-                </div>
-              </div>
-
-              <Button
-                variant="emerald"
-                size="lg"
-                disabled={busy}
-                onClick={handleUpdate}
-                className="w-full mt-6"
-              >
-                {busy ? "Transmitting & Verifying..." : "Dispatch Genuine Update →"}
-              </Button>
-            </Card>
-
-            <Card className="p-6 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Badge variant="red">SECURITY EVALUATION</Badge>
-                  <span className="font-mono text-xs text-zinc-500">8 Test Vectors</span>
-                </div>
-                <h3 className="text-lg font-semibold text-zinc-100">Launch Adversarial Attack</h3>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Injects targeted cryptographic or framing faults to verify fail-closed defense.
-                </p>
-
-                <div className="mt-4">
-                  <label className="text-xs font-mono text-zinc-400 block mb-1.5">Select Attack Vector:</label>
-                  <select
-                    value={attackVector}
-                    onChange={(e) => setAttackVector(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-red-500"
-                  >
-                    {attackVectors.map((v) => (
-                      <option key={v.id} value={v.id}>{v.label}</option>
+                    {diskPackages.map((p) => (
+                      <option key={p.filename} value={p.filename}>
+                        {p.filename}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              <Button
-                variant="red"
-                size="lg"
-                disabled={busy}
-                onClick={handleAttack}
-                className="w-full mt-6"
-              >
-                {busy ? "Injecting Adversarial Vector..." : "Launch Adversarial Vector"}
-              </Button>
-            </Card>
-          </div>
+              {/* Right 6 Cols: Clean 4-Row Summary & Primary Deploy Button */}
+              <div className="lg:col-span-6 flex flex-col justify-between lg:pl-4 lg:border-l lg:border-zinc-800/80">
+                {stagedFile?.meta ? (
+                  <div className="space-y-3 text-xs font-mono tabular-nums">
+                    <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/60">
+                      <span className="text-zinc-500">Target &amp; Version</span>
+                      <span className="text-zinc-200 font-medium">
+                        {stagedFile.meta.target || "—"} · {stagedFile.meta.version || "—"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/60">
+                      <span className="text-zinc-500">Manifest Security Version</span>
+                      <span className="text-emerald-400 font-medium">
+                        SV {stagedFile.meta.sv ?? "—"} (Installed: SV {ecuState?.installed_security_version ?? 1})
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/60">
+                      <span className="text-zinc-500">Bundle Size</span>
+                      <span className="text-zinc-300">
+                        {stagedFile.meta.size.toLocaleString()} B (3,262 B header)
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5">
+                      <span className="text-zinc-500">Payload Integrity</span>
+                      <button
+                        type="button"
+                        onClick={handleFlipByteInMemory}
+                        className={`underline underline-offset-4 ${
+                          tamperedInMem ? "text-amber-400" : "text-zinc-400 hover:text-zinc-200"
+                        }`}
+                      >
+                        {tamperedInMem ? "1 Byte Flipped (Restore)" : "Flip 1 Byte in RAM"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-10 text-center text-xs text-zinc-500 font-mono">
+                    No firmware bundle staged.
+                  </div>
+                )}
 
-          <Card className="mt-6 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-mono text-xs font-semibold text-zinc-400">
-                PIPELINE VERIFICATION WAYPOINTS
-              </span>
-              <span className="font-mono text-xs text-zinc-500">
-                {lastResult ? (lastResult.decision === "ACCEPT" && !lastResult.rollback_triggered ? "ALL GATES COMMITTED" : "GATE REJECTION TRIPPED") : "AWAITING DISPATCH"}
-              </span>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  disabled={busy || !stagedFile}
+                  onClick={handleDeployStaged}
+                  className="w-full mt-6"
+                >
+                  <span>
+                    {busy ? "Verifying & Flashing..." : "Verify & Deploy Firmware to ECU →"}
+                  </span>
+                </Button>
+              </div>
+
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-              {waypoints.map((wp, idx) => {
-                const st = waypointStatuses[idx];
-                let borderCol = "border-zinc-800 bg-zinc-950/60";
-                let dotCol = "bg-zinc-600";
-                let textCol = "text-zinc-300";
+            {/* Interactive Branching Pipeline Verification Tree (Replaces Flat Pills) */}
+            <div className="mt-8 pt-6 border-t border-zinc-800/80">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <span className="font-mono text-xs text-zinc-400">
+                  INTERACTIVE PIPELINE VERIFICATION TREE (CLICK ANY NODE TO INSPECT)
+                </span>
+                <span className="font-mono text-xs text-zinc-500">
+                  {busy
+                    ? "EXECUTING ON-CHIP GATES..."
+                    : lastResult
+                    ? (lastResult.decision === "ACCEPT" && !lastResult.rollback_triggered
+                        ? "ALL 5 GATES PASSED · SLOT ACTIVATED"
+                        : (lastResult.rollback_triggered ? "WATCHDOG ROLLBACK TRIGGERED" : `HALTED AT GATE · ${lastResult.reason}`))
+                    : "READY · CLICK DEPLOY ABOVE"}
+                </span>
+              </div>
 
-                if (st === "passed") {
-                  borderCol = "border-emerald-500/40 bg-emerald-950/20";
-                  dotCol = "bg-emerald-400";
-                  textCol = "text-emerald-300";
-                } else if (st === "failed") {
-                  borderCol = "border-red-500/40 bg-red-950/20";
-                  dotCol = "bg-red-400";
-                  textCol = "text-red-300";
-                } else if (st === "active") {
-                  borderCol = "border-sky-500/60 bg-sky-950/30";
-                  dotCol = "bg-sky-400 pulse-dot";
-                  textCol = "text-sky-300";
-                }
+              {(() => {
+                const colorFor = (st) => {
+                  if (st === "passed") return "#10b981";
+                  if (st === "failed") return "#ef4444";
+                  if (st === "active") return "#38bdf8";
+                  return "#27272a";
+                };
+                const fillFor = (st, isSel) => {
+                  if (st === "passed") return isSel ? "rgba(16,185,129,0.16)" : "rgba(16,185,129,0.08)";
+                  if (st === "failed") return isSel ? "rgba(239,68,68,0.18)" : "rgba(239,68,68,0.10)";
+                  if (st === "active") return "rgba(56,189,248,0.15)";
+                  return isSel ? "#18181b" : "#121215";
+                };
+                const labelColorFor = (st) => {
+                  if (st === "passed") return "#10b981";
+                  if (st === "failed") return "#ef4444";
+                  if (st === "active") return "#38bdf8";
+                  return "#71717a";
+                };
+                const badgeFor = (st) => {
+                  if (st === "passed") return "PASS";
+                  if (st === "failed") return "FAIL";
+                  if (st === "active") return "RUN";
+                  return "IDLE";
+                };
+
+                const s0 = waypointStatuses[0];
+                const s1 = waypointStatuses[1];
+                const s2 = waypointStatuses[2];
+                const s3 = waypointStatuses[3];
+                const s4 = waypointStatuses[4];
+
+                const anyFailed = waypointStatuses.includes("failed") || (lastResult && lastResult.rollback_triggered);
+                const allPassed = waypointStatuses.every(s => s === "passed") && (!lastResult || !lastResult.rollback_triggered);
+
+                const edge12 = s0 === "passed";
+                const edge23 = s1 === "passed";
+                const edge24 = s1 === "passed";
+                const edge35 = s2 === "passed" && s3 !== "failed";
+                const edge45 = s3 === "passed";
 
                 return (
-                  <div key={wp.num} className={`rounded-xl border ${borderCol} p-3.5 transition-all`}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="font-mono text-[10px] text-zinc-500">STAGE {wp.num}</span>
-                      <span className={`w-2 h-2 rounded-full ${dotCol}`} />
+                  <div>
+                    <div className="w-full overflow-x-auto">
+                      <svg className="w-full min-w-[720px] h-auto select-none" viewBox="0 0 920 200" fill="none">
+                        
+                        {/* --- BRANCHING TREE EDGES --- */}
+                        {/* 01 Header (145, 100) -> 02 Anti-Rollback (185, 100) */}
+                        <path d="M 145 100 L 185 100" stroke="#27272a" strokeWidth="2" />
+                        {edge12 && <path d="M 145 100 L 185 100" stroke={colorFor(s1 === "idle" ? "passed" : s1)} strokeWidth="2.2" className="tree-edge-active" />}
+
+                        {/* 02 Anti-Rollback (325, 100) -> Upper Branch: 03 Director Falcon-512 (375, 48) */}
+                        <path d="M 325 100 C 350 100, 350 48, 375 48" stroke="#27272a" strokeWidth="2" />
+                        {edge23 && <path d="M 325 100 C 350 100, 350 48, 375 48" stroke={colorFor(s2)} strokeWidth="2.2" className="tree-edge-active" />}
+
+                        {/* 02 Anti-Rollback (325, 100) -> Lower Branch: 04 OEM Dual-Sign (375, 152) */}
+                        <path d="M 325 100 C 350 100, 350 152, 375 152" stroke="#27272a" strokeWidth="2" />
+                        {edge24 && <path d="M 325 100 C 350 100, 350 152, 375 152" stroke={colorFor(s3 === "idle" ? s2 : s3)} strokeWidth="2.2" className="tree-edge-active" />}
+
+                        {/* Upper Branch 03 (535, 48) -> Merge into 05 SHA3-256 Commit (585, 100) */}
+                        <path d="M 535 48 C 560 48, 560 100, 585 100" stroke="#27272a" strokeWidth="2" />
+                        {edge35 && <path d="M 535 48 C 560 48, 560 100, 585 100" stroke={colorFor(s4 === "idle" ? "passed" : s4)} strokeWidth="2.2" className="tree-edge-active" />}
+
+                        {/* Lower Branch 04 (535, 152) -> Merge into 05 SHA3-256 Commit (585, 100) */}
+                        <path d="M 535 152 C 560 152, 560 100, 585 100" stroke="#27272a" strokeWidth="2" />
+                        {edge45 && <path d="M 535 152 C 560 152, 560 100, 585 100" stroke={colorFor(s4 === "idle" ? "passed" : s4)} strokeWidth="2.2" className="tree-edge-active" />}
+
+                        {/* 05 SHA3-256 Commit (735, 100) -> Upper Leaf: Slot B Activated (775, 52) */}
+                        <path d="M 735 100 C 755 100, 755 52, 775 52" stroke="#27272a" strokeWidth="2" />
+                        {allPassed && <path d="M 735 100 C 755 100, 755 52, 775 52" stroke="#10b981" strokeWidth="2.5" className="tree-edge-active" />}
+
+                        {/* 05 SHA3-256 Commit (735, 100) -> Lower Leaf: Slot A Retained Fallback (775, 148) */}
+                        <path d="M 735 100 C 755 100, 755 148, 775 148" stroke="#27272a" strokeWidth="2" />
+                        {anyFailed && <path d="M 735 100 C 755 100, 755 148, 775 148" stroke="#ef4444" strokeWidth="2.5" className="tree-edge-active" />}
+
+                        {/* --- NODE 01: HEADER INGEST --- */}
+                        <g
+                          transform="translate(10, 74)"
+                          onClick={() => setSelectedGate(0)}
+                          className="cursor-pointer"
+                        >
+                          <rect
+                            width="135"
+                            height="52"
+                            rx="10"
+                            fill={fillFor(s0, selectedGate === 0)}
+                            stroke={selectedGate === 0 ? "#e4e4e7" : colorFor(s0)}
+                            strokeWidth={selectedGate === 0 ? "1.8" : "1.4"}
+                          />
+                          <circle cx="16" cy="18" r="3.5" fill={labelColorFor(s0)} />
+                          <text x="26" y="21" fill="#f4f4f5" fontSize="11" fontWeight="600">01 Header</text>
+                          <text x="123" y="21" textAnchor="end" fill={labelColorFor(s0)} fontSize="9.5" fontFamily="Geist Mono" fontWeight="600">{badgeFor(s0)}</text>
+                          <text x="16" y="39" fill="#a1a1aa" fontSize="10" fontFamily="Geist Mono">AQPK · Key IDs</text>
+                        </g>
+
+                        {/* --- NODE 02: ANTI-ROLLBACK --- */}
+                        <g
+                          transform="translate(185, 74)"
+                          onClick={() => setSelectedGate(1)}
+                          className="cursor-pointer"
+                        >
+                          <rect
+                            width="140"
+                            height="52"
+                            rx="10"
+                            fill={fillFor(s1, selectedGate === 1)}
+                            stroke={selectedGate === 1 ? "#e4e4e7" : colorFor(s1)}
+                            strokeWidth={selectedGate === 1 ? "1.8" : "1.4"}
+                          />
+                          <circle cx="16" cy="18" r="3.5" fill={labelColorFor(s1)} />
+                          <text x="26" y="21" fill="#f4f4f5" fontSize="11" fontWeight="600">02 Rollback</text>
+                          <text x="128" y="21" textAnchor="end" fill={labelColorFor(s1)} fontSize="9.5" fontFamily="Geist Mono" fontWeight="600">{badgeFor(s1)}</text>
+                          <text x="16" y="39" fill="#a1a1aa" fontSize="10" fontFamily="Geist Mono">NVS SV &gt; {ecuState?.installed_security_version ?? 1}</text>
+                        </g>
+
+                        {/* --- NODE 03 (UPPER BRANCH): DIRECTOR FALCON-512 --- */}
+                        <g
+                          transform="translate(375, 22)"
+                          onClick={() => setSelectedGate(2)}
+                          className="cursor-pointer"
+                        >
+                          <rect
+                            width="160"
+                            height="52"
+                            rx="10"
+                            fill={fillFor(s2, selectedGate === 2)}
+                            stroke={selectedGate === 2 ? "#e4e4e7" : colorFor(s2)}
+                            strokeWidth={selectedGate === 2 ? "1.8" : "1.4"}
+                          />
+                          <circle cx="16" cy="18" r="3.5" fill={labelColorFor(s2)} />
+                          <text x="26" y="21" fill="#f4f4f5" fontSize="11" fontWeight="600">03 Director</text>
+                          <text x="148" y="21" textAnchor="end" fill={labelColorFor(s2)} fontSize="9.5" fontFamily="Geist Mono" fontWeight="600">{badgeFor(s2)}</text>
+                          <text x="16" y="39" fill="#a1a1aa" fontSize="10" fontFamily="Geist Mono">Falcon-512 · 4.9 ms</text>
+                        </g>
+
+                        {/* --- NODE 04 (LOWER BRANCH): OEM HYBRID 2FA --- */}
+                        <g
+                          transform="translate(375, 126)"
+                          onClick={() => setSelectedGate(3)}
+                          className="cursor-pointer"
+                        >
+                          <rect
+                            width="160"
+                            height="52"
+                            rx="10"
+                            fill={fillFor(s3, selectedGate === 3)}
+                            stroke={selectedGate === 3 ? "#e4e4e7" : colorFor(s3)}
+                            strokeWidth={selectedGate === 3 ? "1.8" : "1.4"}
+                          />
+                          <circle cx="16" cy="18" r="3.5" fill={labelColorFor(s3)} />
+                          <text x="26" y="21" fill="#f4f4f5" fontSize="11" fontWeight="600">04 OEM 2FA</text>
+                          <text x="148" y="21" textAnchor="end" fill={labelColorFor(s3)} fontSize="9.5" fontFamily="Geist Mono" fontWeight="600">{badgeFor(s3)}</text>
+                          <text x="16" y="39" fill="#a1a1aa" fontSize="10" fontFamily="Geist Mono">ML-DSA-44 + Ed25519</text>
+                        </g>
+
+                        {/* --- NODE 05 (MERGE): SHA3-256 STREAM COMMIT --- */}
+                        <g
+                          transform="translate(585, 74)"
+                          onClick={() => setSelectedGate(4)}
+                          className="cursor-pointer"
+                        >
+                          <rect
+                            width="150"
+                            height="52"
+                            rx="10"
+                            fill={fillFor(s4, selectedGate === 4)}
+                            stroke={selectedGate === 4 ? "#e4e4e7" : colorFor(s4)}
+                            strokeWidth={selectedGate === 4 ? "1.8" : "1.4"}
+                          />
+                          <circle cx="16" cy="18" r="3.5" fill={labelColorFor(s4)} />
+                          <text x="26" y="21" fill="#f4f4f5" fontSize="11" fontWeight="600">05 SHA3</text>
+                          <text x="138" y="21" textAnchor="end" fill={labelColorFor(s4)} fontSize="9.5" fontFamily="Geist Mono" fontWeight="600">{badgeFor(s4)}</text>
+                          <text x="16" y="39" fill="#a1a1aa" fontSize="10" fontFamily="Geist Mono">SHA3-256 · 14.8 ms</text>
+                        </g>
+
+                        {/* --- OUTCOME LEAF A (UPPER): NEW SLOT ACTIVATED --- */}
+                        <g transform="translate(775, 28)" opacity={allPassed ? "1" : "0.4"}>
+                          <rect
+                            width="135"
+                            height="48"
+                            rx="10"
+                            fill={allPassed ? "rgba(16,185,129,0.14)" : "#121215"}
+                            stroke={allPassed ? "#10b981" : "#27272a"}
+                            strokeWidth="1.5"
+                          />
+                          <text x="67" y="20" textAnchor="middle" fill="#f4f4f5" fontSize="10.5" fontWeight="600">
+                            Slot Swapped
+                          </text>
+                          <text x="67" y="36" textAnchor="middle" fill="#10b981" fontSize="10" fontFamily="Geist Mono">
+                            Active: {ecuState?.running_slot || "ota_1"}
+                          </text>
+                        </g>
+
+                        {/* --- OUTCOME LEAF B (LOWER): FAIL-CLOSED FALLBACK --- */}
+                        <g transform="translate(775, 124)" opacity={anyFailed ? "1" : "0.4"}>
+                          <rect
+                            width="135"
+                            height="48"
+                            rx="10"
+                            fill={anyFailed ? "rgba(239,68,68,0.14)" : "#121215"}
+                            stroke={anyFailed ? "#ef4444" : "#27272a"}
+                            strokeWidth="1.5"
+                          />
+                          <text x="67" y="20" textAnchor="middle" fill="#f4f4f5" fontSize="10.5" fontWeight="600">
+                            Slot Retained
+                          </text>
+                          <text x="67" y="36" textAnchor="middle" fill="#ef4444" fontSize="10" fontFamily="Geist Mono">
+                            Fail-Closed
+                          </text>
+                        </g>
+
+                      </svg>
                     </div>
-                    <div className={`text-xs font-semibold ${textCol}`}>{wp.name}</div>
-                    <div className="text-[11px] text-zinc-500 mt-1 leading-tight">{wp.detail}</div>
+
+                    {/* Interactive Selected Gate Detail Bar */}
+                    <div className="mt-3 px-4 py-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-sky-400 font-semibold">
+                          [GATE {waypoints[selectedGate].num} · {waypoints[selectedGate].name.toUpperCase()}]
+                        </span>
+                        <span className="text-zinc-300 font-sans">
+                          {waypoints[selectedGate].inspect}
+                        </span>
+                      </div>
+                      <span className="text-zinc-500 shrink-0">
+                        Status: <strong className={
+                          waypointStatuses[selectedGate] === "passed" ? "text-emerald-400" :
+                          waypointStatuses[selectedGate] === "failed" ? "text-red-400" :
+                          waypointStatuses[selectedGate] === "active" ? "text-sky-400" : "text-zinc-400"
+                        }>{badgeFor(waypointStatuses[selectedGate])}</strong>
+                      </span>
+                    </div>
                   </div>
                 );
-              })}
+              })()}
             </div>
           </Card>
 
           {lastResult && (
-            <Card className="mt-6 p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800">
-                <div className="flex flex-wrap items-center gap-2.5">
+            <Card className="mt-5 p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
                   <Badge
                     variant={
                       lastResult.decision === "ACCEPT" && !lastResult.rollback_triggered
@@ -1514,42 +1836,29 @@
                     }
                   >
                     {lastResult.decision === "ACCEPT" && !lastResult.rollback_triggered
-                      ? "VERDICT: ACCEPTED & COMMITTED"
-                      : (lastResult.rollback_triggered ? "VERDICT: ROLLED BACK TO PREVIOUS SLOT" : "VERDICT: REJECTED (GATE TRIPPED)")}
+                      ? "ACCEPTED"
+                      : (lastResult.rollback_triggered ? "ROLLED BACK" : "REJECTED")}
                   </Badge>
-                  <span className="font-mono text-xs px-2.5 py-0.5 rounded border border-zinc-700 bg-zinc-800 text-zinc-200">
-                    REASON: {lastResult.reason}
-                  </span>
+                  <span className="font-mono text-xs text-zinc-200">{lastResult.reason}</span>
                 </div>
                 <span className="font-mono text-xs text-zinc-500 tabular-nums">
-                  {lastResult.time} {lastResult.elapsed_s != null ? `· ${lastResult.elapsed_s} s` : ""}
+                  {lastResult.time} {lastResult.elapsed_s != null ? `· ${lastResult.elapsed_s}s` : ""}
                 </span>
               </div>
 
-              <div className="mt-4">
-                <h4 className="text-base font-semibold text-zinc-100">{lastResult.title}</h4>
-                <p className="text-xs sm:text-sm text-zinc-400 mt-1">{lastResult.explanation}</p>
-                {lastResult.rollback_triggered && (
-                  <div className="mt-3 p-3 rounded-lg border border-amber-900/50 bg-amber-950/30 text-amber-300 text-xs font-mono">
-                    {lastResult.rollback_detail || "Boot confirmation timed out; ESP32 bootloader restored previous partition."}
-                  </div>
-                )}
-              </div>
+              <p className="text-xs sm:text-sm text-zinc-300 mt-3 leading-relaxed">
+                {lastResult.rollback_detail || lastResult.explanation}
+              </p>
 
               {lastResult.verifiers && lastResult.verifiers.length > 0 && (
-                <div className="mt-5 pt-4 border-t border-zinc-800 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="mt-4 pt-3 border-t border-zinc-800/80 flex flex-wrap gap-6 font-mono text-xs tabular-nums">
                   {lastResult.verifiers.map((v, i) => (
-                    <div key={i} className="rounded-lg border border-zinc-800/80 bg-zinc-950/50 p-3">
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-zinc-300 font-medium">{v.label}</span>
-                        <span className={v.ok ? "text-emerald-400 font-mono text-[11px]" : "text-red-400 font-mono text-[11px]"}>
-                          {v.ok ? "PASS" : "INVALID"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs font-mono text-zinc-500 mt-2 tabular-nums">
-                        <span>Latency: <strong className="text-zinc-300">{v.ms} ms</strong></span>
-                        <span>Stack: <strong className="text-zinc-300">{v.stack_bytes ? `${v.stack_bytes.toLocaleString()} B` : "--"}</strong></span>
-                      </div>
+                    <div key={i} className="flex items-center gap-2">
+                      <span className={v.ok ? "text-emerald-400" : "text-red-400"}>
+                        {v.ok ? "PASS" : "FAIL"}
+                      </span>
+                      <span className="text-zinc-400">{v.label.split(" ")[0]}:</span>
+                      <span className="text-zinc-200">{v.ms} ms</span>
                     </div>
                   ))}
                 </div>
@@ -1557,55 +1866,34 @@
             </Card>
           )}
 
-          <Card className="mt-6 p-6 overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-mono text-xs font-semibold text-zinc-400">SECURITY AUDIT LEDGER</span>
-              <Badge variant="default">{history.length} TRANSACTIONS</Badge>
+          {history.length > 0 && (
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-3 font-mono text-xs text-zinc-500">
+                <span>DEPLOYMENT AUDIT LOG</span>
+                <span>{history.length} events</span>
+              </div>
+              <div className="divide-y divide-zinc-800/60 border-t border-zinc-800/60 font-mono text-xs tabular-nums">
+                {history.slice().reverse().map((h, idx) => {
+                  const ok = h.decision === "ACCEPT" && !h.rollback_triggered;
+                  const isRb = h.rollback_triggered === true;
+                  return (
+                    <div key={idx} className="py-3 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <span className="text-zinc-500">{h.time}</span>
+                        <span className="font-sans text-zinc-200 truncate">{h.title}</span>
+                      </div>
+                      <div className="flex items-center gap-4 shrink-0">
+                        <span className="text-zinc-500 hidden sm:inline">{h.reason}</span>
+                        <Badge variant={ok ? "emerald" : (isRb ? "amber" : "red")}>
+                          {ok ? "ACCEPTED" : (isRb ? "ROLLED BACK" : "REJECTED")}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono tabular-nums">
-                <thead>
-                  <tr className="border-b border-zinc-800 text-zinc-500">
-                    <th className="pb-2.5 font-normal">TIME</th>
-                    <th className="pb-2.5 font-normal">EVENT / VECTOR</th>
-                    <th className="pb-2.5 font-normal">DECISION</th>
-                    <th className="pb-2.5 font-normal">REASON</th>
-                    <th className="pb-2.5 font-normal text-right">ELAPSED</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/60">
-                  {history.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="py-6 text-center text-zinc-500 font-sans">
-                        No transactions recorded yet. Dispatch an update or launch an adversarial vector above.
-                      </td>
-                    </tr>
-                  ) : (
-                    history.slice().reverse().map((h, idx) => {
-                      const ok = h.decision === "ACCEPT" && !h.rollback_triggered;
-                      const isRb = h.rollback_triggered === true;
-                      return (
-                        <tr key={idx} className="hover:bg-zinc-800/20">
-                          <td className="py-2.5 text-zinc-400">{h.time}</td>
-                          <td className="py-2.5 text-zinc-200 font-sans font-medium">{h.title}</td>
-                          <td className="py-2.5">
-                            <Badge variant={ok ? "emerald" : (isRb ? "amber" : "red")}>
-                              {ok ? "ACCEPTED" : (isRb ? "ROLLED BACK" : "REJECTED")}
-                            </Badge>
-                          </td>
-                          <td className="py-2.5 text-zinc-400">{h.reason}</td>
-                          <td className="py-2.5 text-right text-zinc-400">
-                            {h.elapsed_s != null ? `${h.elapsed_s} s` : "--"}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          )}
 
         </div>
       );
@@ -1620,7 +1908,7 @@
       );
       const [ecuState, setEcuState] = useState(null);
       const [simMode, setSimMode] = useState("valid");
-      const [initialAttack, setInitialAttack] = useState("flipped_byte");
+      const [initialAttack, setInitialAttack] = useState(null);
 
       const fetchStatus = () => {
         fetch("/api/status")

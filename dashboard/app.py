@@ -271,3 +271,64 @@ def api_status():
         "history": [],
     }
 
+
+def _dispatch_hil_or_sim(path: str):
+    """Forwards /api/update, /api/attack, /api/case/* to HIL server on 8080 (or runs in-process fallback) and logs to audit stream."""
+    global latest_perf_data
+    import datetime
+    result = None
+    try:
+        import urllib.request
+        req = urllib.request.Request(f"http://127.0.0.1:8080{path}", method="POST", headers={"X-AutoQrypt": "1"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode())
+    except Exception:
+        try:
+            from scripts import hil
+            if not hasattr(_dispatch_hil_or_sim, "_demo"):
+                _dispatch_hil_or_sim._demo = hil.Demo("auto", None)
+            d = _dispatch_hil_or_sim._demo
+            if path == "/api/update":
+                result = d.update()
+            elif path == "/api/attack":
+                result = d.attack()
+            elif path.startswith("/api/case/"):
+                result = d.run_case(path.rsplit("/", 1)[-1])
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    if isinstance(result, dict) and "decision" in result:
+        ok = result.get("decision") == "ACCEPT"
+        ecu_after = result.get("ecu_after") or {}
+        latest_perf_data = {
+            "active_partition_slot": ecu_after.get("running_slot", "ota_0"),
+            "installed_version": ecu_after.get("app_version", "v2.0.0"),
+            "installed_build": ecu_after.get("installed_security_version", 2),
+            "decision": result.get("decision"),
+            "reason": result.get("reason"),
+        }
+        logs.append({
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "level": "INFO" if ok else "ERROR",
+            "logger": "esp32_ecu_VEH-1",
+            "message": f"{result.get('decision')}: {result.get('title')} — {result.get('reason')}",
+            "device_id": "VEH-1",
+            "event_type": "install_success" if ok else "rollback",
+        })
+    return result
+
+
+@app.post("/api/update")
+def api_update():
+    return _dispatch_hil_or_sim("/api/update")
+
+
+@app.post("/api/attack")
+def api_attack():
+    return _dispatch_hil_or_sim("/api/attack")
+
+
+@app.post("/api/case/{case_id}")
+def api_case(case_id: str):
+    return _dispatch_hil_or_sim(f"/api/case/{case_id}")
+

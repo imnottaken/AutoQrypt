@@ -2534,6 +2534,7 @@
             if ($('ecu-slot')) $('ecu-slot').innerText = esc(s.ecu.running_slot || 'ota_0');
           }
         }
+        refreshTelegramStatus(false);
       } catch (e) {}
     }
 

@@ -286,11 +286,9 @@ def _ensure_bot_commands_menu(token: str, state: Dict[str, Any]):
                 f"https://api.telegram.org/bot{token}/setMyCommands",
                 json={
                     "commands": [
-                        {"command": "status", "description": "Live ECU firmware, boot slot & NVS anti-rollback state"},
-                        {"command": "last", "description": "Replay last cryptographic verification & forensic receipt"},
-                        {"command": "update", "description": "Dispatch genuine PQ/T hybrid OEM release"},
-                        {"command": "attack", "description": "Inject adversarial threat vector into OTA stream"},
-                        {"command": "help", "description": "Show VSOC mobile command reference"},
+                        {"command": "status", "description": "Check live ECU firmware, active slot & NVS counter"},
+                        {"command": "last", "description": "View last OTA or security incident report"},
+                        {"command": "help", "description": "Show alert monitor info"},
                     ]
                 },
                 timeout=3,
@@ -352,7 +350,7 @@ def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, stat
             _send_one(
                 token,
                 cid_str,
-                "No recent test recorded yet. Tap /update or /attack to run one.",
+                "No recent OTA update or attack recorded yet.",
                 parse_mode="HTML",
                 reply_markup=REPLY_KEYBOARD,
             )

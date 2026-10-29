@@ -156,7 +156,7 @@ def _make_qr_svg(url: str) -> str:
         clean_url = url.split("?")[0]
         qr = segno.make(clean_url, error="m")
         uri = qr.png_data_uri(scale=6, border=4, dark="#000000", light="#ffffff")
-        return f'<img src="{uri}" width="144" height="144" alt="QR Code" style="display:block; image-rendering:pixelated;">'
+        return f'<img src="{uri}" width="136" height="136" alt="QR Code" style="display:block; image-rendering:pixelated;">'
     except Exception:
         return ""
 

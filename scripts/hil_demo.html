@@ -1561,39 +1561,43 @@
 
   <!-- Clean Minimal Telegram Alerts Modal -->
   <div class="modal-backdrop" id="tg-modal" onclick="if(event.target===this) toggleTelegramModal(false)">
-    <div class="modal-dialog" style="max-width: 440px;">
-      <div class="modal-header" style="padding: 14px 18px;">
+    <div class="modal-dialog" style="max-width: 460px;">
+      <div class="modal-header" style="padding: 14px 20px;">
         <h3 class="modal-title" style="font-size: 14px;">Telegram Alerts</h3>
         <button class="modal-close-btn" onclick="toggleTelegramModal(false)">✕</button>
       </div>
-      <div class="modal-body" style="padding: 18px; gap: 14px;">
-        <div style="display:flex; gap:16px; align-items:center;">
-          <div style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:8px; padding:10px; text-align:center; flex-shrink:0;">
-            <div id="tg-qr-box" style="background:#ffffff; border:1px solid var(--border); border-radius:6px; padding:4px; display:inline-flex; align-items:center; justify-content:center;">
-              <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMYAAADGAQAAAACh4MLwAAABCElEQVR42u1YwQ3EIAyzrgMwEqszEgMg5WKH3q/PnvwA8Sn5WLEdR0U8nIVTOZVXKuDpq40rRkx+XFn54On8q0JsiSRmv2ZHwpu9XlywTQjS4E2E6G7YFtg6T2y8hn2T3tILxamV3sqnu3VmPt3jpAV9+vt00VuXF4AWInT4YOO8LVQ0Aqz0lmwqDrocIdsa9W2bdMkU4cWpBm+MZDbhKVit9MagT4QKfas8TaVBShO5TnorHrN1Up3XDNHoUMo3ZUQzmr11pDeyCScvYI8OwtsbptkeUumgvlnlqfa3inszve29l3sIaS1+3fbedVNst/diuwDNaL6VT8HxG3oZbnvv+bNwKu9XvvqQJyM9JGxLAAAAAElFTkSuQmCC" width="144" height="144" alt="QR Code" style="display:block; image-rendering:pixelated;">
+      <div class="modal-body" style="padding: 20px;">
+        <div style="display:flex; gap:20px; align-items:stretch;">
+          <div style="background:#ffffff; border:1px solid var(--border); border-radius:8px; padding:6px 6px 8px; text-align:center; flex-shrink:0; display:flex; flex-direction:column; align-items:center; justify-content:space-between; box-shadow:var(--shadow-card);">
+            <div id="tg-qr-box" style="display:flex; align-items:center; justify-content:center;">
+              <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMYAAADGAQAAAACh4MLwAAABCElEQVR42u1YwQ3EIAyzrgMwEqszEgMg5WKH3q/PnvwA8Sn5WLEdR0U8nIVTOZVXKuDpq40rRkx+XFn54On8q0JsiSRmv2ZHwpu9XlywTQjS4E2E6G7YFtg6T2y8hn2T3tILxamV3sqnu3VmPt3jpAV9+vt00VuXF4AWInT4YOO8LVQ0Aqz0lmwqDrocIdsa9W2bdMkU4cWpBm+MZDbhKVit9MagT4QKfas8TaVBShO5TnorHrN1Up3XDNHoUMo3ZUQzmr11pDeyCScvYI8OwtsbptkeUumgvlnlqfa3inszve29l3sIaS1+3fbedVNst/diuwDNaL6VT8HxG3oZbnvv+bNwKu9XvvqQJyM9JGxLAAAAAElFTkSuQmCC" width="136" height="136" alt="QR Code" style="display:block; image-rendering:pixelated;">
             </div>
-            <div style="margin-top:6px;">
-              <a id="tg-enroll-link" href="#" target="_blank" style="font-size:11px; color:var(--blue); font-weight:600; text-decoration:none;">Open in Telegram ↗</a>
+            <div style="width:100%; border-top:1px solid var(--border); padding-top:6px; margin-top:2px;">
+              <a id="tg-enroll-link" href="#" target="_blank" style="font-size:11px; color:var(--blue); font-weight:600; text-decoration:none; display:block;">Open in Telegram ↗</a>
             </div>
           </div>
 
-          <div style="display:flex; flex-direction:column; gap:10px; flex:1;">
-            <div style="font-size:14px; font-weight:700; color:var(--text-primary); line-height:1.25;">Connect your phone</div>
-            <p style="font-size:12px; color:var(--text-secondary); line-height:1.45;">
-              Scan the QR code and tap <strong>Start</strong> in Telegram to receive instant OTA update and security summaries.
-            </p>
+          <div style="display:flex; flex-direction:column; justify-content:space-between; flex:1; padding: 2px 0;">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="font-size:14.5px; font-weight:700; color:var(--text-primary); line-height:1.2;">Connect your phone</div>
+              <p style="font-size:12px; color:var(--text-secondary); line-height:1.45; margin:0;">
+                Scan the QR code and tap <strong>Start</strong> in Telegram to receive instant OTA and security summaries.
+              </p>
+            </div>
 
-            <div id="tg-sub-list" style="display:flex; flex-wrap:wrap; gap:6px;">
-              <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; padding:4px 9px; border-radius:4px; background:var(--emerald-bg); color:var(--emerald); border:1px solid var(--emerald-border);">
+            <div id="tg-sub-list" style="display:flex; flex-wrap:wrap; gap:6px; margin: 10px 0;">
+              <span style="display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:4px; background:var(--emerald-bg); color:var(--emerald); border:1px solid var(--emerald-border);">
                 <span class="status-dot"></span> Bhavesh Seervi
               </span>
             </div>
 
-            <div style="display:flex; gap:8px; align-items:center; margin-top:2px;">
-              <button class="btn-info-modal" style="margin-left:0; background:#0f172a; padding:6px 12px;" onclick="sendTelegramTestAlert()" id="tg-test-btn">Send Test Alert</button>
-              <button class="btn-info-modal" style="margin-left:0; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border); padding:6px 10px;" onclick="refreshTelegramStatus(true)">Refresh</button>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; gap:8px; align-items:center;">
+                <button class="btn-info-modal" style="margin-left:0; background:#0f172a; padding:7px 14px; font-size:12px;" onclick="sendTelegramTestAlert()" id="tg-test-btn">Send Test Alert</button>
+                <button class="btn-info-modal" style="margin-left:0; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border); padding:7px 12px; font-size:12px;" onclick="refreshTelegramStatus(true)">Refresh</button>
+              </div>
+              <div id="tg-feedback" style="font-family:var(--font-mono); font-size:11px; color:var(--emerald); display:none;"></div>
             </div>
-            <div id="tg-feedback" style="font-family:var(--font-mono); font-size:11px; color:var(--emerald); display:none;"></div>
           </div>
         </div>
       </div>

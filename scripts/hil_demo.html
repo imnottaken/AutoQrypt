@@ -80,7 +80,10 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 function renderEcu(e) {
-  if (!e) return;
+  if (!e) {
+    $("ecu").innerHTML = `<div><span>ESP32</span><b class="fail">Not connected over USB</b></div>`;
+    return;
+  }
   $("ecu").innerHTML =
     `<div><span>Firmware build</span><b>${esc(e.app_version)}</b></div>` +
     `<div><span>Security version</span><b>${esc(e.installed_security_version)}</b></div>` +
@@ -120,11 +123,15 @@ async function send(kind) {
   try {
     const res = await fetch(`/api/${kind}`, { method: "POST", headers: { "X-AutoQrypt": "1" } });
     const r = await res.json();
+    if (r.error) {
+      $("result").innerHTML = `<p class="verdict bad">ESP32 not reachable</p><p>${esc(r.error)}</p>`;
+      return;
+    }
     renderResult(r);
     renderEcu(r.ecu_after);
     await refresh();
   } catch (err) {
-    $("result").innerHTML = `<p class="fail">Could not reach the demo server: ${esc(err)}</p>`;
+    $("result").innerHTML = `<p class="fail">Could not reach the demo server. Is <code>hil.py demo</code> still running in its terminal?</p>`;
   } finally {
     $("update").disabled = $("attack").disabled = false;
   }

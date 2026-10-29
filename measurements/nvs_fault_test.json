@@ -1,0 +1,37 @@
+{
+  "generated": "2026-10-29T10:51:46",
+  "procedure": "Board at v2 / security version 2 after the 17/17 run; NVS partition (0x9000, 16 KB) overwritten with zeros via esptool write_flash; reset; packages sent.",
+  "boot_report": {
+    "device_id": "VEH-1",
+    "event_type": "boot_report",
+    "level": "INFO",
+    "logger": "esp32_ecu_VEH-1",
+    "message": "ECU booted v2.0.0",
+    "app_version": "v2.0.0",
+    "running_slot": "ota_1",
+    "installed_security_version": 1,
+    "anti_rollback_state": "unavailable",
+    "confirmed_on_this_boot": false,
+    "last_invalid_slot": "ota_0",
+    "last_invalid_version": "v3.0.0",
+    "free_heap_bytes": 271188
+  },
+  "boot_log": [
+    "I (163) AUTOQRYPT_ECU: Highest otadata sequence: 2 (updates installed)",
+    "E (163) AUTOQRYPT_ECU: Anti-rollback state unavailable (ESP_ERR_NVS_NOT_FOUND): all updates will be refused"
+  ],
+  "packages": [
+    {
+      "package": "Genuine newer update (security version 3)",
+      "decision": "REJECT",
+      "reason": "ANTI_ROLLBACK_STATE_UNAVAILABLE",
+      "running_slot": "ota_1"
+    },
+    {
+      "package": "Old v1.0.0, security version 1",
+      "decision": "REJECT",
+      "reason": "ANTI_ROLLBACK_STATE_UNAVAILABLE",
+      "running_slot": "ota_1"
+    }
+  ]
+}

@@ -47,6 +47,7 @@ import struct
 import sys
 import threading
 import time
+import webbrowser
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -315,12 +316,13 @@ def is_garbled(x):
 
 
 class ECU:
-    def __init__(self, port, dashboard=None, echo=False):
+    def __init__(self, port, dashboard=None, echo=False, connect=True):
         import serial
         self.ser = serial.Serial()
         self.ser.port, self.ser.baudrate, self.ser.timeout = port, BAUD, 0.2
         self.ser.dtr = self.ser.rts = False  # don't hold the board in reset/bootloader
-        self.ser.open()
+        if connect:
+            self.ser.open()
         self.dashboard = dashboard
         self.echo = echo
         self.log = []
@@ -548,46 +550,67 @@ class Demo:
 
     def __init__(self, port, dashboard):
         self.images, self.keys = load_images(), load_keys()
-        self.ecu = ECU(port, dashboard, echo=True)
+        self.ecu = ECU(port, dashboard, echo=True, connect=False)
         self.lock = threading.Lock()
         self.attack_index = 0
         self.history = []
+        self.state = None
+        try:
+            self.connect()
+        except Exception as e:  # serve the page anyway; the first click retries
+            print(f"[!] ESP32 not reachable on {port} yet ({e}). Plug it in, then click a button.")
+
+    def connect(self):
+        """Opens the port and resets the board; it also rebooted if USB was replugged."""
+        self.ecu.ser.open()
         self.ecu.reset()
-        self.state = self.ecu.boot()
+        self.state = self.ecu.boot() or self.state
         if not self.state:
-            sys.exit("[!] ECU did not boot. Is the AutoQrypt firmware flashed?")
+            self.ecu.ser.close()
+            raise RuntimeError("no boot report; is the AutoQrypt firmware flashed?")
 
     def status(self):
-        return {"ecu": self.state, "history": self.history[-12:]}
+        return {"ecu": self.state, "connected": self.ecu.ser.is_open, "history": self.history[-12:]}
 
     def send(self, kind, name, title, explanation):
+        from serial import SerialException
         with self.lock:
-            # Each package targets the next security version, so a genuine update is always
-            # newer than what is installed and each attack fails on its own defect.
-            sv = self.state["installed_security_version"] + 1
-            header, image, mode = package(name, self.images, self.keys, sv)
-            t0 = time.time()
-            ev = self.ecu.send_package(header, image, mode, progress=False) or {}
-            entry = {
-                "kind": kind, "title": title, "explanation": explanation,
-                "time": datetime.datetime.now().strftime("%H:%M:%S"),
-                "decision": ev.get("decision", "TIMEOUT"), "reason": ev.get("reason", "TIMEOUT"),
-                "release": ev.get("firmware_version"), "security_version": ev.get("security_version"),
-                "verifiers": [{"label": label, "ok": ev[k]["ok"], "ms": round(ev[k]["us"] / 1000, 1),
-                               "stack_bytes": ev[k]["stack_peak_bytes"]} for k, label in VERIFIERS if k in ev],
-                "sha3_ms": round(ev["image_sha3_us"] / 1000, 1) if "image_sha3_us" in ev else None,
-            }
-            if entry["decision"] == "ACCEPT":
-                self.state = self.ecu.boot(60) or self.state
-            else:
-                self.ecu.wait_for(lambda x: x == "AQ:READY", 15)
-                if ev:
-                    self.state = {**self.state, "running_slot": ev["running_slot"],
-                                  "installed_security_version": ev["installed_security_version"]}
-            entry["elapsed_s"] = round(time.time() - t0, 1)
-            entry["ecu_after"] = self.state
-            self.history.append(entry)
-            return entry
+            try:
+                if not self.ecu.ser.is_open:
+                    self.connect()
+                return self._send(kind, name, title, explanation)
+            except (SerialException, RuntimeError):
+                self.ecu.ser.close()
+                return {"error": f"Lost the USB link to the ESP32 ({self.ecu.ser.port}). Reseat the cable, "
+                                 "wait for the blue LED, then click again."}
+
+    def _send(self, kind, name, title, explanation):
+        # Each package targets the next security version, so a genuine update is always
+        # newer than what is installed and each attack fails on its own defect.
+        sv = self.state["installed_security_version"] + 1
+        header, image, mode = package(name, self.images, self.keys, sv)
+        t0 = time.time()
+        ev = self.ecu.send_package(header, image, mode, progress=False) or {}
+        entry = {
+            "kind": kind, "title": title, "explanation": explanation,
+            "time": datetime.datetime.now().strftime("%H:%M:%S"),
+            "decision": ev.get("decision", "TIMEOUT"), "reason": ev.get("reason", "TIMEOUT"),
+            "release": ev.get("firmware_version"), "security_version": ev.get("security_version"),
+            "verifiers": [{"label": label, "ok": ev[k]["ok"], "ms": round(ev[k]["us"] / 1000, 1),
+                           "stack_bytes": ev[k]["stack_peak_bytes"]} for k, label in VERIFIERS if k in ev],
+            "sha3_ms": round(ev["image_sha3_us"] / 1000, 1) if "image_sha3_us" in ev else None,
+        }
+        if entry["decision"] == "ACCEPT":
+            self.state = self.ecu.boot(60) or self.state
+        else:
+            self.ecu.wait_for(lambda x: x == "AQ:READY", 15)
+            if ev:
+                self.state = {**self.state, "running_slot": ev["running_slot"],
+                              "installed_security_version": ev["installed_security_version"]}
+        entry["elapsed_s"] = round(time.time() - t0, 1)
+        entry["ecu_after"] = self.state
+        self.history.append(entry)
+        return entry
 
     def update(self):
         return self.send("update", "v2", "Genuine OEM update",
@@ -629,15 +652,22 @@ def cmd_demo(args):
             action = {"/api/update": demo.update, "/api/attack": demo.attack}.get(self.path)
             if not action:
                 return self.reply(b"{}", code=404)
-            self.reply(json.dumps(action()).encode())
+            try:
+                result = action()
+            except Exception as e:  # answer the page instead of dropping the connection
+                result = {"error": f"Demo server error: {type(e).__name__}: {e}"}
+            self.reply(json.dumps(result).encode())
 
         def log_message(self, *_):
             pass
 
     server = ThreadingHTTPServer(("127.0.0.1", args.http_port), Handler)
-    print(f"[*] ECU on {args.port}: {demo.state['app_version']}, security version "
-          f"{demo.state['installed_security_version']}")
-    print(f"[*] Demo page: http://127.0.0.1:{args.http_port}   (Ctrl+C to stop)")
+    if demo.state:
+        print(f"[*] ECU on {args.port}: {demo.state['app_version']}, security version "
+              f"{demo.state['installed_security_version']}")
+    url = f"http://127.0.0.1:{args.http_port}"
+    print(f"[*] Demo page: {url}   (Ctrl+C to stop)")
+    webbrowser.open(url)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -31,6 +31,10 @@
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
+#include "esp_partition.h"
+#include "esp_flash_partitions.h"
+#include "bootloader_common.h"
+#include "spi_flash_mmap.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "driver/uart.h"
@@ -92,6 +96,8 @@ static uint8_t s_chunk[CHUNK_SIZE];
 static uint8_t s_image_msg[sizeof(IMAGE_DOMAIN) - 1 + MANIFEST_LEN];
 static uint8_t s_director_msg[sizeof(DIRECTOR_DOMAIN) - 1 + ID_FIELD_LEN + MANIFEST_LEN];
 static uint32_t s_security_version = FACTORY_SECURITY_VER;
+// False when the anti-rollback counter could not be read or persisted: every package is refused
+static bool s_vault_ok;
 
 // LED signalling (read by app_task)
 #define LED_TICK_MS       100
@@ -107,37 +113,81 @@ static const char *running_slot(void) {
 
 // ---------------------------------------------------------------- NVS vault
 
-static uint32_t nvs_get_or(nvs_handle_t h, const char *key, uint32_t fallback) {
-    uint32_t v;
-    return nvs_get_u32(h, key, &v) == ESP_OK ? v : fallback;
+/** Reads a counter; a key that was never written gives `fallback` if allowed, any other error fails. */
+static esp_err_t vault_get(nvs_handle_t h, const char *key, bool allow_missing, uint32_t fallback, uint32_t *out) {
+    esp_err_t err = nvs_get_u32(h, key, out);
+    if (err == ESP_ERR_NVS_NOT_FOUND && allow_missing) {
+        *out = fallback;
+        return ESP_OK;
+    }
+    return err;
+}
+
+/**
+ * Highest valid sequence number in otadata. The bootloader writes sequence 1 for the
+ * factory image on first boot and every activated update raises it, so <= 1 means no
+ * update has ever been installed. Rejected packages never touch otadata.
+ */
+static uint32_t highest_ota_sequence(void) {
+    const esp_partition_t *p = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, NULL);
+    uint32_t highest = 0;
+    for (int i = 0; p && i < 2; i++) {
+        esp_ota_select_entry_t e;
+        if (esp_partition_read(p, i * SPI_FLASH_SEC_SIZE, &e, sizeof(e)) != ESP_OK) {
+            return UINT32_MAX;  // can't tell: treat as updated, so a missing counter fails closed
+        }
+        if (bootloader_common_ota_select_valid(&e) && e.ota_seq > highest) highest = e.ota_seq;
+    }
+    return p ? highest : UINT32_MAX;
+}
+
+static esp_err_t vault_erase(nvs_handle_t h, const char *key) {
+    esp_err_t err = nvs_erase_key(h, key);
+    return err == ESP_ERR_NVS_NOT_FOUND ? ESP_OK : err;
 }
 
 /**
  * Loads the monotonic security version. A version staged by an accepted update is only
  * committed once that image is running and confirmed, so a rolled-back boot never
- * raises the counter.
+ * raises the counter. Any read or write error is returned; the caller then refuses all
+ * packages rather than trusting a counter that may be stale.
+ *
+ * A missing counter means "factory value" only while no update has ever been installed.
+ * After that, a missing counter means NVS lost it (ESP-IDF silently reformats
+ * corrupt pages), so it is an error rather than a reset to the factory value.
  */
-static void load_security_version(bool running_confirmed) {
+static esp_err_t load_security_version(bool running_confirmed, bool factory_image) {
     nvs_handle_t vault;
-    ESP_ERROR_CHECK(nvs_open("sec_vault", NVS_READWRITE, &vault));
-    s_security_version = nvs_get_or(vault, "monotonic_ver", FACTORY_SECURITY_VER);
+    esp_err_t err = nvs_open("sec_vault", NVS_READWRITE, &vault);
+    if (err != ESP_OK) return err;
 
-    uint32_t pending = nvs_get_or(vault, "pending_ver", 0);
-    char slot[17] = {0};
-    size_t len = sizeof(slot);
-    bool has_slot = nvs_get_str(vault, "pending_slot", slot, &len) == ESP_OK;
-    if (pending) {
-        if (running_confirmed && has_slot && strcmp(slot, running_slot()) == 0 && pending > s_security_version) {
-            s_security_version = pending;
-            nvs_set_u32(vault, "monotonic_ver", pending);
-            ESP_LOGI(TAG, "Committed monotonic security version %" PRIu32 " for %s", pending, slot);
+    uint32_t current = 0, pending = 0;
+    err = vault_get(vault, "monotonic_ver", factory_image, FACTORY_SECURITY_VER, &current);
+    if (err == ESP_OK) err = vault_get(vault, "pending_ver", true, 0, &pending);
+    if (err == ESP_OK && pending) {
+        char slot[17] = {0};
+        size_t len = sizeof(slot);
+        esp_err_t slot_err = nvs_get_str(vault, "pending_slot", slot, &len);
+        if (slot_err != ESP_OK && slot_err != ESP_ERR_NVS_NOT_FOUND) err = slot_err;
+        if (err == ESP_OK && slot_err == ESP_OK && running_confirmed && strcmp(slot, running_slot()) == 0
+            && pending > current) {
+            // Make the raised counter durable before the pending record is removed
+            err = nvs_set_u32(vault, "monotonic_ver", pending);
+            if (err == ESP_OK) err = nvs_commit(vault);
+            if (err == ESP_OK) {
+                current = pending;
+                ESP_LOGI(TAG, "Committed monotonic security version %" PRIu32 " for %s", pending, slot);
+            }
         }
-        nvs_erase_key(vault, "pending_ver");
-        nvs_erase_key(vault, "pending_slot");
+        if (err == ESP_OK) err = vault_erase(vault, "pending_ver");
+        if (err == ESP_OK) err = vault_erase(vault, "pending_slot");
     }
-    nvs_set_u32(vault, "monotonic_ver", s_security_version);
-    nvs_commit(vault);
+    // Persists the factory value on first boot (NVS skips the write when it is unchanged)
+    if (err == ESP_OK) err = nvs_set_u32(vault, "monotonic_ver", current);
+    if (err == ESP_OK) err = nvs_commit(vault);
     nvs_close(vault);
+    if (err == ESP_OK) s_security_version = current;
+    return err;
 }
 
 static esp_err_t stage_security_version(uint32_t ver, const char *slot) {
@@ -358,6 +408,7 @@ static void handle_package(void) {
         emit_decision("REJECT", "TRUNCATED_HEADER", NULL, jobs, -1);
         return;
     }
+    if (!s_vault_ok) { emit_decision("REJECT", "ANTI_ROLLBACK_STATE_UNAVAILABLE", NULL, jobs, -1); return; }
     const char *reason = parse_manifest(s_header, &m);
     if (reason) { emit_decision("REJECT", reason, &m, jobs, -1); return; }
     if (strcmp(m.target_id, DEVICE_TARGET_ID) != 0) { emit_decision("REJECT", "WRONG_TARGET", &m, jobs, -1); return; }
@@ -507,11 +558,10 @@ static void app_task(void *arg) {
 }
 
 void app_main(void) {
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        nvs_flash_erase();
-        nvs_flash_init();
-    }
+    // Never erase NVS here: it holds the anti-rollback counter, and wiping it would make
+    // older releases installable again. If it can't be used, keep running the current
+    // firmware but refuse every update until the ECU is re-provisioned.
+    esp_err_t nvs_err = nvs_flash_init();
 
 #if APP_FW_VERSION == 3
     // Fault-injected release: dies before confirming itself. The bootloader then marks
@@ -526,12 +576,22 @@ void app_main(void) {
     const esp_partition_t *running = esp_ota_get_running_partition();
     esp_ota_img_states_t state = ESP_OTA_IMG_UNDEFINED;
     esp_ota_get_state_partition(running, &state);
+    uint32_t ota_seq = highest_ota_sequence();
+    bool factory_image = ota_seq <= 1;
+    ESP_LOGI(TAG, "Highest otadata sequence: %" PRIu32 " (%s)", ota_seq,
+             factory_image ? "no update installed yet" : "updates installed");
     bool confirmed_now = false;
     if (state == ESP_OTA_IMG_PENDING_VERIFY) {
         confirmed_now = esp_ota_mark_app_valid_cancel_rollback() == ESP_OK;
         if (confirmed_now) s_ok_ticks = OK_PATTERN_TICKS;  // update installed: 4 blinks
     }
-    load_security_version(state != ESP_OTA_IMG_PENDING_VERIFY || confirmed_now);
+    if (nvs_err == ESP_OK) {
+        nvs_err = load_security_version(state != ESP_OTA_IMG_PENDING_VERIFY || confirmed_now, factory_image);
+    }
+    s_vault_ok = nvs_err == ESP_OK;
+    if (!s_vault_ok) {
+        ESP_LOGE(TAG, "Anti-rollback state unavailable (%s): all updates will be refused", esp_err_to_name(nvs_err));
+    }
 
     uart_driver_install(UART_PORT, UART_RX_BUF, 0, 0, NULL, 0);
 
@@ -555,8 +615,9 @@ void app_main(void) {
     printf("-----------------------------------------------------------------\n");
     printf("{\"device_id\":\"%s\",\"event_type\":\"boot_report\",\"level\":\"INFO\",\"logger\":\"esp32_ecu_%s\","
            "\"message\":\"ECU booted %s\",\"app_version\":\"%s\",\"running_slot\":\"%s\",\"installed_security_version\":%" PRIu32
-           ",\"confirmed_on_this_boot\":%s,\"last_invalid_slot\":\"%s\",\"last_invalid_version\":\"%s\",\"free_heap_bytes\":%u}\n",
+           ",\"anti_rollback_state\":\"%s\",\"confirmed_on_this_boot\":%s,\"last_invalid_slot\":\"%s\",\"last_invalid_version\":\"%s\",\"free_heap_bytes\":%u}\n",
            DEVICE_VEHICLE_ID, DEVICE_VEHICLE_ID, app_version, app_version, running->label, s_security_version,
+           s_vault_ok ? "ok" : "unavailable",
            confirmed_now ? "true" : "false", has_invalid ? invalid->label : "", has_invalid ? invalid_desc.version : "",
            (unsigned)esp_get_free_heap_size());
 

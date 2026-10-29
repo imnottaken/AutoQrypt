@@ -817,7 +817,8 @@ def cmd_demo(args):
                 self.reply(json.dumps(demo.status()).encode())
             elif self.path.startswith("/api/telegram/status"):
                 force_sync = "sync=1" in self.path
-                self.reply(json.dumps(get_telegram_status(force_sync=force_sync)).encode())
+                new_qr = "new_qr=1" in self.path
+                self.reply(json.dumps(get_telegram_status(force_sync=force_sync, new_qr=new_qr)).encode())
             elif self.path.startswith("/api/telegram/open"):
                 st = get_telegram_status(force_sync=False)
                 url = st.get("bot_url")

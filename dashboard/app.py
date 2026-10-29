@@ -216,8 +216,8 @@ def run_demo(req: DemoRequest):
 
 
 @app.get("/api/telegram/status")
-def telegram_status(sync: int = 0):
-    return get_telegram_status(force_sync=bool(sync))
+def telegram_status(sync: int = 0, new_qr: int = 0):
+    return get_telegram_status(force_sync=bool(sync), new_qr=bool(new_qr))
 
 
 @app.get("/api/telegram/open")

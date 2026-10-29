@@ -1594,7 +1594,7 @@
             <div style="display:flex; flex-direction:column; gap:6px;">
               <div style="display:flex; gap:8px; align-items:center;">
                 <button class="btn-info-modal" style="margin-left:0; background:#0f172a; padding:7px 14px; font-size:12px;" onclick="sendTelegramTestAlert()" id="tg-test-btn">Send Test Alert</button>
-                <button class="btn-info-modal" style="margin-left:0; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border); padding:7px 12px; font-size:12px;" onclick="refreshTelegramStatus(true)">Refresh</button>
+                <button class="btn-info-modal" style="margin-left:0; background:var(--bg-subtle); color:var(--text-primary); border:1px solid var(--border); padding:7px 12px; font-size:12px;" onclick="refreshTelegramStatus(true, true)">New QR</button>
               </div>
               <div id="tg-feedback" style="font-family:var(--font-mono); font-size:11px; color:var(--emerald); display:none;"></div>
             </div>
@@ -1641,12 +1641,15 @@
 
   function openTelegramModal() {
     toggleTelegramModal(true);
-    refreshTelegramStatus(false);
+    refreshTelegramStatus(false, true);
   }
 
-  async function refreshTelegramStatus(showFeedback) {
+  async function refreshTelegramStatus(showFeedback, newQr) {
     try {
-      const url = showFeedback ? '/api/telegram/status?sync=1' : '/api/telegram/status';
+      let url = '/api/telegram/status';
+      if (showFeedback && newQr) url += '?sync=1&new_qr=1';
+      else if (showFeedback) url += '?sync=1';
+      else if (newQr) url += '?new_qr=1';
       const res = await fetch(url);
       if (!res.ok) return;
       const st = await res.json();
@@ -1672,7 +1675,7 @@
       if (showFeedback && $('tg-feedback')) {
         $('tg-feedback').style.display = 'block';
         $('tg-feedback').style.color = 'var(--emerald)';
-        $('tg-feedback').innerText = `Synced (${count} connected)`;
+        $('tg-feedback').innerText = newQr ? `Generated new QR (#${st.pair_token || 'NEW'})` : `Synced (${count} connected)`;
       }
     } catch (e) {}
   }

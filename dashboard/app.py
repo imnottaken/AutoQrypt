@@ -8,6 +8,7 @@ import sys
 import subprocess
 import json
 import logging
+import tempfile
 import threading
 from pydantic import BaseModel, ValidationError
 
@@ -19,7 +20,11 @@ from sbom.osv_scanner import CycloneDXError, OSVScanner, parse_cyclonedx
 sbom_log = logging.getLogger("dashboard.sbom")
 
 app = FastAPI(title="Fleet Management Dashboard")
-start_command_poller()
+
+
+@app.on_event("startup")
+async def _startup_telegram_poller():
+    start_command_poller()
 
 # Fixed allowlist of demo scripts the dashboard is permitted to launch.
 # /run-demo must never build a filesystem path from unvalidated client input.
@@ -38,6 +43,7 @@ logs = []
 latest_perf_data = {}
 AUDIT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "audit")
 AUDIT_FILE = os.path.join(AUDIT_DIR, "audit_log.json")
+_audit_lock = threading.Lock()
 
 # Ensure audit file exists
 os.makedirs(AUDIT_DIR, exist_ok=True)
@@ -77,25 +83,32 @@ async def ingest_log(request: Request):
     if data.get("event_type") == "perf_report" and data.get("perf_data"):
         latest_perf_data = data["perf_data"]
     
-    # Persistently append to the central audit log JSON array
-    try:
-        with open(AUDIT_FILE, "r") as f:
-            disk_logs = json.load(f)
-    except Exception:
-        disk_logs = []
-        
-    if not disk_logs or data.get("event_type") == "ota_start":
-        # Create a new session block
-        disk_logs.append({
-            "update_session_timestamp": data.get("timestamp", ""),
-            "events": [data]
-        })
-    else:
-        # Append to latest session block
-        disk_logs[-1]["events"].append(data)
-    
-    with open(AUDIT_FILE, "w") as f:
-        json.dump(disk_logs, f, indent=2)
+    # Persistently append to the central audit log JSON array (thread-safe & atomic)
+    with _audit_lock:
+        try:
+            with open(AUDIT_FILE, "r") as f:
+                disk_logs = json.load(f)
+        except Exception:
+            disk_logs = []
+
+        if not disk_logs or data.get("event_type") == "ota_start":
+            # Create a new session block
+            disk_logs.append({
+                "update_session_timestamp": data.get("timestamp", ""),
+                "events": [data]
+            })
+        else:
+            # Append to latest session block
+            disk_logs[-1]["events"].append(data)
+
+        try:
+            audit_dir = os.path.dirname(AUDIT_FILE)
+            fd, tmp_path = tempfile.mkstemp(dir=audit_dir, suffix=".tmp")
+            with os.fdopen(fd, "w") as f:
+                json.dump(disk_logs, f, indent=2)
+            os.replace(tmp_path, AUDIT_FILE)
+        except Exception:
+            pass
         
     return {"status": "ok"}
 
@@ -259,7 +272,7 @@ def api_status():
         req = urllib.request.Request("http://127.0.0.1:8080/api/status")
         with urllib.request.urlopen(req, timeout=0.4) as resp:
             hil_data = json.loads(resp.read().decode())
-            if hil_data.get("connected") and hil_data.get("ecu"):
+            if (hil_data.get("hardware_attached") or not latest_perf_data) and hil_data.get("ecu"):
                 return hil_data
     except Exception:
         pass

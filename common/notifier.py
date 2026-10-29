@@ -47,6 +47,7 @@ _notify_threads = []
 _notify_lock = threading.Lock()
 _sub_lock = threading.Lock()
 _poller_started = False
+_sent_alert_msg_ids = set()
 
 ATTACK_DEMO_CYCLE = [
     "demo_2_tampered.py",
@@ -322,11 +323,23 @@ def _send_one(token: str, chat_id: str, text: str, parse_mode: Optional[str] = "
         try:
             resp = _SEND_SESSION.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload, timeout=2.5)
             if resp.status_code == 200:
+                try:
+                    mid = int(((resp.json().get("result") or {}).get("message_id")) or 0)
+                    if mid > 0:
+                        _sent_alert_msg_ids.add(mid)
+                except Exception:
+                    pass
                 return True
             if parse_mode and resp.status_code == 400:
                 payload.pop("parse_mode", None)
                 resp2 = _SEND_SESSION.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload, timeout=2.5)
                 if resp2.status_code == 200:
+                    try:
+                        mid2 = int(((resp2.json().get("result") or {}).get("message_id")) or 0)
+                        if mid2 > 0:
+                            _sent_alert_msg_ids.add(mid2)
+                    except Exception:
+                        pass
                     return True
         except Exception:
             if attempt == 0:
@@ -451,7 +464,10 @@ def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, stat
 
         # Clean up any duplicate welcome message sent before or after our_msg_id by another running instance
         if user_msg_id > 0 and our_msg_id > 0:
+            _sent_alert_msg_ids.add(our_msg_id)
             for prev_id in range(user_msg_id + 1, our_msg_id):
+                if prev_id in _sent_alert_msg_ids:
+                    continue
                 try:
                     _SEND_SESSION.post(
                         f"https://api.telegram.org/bot{token}/deleteMessage",
@@ -463,6 +479,8 @@ def _handle_bot_command(token: str, cid_str: str, name: str, cmd_text: str, stat
             for delay_s in (0.6, 0.7, 0.8):
                 time.sleep(delay_s)
                 for next_id in (our_msg_id + 1, our_msg_id + 2):
+                    if next_id in _sent_alert_msg_ids:
+                        continue
                     try:
                         _SEND_SESSION.post(
                             f"https://api.telegram.org/bot{token}/deleteMessage",
@@ -662,6 +680,9 @@ def sync_subscribers(send_welcome: bool = True, force: bool = False) -> List[Dic
                         commands_to_run.append((cid_str, name, text, user_mid))
 
             if max_uid > last_uid or changed:
+                fresh_disk_state = _load_bot_state()
+                if fresh_disk_state.get("last_report_html"):
+                    state["last_report_html"] = fresh_disk_state["last_report_html"]
                 state["last_update_id"] = max_uid
                 _save_bot_state(state)
             if changed:
@@ -728,12 +749,13 @@ def get_telegram_status(force_sync: bool = False, new_qr: bool = False) -> Dict[
             subs = sync_subscribers(send_welcome=True, force=True)
         else:
             subs = list(_load_saved_subscribers().values())
-        state = _load_bot_state()
-        if token and (not state.get("bot_base_url") or not state.get("qr_svg")) and not _in_test_harness():
-            _ensure_bot_commands_menu(token, state)
-        elif state.get("bot_url") and not state.get("qr_svg"):
-            _rotate_pairing_token(state)
-            _save_bot_state(state)
+        with _sub_lock:
+            state = _load_bot_state()
+            if token and (not state.get("bot_base_url") or not state.get("qr_svg")) and not _in_test_harness():
+                _ensure_bot_commands_menu(token, state)
+            elif state.get("bot_url") and not state.get("qr_svg"):
+                _rotate_pairing_token(state)
+                _save_bot_state(state)
 
     return {
         "configured": bool(token),
@@ -762,9 +784,10 @@ def send_telegram_alert(text: str, async_send: bool = True, force: bool = False,
     if not token:
         return False
 
-    state = _load_bot_state()
-    state["last_report_html"] = text
-    _save_bot_state(state)
+    with _sub_lock:
+        state = _load_bot_state()
+        state["last_report_html"] = text
+        _save_bot_state(state)
 
     def _deliver() -> bool:
         # Read saved subscriber directly from disk (<0.2ms) without blocking on getUpdates
@@ -783,11 +806,12 @@ def send_telegram_alert(text: str, async_send: bool = True, force: bool = False,
                 any_ok = True
         if not any_ok:
             # Offline fallback: queue alert so it is not lost if network drops momentarily
-            cur_state = _load_bot_state()
-            q = list(cur_state.get("pending_alerts") or [])
-            q.append(text)
-            cur_state["pending_alerts"] = q[-10:]
-            _save_bot_state(cur_state)
+            with _sub_lock:
+                cur_state = _load_bot_state()
+                q = list(cur_state.get("pending_alerts") or [])
+                q.append(text)
+                cur_state["pending_alerts"] = q[-10:]
+                _save_bot_state(cur_state)
         return any_ok
 
     if not async_send:
@@ -859,9 +883,9 @@ def notify_hil_result(entry: dict):
             f"• <b>How we protected your car:</b> Automatically restored your previous working software (<code>{html.escape(str(fw_ver))}</code>) with zero downtime.",
         ]
     elif decision == "ACCEPT":
-        headline = "Vehicle Update Installed"
+        headline = "Firmware Update Installed"
         lines = [
-            "<b>✅ AutoQrypt — Vehicle Update Installed</b>",
+            "<b>✅ AutoQrypt — Firmware Update Installed</b>",
             "",
             "<i>Your vehicle verified and installed the latest official software update.</i>",
             "",

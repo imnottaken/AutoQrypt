@@ -626,6 +626,7 @@ class Demo:
         self.images, self.keys = load_images(), load_keys()
         self.ecu = ECU(port, dashboard, echo=True, connect=False)
         self.lock = threading.Lock()
+        self.hw_lock = threading.Lock()
         self.attack_index = 0
         self.history = []
         self.state = {
@@ -833,34 +834,35 @@ class Demo:
             self.attack_index = 0
             hw_mode = "ESP32-ECU-GW"
             # Re-scan and reconnect physical ESP32 USB-UART if plugged/replugged
-            if self.ecu and self.ecu.ser:
+            with self.hw_lock:
+                if self.ecu and self.ecu.ser:
+                    try:
+                        self.ecu.ser.close()
+                    except Exception:
+                        pass
+                    try:
+                        p = auto_port()
+                        if p and (os.path.exists(p) or p.startswith("COM")):
+                            self.ecu.ser.port = p
+                            self.ecu.ser.open()
+                            self.ecu.reset()
+                            self.ecu.boot(timeout=3)
+                            hw_mode = f"ESP32-ECU-GW ({p} · Physical Hardware)"
+                    except Exception:
+                        pass
+                self.state = {
+                    "app_version": "v1.0.0",
+                    "installed_security_version": 1,
+                    "running_slot": "ota_0",
+                    "anti_rollback_state": "ok",
+                    "target_id": TARGET_ID,
+                    "vehicle_id": VEHICLE_ID,
+                    "mode": hw_mode,
+                }
                 try:
-                    self.ecu.ser.close()
+                    self.write_demo_packages()
                 except Exception:
                     pass
-                try:
-                    p = auto_port()
-                    if p and (os.path.exists(p) or p.startswith("COM")):
-                        self.ecu.ser.port = p
-                        self.ecu.ser.open()
-                        self.ecu.reset()
-                        self.ecu.boot(timeout=3)
-                        hw_mode = f"ESP32-ECU-GW ({p} · Physical Hardware)"
-                except Exception:
-                    pass
-            self.state = {
-                "app_version": "v1.0.0",
-                "installed_security_version": 1,
-                "running_slot": "ota_0",
-                "anti_rollback_state": "ok",
-                "target_id": TARGET_ID,
-                "vehicle_id": VEHICLE_ID,
-                "mode": hw_mode,
-            }
-            try:
-                self.write_demo_packages()
-            except Exception:
-                pass
             return {
                 "status": "ok",
                 "hardware_attached": bool(self.ecu and self.ecu.ser and self.ecu.ser.is_open),
@@ -998,7 +1000,7 @@ class Demo:
                     "offset": "0x000000",
                     "status": "ok" if hdr_ok else ("missing" if len(raw_bytes) < 3262 else "corrupt"),
                 })
-                total_payload_chunks = 67
+                total_payload_chunks = max(1, math.ceil((len(raw_bytes) - 3262) / 4096)) if len(raw_bytes) > 3262 else 67
                 for c_idx in range(total_payload_chunks):
                     start = 3262 + c_idx * 4096
                     end = min(start + 4096, len(ref_pkg))
@@ -1096,14 +1098,14 @@ class Demo:
                 # Dispatch Telegram alert immediately (<0.2s) and trigger serial LED alarm asynchronously
                 notify_hil_result(entry)
                 def _bg_reject_led():
-                    if ensure_serial():
-                        try:
-                            hdr = raw_bytes[4:3262] if len(raw_bytes) >= 3262 else (b"XXXX" + b"\0" * 3254)
-                            self.ecu.drain()
-                            self.ecu.ser.write(b"AQPK" + bytes(hdr))
-                            self.ecu.wait_for(lambda x: x == "AQ:READY", 3)
-                        except Exception:
-                            pass
+                    with self.hw_lock:
+                        if ensure_serial():
+                            try:
+                                self.ecu.drain()
+                                self.ecu.ser.write(b"AQPKXXXX" + b"\0" * 3254)
+                                self.ecu.wait_for(lambda x: x == "AQ:READY", 3)
+                            except Exception:
+                                pass
                 threading.Thread(target=_bg_reject_led, daemon=True).start()
                 return entry
 
@@ -1274,13 +1276,14 @@ class Demo:
                 self.history.append(entry)
                 notify_hil_result(entry)
                 def _bg_rb_led():
-                    if ensure_serial():
-                        try:
-                            self.ecu.drain()
-                            self.ecu.ser.write(b"AQPKXXXX" + b"\0" * 3254)
-                            self.ecu.wait_for(lambda x: x == "AQ:READY", 3)
-                        except Exception:
-                            pass
+                    with self.hw_lock:
+                        if ensure_serial():
+                            try:
+                                self.ecu.drain()
+                                self.ecu.ser.write(b"AQPKXXXX" + b"\0" * 3254)
+                                self.ecu.wait_for(lambda x: x == "AQ:READY", 3)
+                            except Exception:
+                                pass
                 threading.Thread(target=_bg_rb_led, daemon=True).start()
             else:
                 self.state = {
@@ -1308,21 +1311,22 @@ class Demo:
                 # Send Telegram alert immediately (<0.2s) and run LED blink + package regeneration asynchronously
                 notify_hil_result(entry)
                 def _bg_accept_hw():
-                    if ensure_serial():
+                    with self.hw_lock:
+                        if ensure_serial():
+                            try:
+                                for i in range(2):
+                                    self.ecu.ser.rts = True
+                                    time.sleep(0.28)
+                                    self.ecu.ser.rts = False
+                                    if i == 0:
+                                        time.sleep(0.42)
+                                self.ecu.boot(timeout=3)
+                            except Exception:
+                                pass
                         try:
-                            for i in range(2):
-                                self.ecu.ser.rts = True
-                                time.sleep(0.28)
-                                self.ecu.ser.rts = False
-                                if i == 0:
-                                    time.sleep(0.42)
-                            self.ecu.boot(timeout=3)
+                            self.write_demo_packages()
                         except Exception:
                             pass
-                    try:
-                        self.write_demo_packages()
-                    except Exception:
-                        pass
                 threading.Thread(target=_bg_accept_hw, daemon=True).start()
 
             return entry

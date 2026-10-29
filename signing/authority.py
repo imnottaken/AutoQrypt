@@ -81,11 +81,12 @@ class SigningAuthority:
     @staticmethod
     def verify_director_signature(public_key_bytes: bytes, device_id: str, version: str, build_number: int, image_digest: str, signature_b64: str) -> bool:
         payload = SigningAuthority.construct_director_payload(device_id, version, build_number, image_digest)
-        return _verify(public_key_bytes, payload, signature_b64)
+        return _verify(public_key_bytes, payload, signature_b64, FALCON512_PUB_LEN)
 
 
 ED25519_PUB_LEN = 32
 MLDSA44_PUB_LEN = 1312
+FALCON512_PUB_LEN = 897
 
 
 def _verify(public_key_bytes: bytes, payload: bytes, signature_b64: str, required_pub_len: int = None) -> bool:

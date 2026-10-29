@@ -97,7 +97,8 @@ class ChunkManager:
         if is_resume:
             self._resume_start_time = time.perf_counter()
             rem = total_chunks - verified_count
-            start_id = [k for k,v in self.chunk_states.items() if v != ChunkState.VERIFIED][0]
+            unverified = [k for k, v in self.chunk_states.items() if v != ChunkState.VERIFIED]
+            start_id = unverified[0] if unverified else total_chunks
             self.logger.info(f"OTA_RESUMED — resuming from chunk_id: {start_id} — {rem} chunks remaining", event_type="ota_resumed")
             
             # Publish UI updates for already verified chunks so dashboard turns them green

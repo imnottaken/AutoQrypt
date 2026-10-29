@@ -1,6 +1,7 @@
 import hashlib
 import os
 import json
+import tempfile
 from typing import Optional
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
@@ -32,8 +33,10 @@ def _falcon_keypair(seed: Optional[bytes]):
         return bytes.fromhex(data["pk"]), bytes.fromhex(data["sk"])
     pk, sk = falcon_padded_512.generate_keypair()
     os.makedirs(_KEYSTORE_DIR, exist_ok=True)
-    with open(path, "w") as f:
+    fd, tmp_path = tempfile.mkstemp(dir=_KEYSTORE_DIR, suffix=".tmp")
+    with os.fdopen(fd, "w") as f:
         json.dump({"pk": pk.hex(), "sk": sk.hex()}, f)
+    os.replace(tmp_path, path)
     return pk, sk
 
 class SimulatedHSM:
@@ -48,6 +51,7 @@ class SimulatedHSM:
                 try:
                     with open(receipt_path, "r") as f:
                         data = json.load(f)
+                    self.entropy_receipt = data
                     seed = bytes.fromhex(data["seed_bytes_hex"])
                 except Exception:
                     pass

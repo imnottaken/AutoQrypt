@@ -2459,10 +2459,10 @@
 
         let tagClass = 'status';
         let tagText = 'Status';
-        if (log.event_type === 'chunk_verified' || log.event_type === 'install_success') {
+        if (log.event_type === 'chunk_verified' || log.event_type === 'install_success' || (log.event_type === 'ota_decision' && level === 'INFO')) {
           tagClass = 'normal';
           tagText = 'Normal';
-        } else if (log.event_type === 'chunk_corrupted' || log.event_type === 'rollback') {
+        } else if (log.event_type === 'chunk_corrupted' || log.event_type === 'rollback' || (log.event_type === 'ota_decision' && level !== 'INFO')) {
           tagClass = 'tampered';
           tagText = 'Tampered';
         } else if (log.event_type === 'chunk_retransmission_requested') {

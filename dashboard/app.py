@@ -313,7 +313,7 @@ def _dispatch_hil_or_sim(path: str):
             "logger": "esp32_ecu_VEH-1",
             "message": f"{result.get('decision')}: {result.get('title')} — {result.get('reason')}",
             "device_id": "VEH-1",
-            "event_type": "install_success" if ok else "rollback",
+            "event_type": "ota_decision",
         })
     return result
 

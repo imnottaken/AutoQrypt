@@ -149,18 +149,16 @@ AutoQrypt profiles silicon behavior directly during execution:
 
 ## Quantum Integrations
 
-### 1. QpiAI Quantum SDK (`src/sponsors/qpiai_qcloud.py` & `src/sponsors/bloq_platform.py`)
-- **Cloud Profile Sync & Local Solver Runtime**: Authenticates against `qcloud.qpiai.tech` (`QpiAIQuantumAuth.login`), pushes OpenQASM 2.0 circuits directly to the user's QpiAI Cloud profile (`POST /api/circuits/create`), and executes quantum circuits locally on `QpiAI-QSV-Local`.
-- **Three Built-In `qpiai-quantum` Local Solvers**:
-  1. **`qpiai_quantum.QRNG` (8-Qubit Hadamard Superposition)**: Generates 256-bit quantum entropy seeds audited against Shannon entropy and NIST SP 800-90B min-entropy (`> 5.0` bits/byte) to seed ML-DSA-44, Falcon-512, and Ed25519 OEM keys (`measurements/key_provenance.json`).
-  2. **`qpiai_quantum.algorithms.opt.solvers.qaoa.QAOASolver` (5-Qubit Ising Cost Hamiltonian)**: Subclasses `OptimizationProblem` and runs parameterized QAOA circuits on `QpiAI-QSV-Local` to assign `Falcon-512` (Brake ASIL-D), `ML-DSA-44` (BMS), and `ML-DSA-44+SPHINCS+` (ADAS).
-  3. **`qpiai_quantum.ShorsAlgorithm` (8-Qubit QFT Period Finding)**: Executes Quantum Fourier Transform period finding on `QpiAI-QSV-Local` to factor classical RSA modulus $N = 15 \to 3 \times 5$ ($r = 4$), empirically demonstrating why Gate 6 enforces lattice-based PQC.
+### 1. QpiAI Quantum SDK (`src/sponsors/qpiai_qcloud.py`)
+- **Circuit Generation**: Configures quantum superposition circuits using the `qpiai-quantum` SDK.
+- **Multi-Backend Runtime**: Authenticates against `qcloud.qpiai.tech` with automatic fallback to local statevector simulation (`QpiAI-QSV-Local`).
+- **NIST SP 800-90B Audit**: Evaluates Shannon entropy and min-entropy, producing certified entropy receipts.
 - **Exported Artifacts**:
-  - `dataset/qpiai_qrng_circuit.qasm`, `dataset/qpiai_qaoa_ecu_circuit.qasm`, `dataset/qpiai_shor_rsa_threat.qasm`
-  - `dataset/qpiai_qrng_receipt.json` & `measurements/key_provenance.json`
+  - `dataset/qpiai_qrng_circuit.qasm`: OpenQASM 2.0 quantum circuit ready for QpiAI Cloud.
+  - `dataset/qpiai_qrng_receipt.json`: Cryptographic entropy verification receipt.
 
 ### 2. Bloq Platform QUBO Optimizer (`src/sponsors/bloq_platform.py`)
-- **Algorithmic Agility Formulation**: Models ECU hardware profiles (`dataset/ecu_hardware_profiles.json`) into a Quadratic Unconstrained Binary Optimization (QUBO) / Ising Hamiltonian balancing RAM, latency, and CAN-FD frame limits:
+- **Algorithmic Agility Formulation**: Models ECU hardware profiles (`dataset/ecu_hardware_profiles.json`) into a Quadratic Unconstrained Binary Optimization (QUBO) Hamiltonian balancing RAM, latency, and CAN frame limits:
   $$\min \sum_{e,a} \left[ w_1 \frac{\text{RAM}_{e,a}}{\text{RAM}_e^{\max}} + w_2 \frac{\text{Frames}_{e,a}}{\text{Bandwidth}_e} + w_3 \frac{\text{Latency}_{e,a}}{\text{Deadline}_e} \right] x_{e,a} + \lambda \sum_e \left(1 - \sum_a x_{e,a}\right)^2$$
 - **Exported Artifacts**:
   - `bloq_workspace/ecu_pqc_benchmark_dataset.csv`: Uploadable dataset for `platform.bloq.in`.

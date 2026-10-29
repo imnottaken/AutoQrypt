@@ -1,32 +1,14 @@
 {
-  "job_id": "qpiai-qrng-3573c39b5394",
+  "job_id": "qpiai-qsv-523802760e2f",
   "experiment_name": "PQC02_Automotive_QRNG_Seed",
   "device_name": "QpiAI-QSV-Local",
   "qubits": 8,
   "shots": 1024,
-  "shannon_entropy": 7.8193,
-  "nist_min_entropy": 6.6781,
+  "shannon_entropy": 7.815,
+  "nist_min_entropy": 6.5406,
   "entropy_health_pass": true,
   "seed_sha256": "f7d41d08d30d6ed83f3f4871eec3ed93583ffcb00b68ece14361599428736915",
   "seed_bytes_hex": "30ab0f7ded1f8a8a5631744093ac7a3953a74988f30974062edd94526e148086",
-  "timestamp": "2026-10-29T16:49:57.650989+00:00",
-  "backend_mode": "QpiAI-QSV-Local (Authenticated QCloud SDK Local Solver)",
-  "sdk_algorithm": "qpiai_quantum.QRNG",
-  "cloud_experiment_id": "26f7a59a-d048-4129-b04c-bb8f9b971e67",
-  "cloud_circuit_id": "50ba0bc9-bc2b-46fc-9b72-331c4b1d4fe0",
-  "cloud_qasm_id": "6ae20b7711993da82d45fa1a",
-  "top_measurement_counts": {
-    "11010110": 10,
-    "01100010": 9,
-    "10111000": 9,
-    "00000101": 8,
-    "10000000": 8,
-    "10000010": 8,
-    "10010001": 8,
-    "10100001": 8,
-    "10101101": 8,
-    "11100011": 8,
-    "00010000": 7,
-    "00101101": 7
-  }
+  "timestamp": "2026-10-29T09:42:08.430180+00:00",
+  "backend_mode": "QpiAI-QSV-Local (Statevector Simulator)"
 }

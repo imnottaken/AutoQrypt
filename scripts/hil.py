@@ -105,49 +105,26 @@ def pad16(s: str) -> bytes:
 
 # ------------------------------------------------------------------ provisioning
 
-def qcloud_entropy(device="QpiAI-QSV-Local"):
-    """Runs an 8-qubit Hadamard QRNG circuit via qpiai-quantum (syncing circuit to QCloud profile + executing on QpiAI-QSV-Local fallback)."""
+def qcloud_entropy(device):
+    """Runs an 8-qubit Hadamard circuit on QpiAI QCloud; returns (measurement record, provenance)."""
     from dotenv import load_dotenv
     load_dotenv(os.path.join(ROOT, "qcloud.env"))
     import qpiai_quantum as qp
-    from src.sponsors.qpiai_qcloud import QpiAIEntropyEngine, ensure_qpiai_local_auth
-
-    api_key = (os.environ.get("QPIAI_API_KEY") or os.environ.get("API_KEY") or "").strip("'\" ")
-    is_cloud, user_info, _ = ensure_qpiai_local_auth(api_key)
-    engine = QpiAIEntropyEngine(api_key=api_key, backend=device)
-
-    qrng = qp.QRNG(n_bits=8)
-    circuit = qrng.build_circuit()
-    circuit.name = "PQC02_QRNG_KEYGEN"
-
-    cloud_meta = engine.sync_circuit_to_qcloud(circuit, circuit_name="PQC02_QRNG_KEYGEN", shots=1024)
-    actual_device = device
-    try:
-        result = circuit.run(shots=1024, experiment_name="Default Experiment", device_name=device, timeout=300)
-    except Exception:
-        actual_device = "QpiAI-QSV-Local"
-        result = circuit.run(shots=1024, experiment_name="Default Experiment", device_name="QpiAI-QSV-Local")
-
-    counts = dict(result.counts or result.get_counts())
-    job_id = str(result.job_id or result.get_job_id() or "qpiai-qsv-local")
+    qp.QpiAIQuantumAuth.login(api_key=os.environ["QPIAI_API_KEY"])
+    circuit = qp.Circuit(8, name="PQC02_QRNG_KEYGEN")
+    for q in range(8):
+        circuit.h(q)
+    circuit.measure_all()
+    result = circuit.run(shots=1024, experiment_name="Default Experiment", device_name=device, timeout=300)
+    counts = result.counts
     total = sum(counts.values())
-    probs = [c / total for c in counts.values() if c > 0]
-    prov = {
-        "source": f"QpiAI qpiai-quantum ({actual_device}) 8-qubit QRNG measurement record, mixed with os.urandom(32)",
-        "sdk_module": "qpiai_quantum.QRNG + Circuit.run",
-        "device": actual_device,
-        "job_id": job_id,
-        "shots": total,
-        "distinct_outcomes": len(counts),
+    probs = [c / total for c in counts.values()]
+    return (json.dumps({"job_id": result.job_id, "counts": counts}, sort_keys=True).encode(), {
+        "source": f"QpiAI QCloud {device} measurement record, mixed with os.urandom(32)",
+        "device": device, "job_id": result.job_id, "shots": total, "distinct_outcomes": len(counts),
         "shannon_entropy_bits": round(-sum(p * math.log2(p) for p in probs), 4),
         "min_entropy_bits": round(-math.log2(max(probs)), 4),
-        "qcloud_authenticated": is_cloud,
-        "qcloud_user": (user_info or {}).get("name"),
-        "qcloud_experiment_id": cloud_meta.get("experiment_id"),
-        "qcloud_circuit_id": cloud_meta.get("circuit_id"),
-        "qcloud_qasm_id": cloud_meta.get("qasm_id"),
-    }
-    return (json.dumps({"job_id": job_id, "counts": counts}, sort_keys=True).encode(), prov)
+    })
 
 
 def cmd_provision(args):
@@ -1407,9 +1384,6 @@ def cmd_demo(args):
                 self.send_response(302)
                 self.send_header("Location", url)
                 self.end_headers()
-            elif self.path.startswith("/api/qpiai/status"):
-                from src.sponsors.qpiai_qcloud import get_qpiai_suite_status
-                self.reply(json.dumps(get_qpiai_suite_status(run_fresh=False)).encode())
             else:
                 self.reply(b"{}", code=404)
 
@@ -1456,9 +1430,6 @@ def cmd_demo(args):
                     parse_mode="HTML",
                 )
                 return self.reply(json.dumps({"ok": ok, "status": get_telegram_status()}).encode())
-            if self.path == "/api/qpiai/run":
-                from src.sponsors.qpiai_qcloud import get_qpiai_suite_status
-                return self.reply(json.dumps(get_qpiai_suite_status(run_fresh=True)).encode())
             if self.path.startswith("/api/case/"):
                 cid = self.path.split("/")[-1]
                 action = lambda: demo.run_case(cid)
@@ -1500,7 +1471,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
     pr = sub.add_parser("provision", help="create secret OEM signing keys and write trusted_keys.h")
-    pr.add_argument("--device", default="QpiAI-QSV-Local", help="QpiAI device (e.g. QpiAI-QSV-Local, QpiAI-QSV-Simulator, QpiAI-Indus-1)")
+    pr.add_argument("--device", default="QpiAI-QSV-Simulator", help="QpiAI QCloud device (e.g. QpiAI-Indus-1)")
     pr.add_argument("--no-qcloud", action="store_true", help="use os.urandom only")
     pr.add_argument("--force", action="store_true", help="replace existing keys")
     sub.add_parser("keys", help="write firmware/main/trusted_keys.h")

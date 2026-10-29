@@ -408,151 +408,7 @@
       );
     }
 
-    function QpiAIModal({ open, onClose, qpiData, onRunFresh, running }) {
-      if (!open) return null;
-      const qrng = qpiData?.qrng || {};
-      const qaoa = qpiData?.qaoa || {};
-      const shor = qpiData?.shor || {};
-      const cloud = qpiData?.cloud_profile || {};
-      const circuits = cloud.circuits || {};
-      const assignments = qaoa.assignments || {};
-      const pkIds = qpiData?.key_provenance?.public_key_ids || {};
-
-      return (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-        >
-          <div className="w-full max-w-2xl rounded-2xl border border-zinc-800 bg-zinc-900 text-zinc-100 shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800 bg-zinc-950/60">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-violet-400 pulse-dot" />
-                <span className="text-sm font-semibold tracking-tight text-zinc-100">
-                  QpiAI Quantum Verification (`qpiai-quantum` v{qpiData?.sdk_version || "0.7.5"})
-                </span>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-violet-950/70 text-violet-300 border border-violet-500/30">
-                  {qpiData?.device_name || "QpiAI-QSV-Local"}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-7 h-7 rounded-lg border border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:text-zinc-100 flex items-center justify-center text-xs"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto text-xs">
-              {/* Top Cloud Sync Bar */}
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-3.5 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold">
-                    QpiAI Cloud Profile (`qcloud.qpiai.tech`)
-                  </div>
-                  <div className="text-zinc-100 font-medium mt-0.5">
-                    {qpiData?.cloud_authenticated
-                      ? `Authenticated: ${qpiData?.cloud_user?.name || "Active"} (${qpiData?.masked_api_key})`
-                      : "Local Statevector Solver Mode (Offline-Ready)"}
-                  </div>
-                  <div className="font-mono text-[11px] text-zinc-400 mt-0.5">
-                    Experiment ID: <span className="text-sky-400">{cloud.experiment_id || "26f7a59a-d048-4129-b04c-bb8f9b971e67"}</span>
-                  </div>
-                </div>
-                <Button size="sm" variant="primary" onClick={onRunFresh} disabled={running}>
-                  <span>{running ? "Running Solvers..." : "Re-Run Local Quantum Solvers"}</span>
-                </Button>
-              </div>
-
-              {/* 3 Local Solvers Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {/* 1. QRNG */}
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3.5 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[11px] font-semibold text-sky-400">1. qpiai_quantum.QRNG</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-500/30">
-                        {qrng.qubits || 8}Q · {qrng.shots || 1024} shots
-                      </span>
-                    </div>
-                    <div className="text-[13px] font-semibold text-zinc-100 mt-1">OEM PQC Key Entropy</div>
-                    <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                      8-qubit Hadamard superposition seeds ML-DSA-44, Falcon-512, and Ed25519 keys.
-                    </p>
-                  </div>
-                  <div className="font-mono text-[11px] space-y-1 pt-2 border-t border-zinc-800/80 text-zinc-300">
-                    <div>Shannon: <span className="text-emerald-400">{qrng.shannon_entropy ?? "7.81"} / 8.00 bits</span></div>
-                    <div>Min-Entropy: <span className="text-emerald-400">{qrng.nist_min_entropy ?? "6.54"} bits</span></div>
-                    <div className="truncate text-zinc-400" title={circuits.PQC02_Automotive_QRNG_Seed}>
-                      Circuit ID: <span className="text-zinc-200">{(circuits.PQC02_Automotive_QRNG_Seed || "").slice(0, 13)}…</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. QAOASolver */}
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3.5 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[11px] font-semibold text-violet-400">2. QAOASolver</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-violet-950/70 text-violet-300 border border-violet-500/30">
-                        5Q Ising · {qaoa.summary?.total_circuit_evaluations || 48} evals
-                      </span>
-                    </div>
-                    <div className="text-[13px] font-semibold text-zinc-100 mt-1">ECU PQC Assignment</div>
-                    <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                      Constrained QUBO solved on `QpiAI-QSV-Local` for CAN-FD &amp; ASIL-D limits:
-                    </p>
-                  </div>
-                  <div className="font-mono text-[11px] space-y-1 pt-2 border-t border-zinc-800/80 text-zinc-300">
-                    <div>BRAKE: <span className="text-sky-400">{assignments["ECU-01-BRAKE"]?.selected_algorithm || "Falcon-512"}</span></div>
-                    <div>BMS: <span className="text-emerald-400">{assignments["ECU-02-BMS"]?.selected_algorithm || "ML-DSA-44"}</span></div>
-                    <div>ADAS: <span className="text-violet-400">{assignments["ECU-03-ADAS"]?.selected_algorithm || "ML-DSA-44+SPHINCS+"}</span></div>
-                  </div>
-                </div>
-
-                {/* 3. ShorsAlgorithm */}
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-3.5 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[11px] font-semibold text-amber-400">3. ShorsAlgorithm</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-950/70 text-amber-300 border border-amber-500/30">
-                        {shor.total_qubits || 8}Q QFT
-                      </span>
-                    </div>
-                    <div className="text-[13px] font-semibold text-zinc-100 mt-1">Classical RSA Break</div>
-                    <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">
-                      Quantum Fourier Transform period finding factors legacy RSA modulus on local solver.
-                    </p>
-                  </div>
-                  <div className="font-mono text-[11px] space-y-1 pt-2 border-t border-zinc-800/80 text-zinc-300">
-                    <div>Target N={shor.target_rsa_modulus || 15}: <span className="text-amber-400">p={shor.recovered_factors?.[0] || 3}, q={shor.recovered_factors?.[1] || 5}</span></div>
-                    <div>Period r={shor.period_r || 4} (a={shor.coprime_base_a || 7})</div>
-                    <div className="truncate text-zinc-400" title={circuits.PQC02_Shor_RSA15_ThreatProof}>
-                      Circuit ID: <span className="text-zinc-200">{(circuits.PQC02_Shor_RSA15_ThreatProof || "").slice(0, 13)}…</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Synced Cloud Circuit IDs + Flashed ESP32 Key Provenance */}
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3.5 font-mono text-[11px] space-y-1.5">
-                <div className="text-zinc-400 font-sans font-semibold text-xs">
-                  Synced QpiAI Cloud Circuits &amp; Anchored ESP32 Key Provenance
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-zinc-300">
-                  <div>QRNG Keygen Circuit: <span className="text-sky-400">{circuits.PQC02_QRNG_KEYGEN || "2d2e061e-48cc-44d8-9b5f-f5f70d9bb189"}</span></div>
-                  <div>QAOA Optimizer Circuit: <span className="text-violet-400">{circuits.PQC02_ECU_QAOA_Optimizer || "692ab04c-4740-45c1-b815-dc39b413029b"}</span></div>
-                  <div>ML-DSA-44 Key ID: <span className="text-emerald-400">{pkIds.mldsa44 || "fc4bd15ca4de9861"}</span></div>
-                  <div>Falcon-512 Key ID: <span className="text-emerald-400">{pkIds.falcon512 || "b0648c6f0e1135b1"}</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    function Header({ currentView, setCurrentView, ecuState, tgStatus, onOpenTelegram, onOpenQpiAI }) {
+    function Header({ currentView, setCurrentView, ecuState, tgStatus, onOpenTelegram }) {
       const scrollTo = (id) => {
         if (currentView !== "landing") {
           setCurrentView("landing");
@@ -613,18 +469,8 @@
               </nav>
             )}
 
-            {/* QpiAI + Telegram + View Switcher */}
+            {/* Telegram + View Switcher */}
             <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={onOpenQpiAI}
-                title="QpiAI Quantum Verification"
-                aria-label="QpiAI Quantum Verification"
-                className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-violet-500/30 bg-violet-950/50 hover:bg-violet-900/60 hover:border-violet-400/50 text-violet-300 text-xs font-mono font-semibold transition-all"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-                <span>QpiAI</span>
-              </button>
               <button
                 type="button"
                 onClick={onOpenTelegram}
@@ -2541,30 +2387,6 @@
       const [tgStatus, setTgStatus] = useState(null);
       const [tgTesting, setTgTesting] = useState(false);
       const [tgFeedback, setTgFeedback] = useState("");
-      const [qpiOpen, setQpiOpen] = useState(false);
-      const [qpiData, setQpiData] = useState(null);
-      const [qpiRunning, setQpiRunning] = useState(false);
-
-      const handleOpenQpiAI = () => {
-        setQpiOpen(true);
-        if (!qpiData) {
-          setQpiRunning(true);
-          fetch("/api/qpiai/status")
-            .then(res => res.json())
-            .then(data => setQpiData(data))
-            .catch(() => {})
-            .finally(() => setQpiRunning(false));
-        }
-      };
-
-      const handleRunFreshQpiAI = () => {
-        setQpiRunning(true);
-        fetch("/api/qpiai/run", { method: "POST", headers: { "X-AutoQrypt": "1" } })
-          .then(res => res.json())
-          .then(data => setQpiData(data))
-          .catch(() => {})
-          .finally(() => setQpiRunning(false));
-      };
 
       const fetchTelegram = (showFeedback = false, newQr = false) => {
         let url = "/api/telegram/status";
@@ -2634,14 +2456,6 @@
             ecuState={ecuState}
             tgStatus={tgStatus}
             onOpenTelegram={handleOpenTelegram}
-            onOpenQpiAI={handleOpenQpiAI}
-          />
-          <QpiAIModal
-            open={qpiOpen}
-            onClose={() => setQpiOpen(false)}
-            qpiData={qpiData}
-            onRunFresh={handleRunFreshQpiAI}
-            running={qpiRunning}
           />
           <TelegramModal
             open={tgOpen}

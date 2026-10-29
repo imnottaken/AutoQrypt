@@ -1,21 +1,6 @@
 {
-  "source": "QpiAI qpiai-quantum (QpiAI-QSV-Local) 8-qubit QRNG measurement record, mixed with os.urandom(32)",
-  "sdk_module": "qpiai_quantum.QRNG + Circuit.run",
-  "device": "QpiAI-QSV-Local",
-  "job_id": "qpiai-qsv-local",
-  "shots": 1024,
-  "distinct_outcomes": 251,
-  "shannon_entropy_bits": 7.7998,
-  "min_entropy_bits": 6.5406,
-  "qcloud_authenticated": true,
-  "qcloud_user": "devesh kolte",
-  "qcloud_experiment_id": "26f7a59a-d048-4129-b04c-bb8f9b971e67",
-  "qcloud_circuits": {
-    "qrng_keygen_circuit_id": "2d2e061e-48cc-44d8-9b5f-f5f70d9bb189",
-    "qrng_seed_circuit_id": "50ba0bc9-bc2b-46fc-9b72-331c4b1d4fe0",
-    "qaoa_ecu_optimizer_circuit_id": "692ab04c-4740-45c1-b815-dc39b413029b",
-    "shor_rsa_threat_circuit_id": "deeeca0f-759b-42d1-b0b1-66b36247a96e"
-  },
+  "source": "os.urandom(32) only (QCloud not used)",
+  "qcloud_error": "Error during QASM job submission: Bad Request (400) when submitting job. Server response: an active subscription is required to run jobs.",
   "created": "2026-10-28T23:59:12",
   "seed_commitment_sha3_256": "5697f2169404c2e1769a7ddd4b402dca4df4e218701a457d4deb9dc54d0d8b54",
   "key_derivation": "Ed25519 and ML-DSA-44: SHAKE-256(label | seed); Falcon-512: PQClean keygen (OS RNG)",

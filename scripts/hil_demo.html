@@ -1099,7 +1099,7 @@
           </span>
           <span class="tg-btn-meta">
             <span class="tg-btn-title">Telegram Alerts</span>
-            <span class="tg-btn-sub">@autoqryptbot · QR</span>
+            <span class="tg-btn-sub">Mobile SOC · QR</span>
           </span>
           <span class="tg-btn-count" id="tg-pill-text">1 Live</span>
         </button>
@@ -1604,7 +1604,7 @@
       <div class="modal-header">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="tag-chip" style="background:#0f172a; color:#ffffff; border-color:#0f172a;">ISO/SAE 21434</span>
-          <h3 class="modal-title">VSOC Mobile Telematics &amp; Incident Dispatch (@autoqryptbot)</h3>
+          <h3 class="modal-title">VSOC Mobile Telematics &amp; Incident Dispatch</h3>
         </div>
         <button class="modal-close-btn" onclick="toggleTelegramModal(false)">✕</button>
       </div>
@@ -1612,10 +1612,10 @@
         <div style="display:grid; grid-template-columns: 185px 1fr; gap:18px; align-items:start;">
           <div style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:6px; padding:12px; text-align:center;">
             <div style="background:#ffffff; border:1px solid var(--border); border-radius:4px; padding:8px; display:inline-block;">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://t.me/autoqryptbot?start=subscribe" alt="Scan for @autoqryptbot" width="142" height="142" style="display:block;">
+              <img id="tg-qr-img" src="" alt="Scan QR to Enroll Mobile Endpoint" width="142" height="142" style="display:block;">
             </div>
             <div style="font-family:var(--font-mono); font-size:10.5px; font-weight:700; color:var(--text-primary); margin-top:8px;">ENDPOINT ENROLLMENT</div>
-            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Scan QR or open <a href="https://t.me/autoqryptbot?start=subscribe" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">t.me/autoqryptbot</a> and tap <strong>Start</strong>.</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Scan QR or <a id="tg-enroll-link" href="#" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">open enrollment link</a> and tap <strong>Start</strong>.</div>
           </div>
 
           <div style="display:flex; flex-direction:column; gap:12px;">
@@ -1710,6 +1710,10 @@
       const st = await res.json();
       const count = st.subscriber_count || 0;
       if ($('tg-pill-text')) $('tg-pill-text').innerText = `${count} Live`;
+      if (st.bot_url) {
+        if ($('tg-qr-img')) $('tg-qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(st.bot_url)}`;
+        if ($('tg-enroll-link')) $('tg-enroll-link').href = st.bot_url;
+      }
       if ($('tg-sub-list')) {
         if (st.subscribers && st.subscribers.length) {
           $('tg-sub-list').innerHTML = st.subscribers.map(s => `

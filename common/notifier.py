@@ -14,8 +14,6 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KEYSTORE_DIR = os.path.join(ROOT_DIR, "key_management", ".keystore")
 SUBSCRIBERS_FILE = os.path.join(KEYSTORE_DIR, "telegram_subscribers.json")
 STATE_FILE = os.path.join(KEYSTORE_DIR, "telegram_bot_state.json")
-BOT_USERNAME = "autoqryptbot"
-BOT_URL = f"https://t.me/{BOT_USERNAME}"
 
 try:
     from dotenv import load_dotenv
@@ -151,9 +149,13 @@ def _send_one(token: str, chat_id: str, text: str, parse_mode: Optional[str] = "
 
 
 def _ensure_bot_commands_menu(token: str, state: Dict[str, Any]):
-    if state.get("commands_registered"):
+    if state.get("commands_registered") and state.get("bot_url"):
         return
     try:
+        me = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=3).json()
+        uname = (me.get("result") or {}).get("username")
+        if uname:
+            state["bot_url"] = f"https://t.me/{uname}?start=subscribe"
         requests.post(
             f"https://api.telegram.org/bot{token}/setMyCommands",
             json={
@@ -379,10 +381,12 @@ def start_command_poller(interval_s: float = 2.5):
 def get_telegram_status() -> Dict[str, Any]:
     token = _get_token()
     subs = sync_subscribers(send_welcome=True) if token else []
+    state = _load_bot_state()
+    if token and not state.get("bot_url") and not _in_test_harness():
+        _ensure_bot_commands_menu(token, state)
     return {
         "configured": bool(token),
-        "bot_username": BOT_USERNAME,
-        "bot_url": f"{BOT_URL}?start=subscribe",
+        "bot_url": state.get("bot_url", ""),
         "subscriber_count": len(subs),
         "subscribers": [
             {

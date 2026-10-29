@@ -95,7 +95,6 @@ def run_server_node():
     dash_p = subprocess.Popen(dash_cmd, env=env)
 
     try:
-        time.sleep(3)
         print("\n[+] Build Pipeline: Compiling and Signing Firmware...")
         
         # Scenario 3: 10-chunk firmware OTA requirement
@@ -114,14 +113,26 @@ def run_server_node():
         #chunks_b64 is responsible for encoding binary chunks into base64 strings so that they can be safely transmitted in JSON format over HTTP
         #we convert the binary data into a text representation that can be included in the JSON payload sent to the OTA server.
         chunks_b64 = [base64.b64encode(c).decode("utf-8") for c in chunks]
-        requests.post(f"http://{OTA_SERVER_HOST}:{OTA_SERVER_PORT}/upload", json={
-            "manifest": manifest.model_dump(),
-            "chunks_base64": chunks_b64
-        })
+        # The OTA server process may still be starting: retry (upload is idempotent) until it answers,
+        # but give up if it died or the deadline passes, so a failed startup cannot hang or half-run.
+        upload_deadline = time.monotonic() + 90
+        while True:
+            try:
+                requests.post(f"http://{OTA_SERVER_HOST}:{OTA_SERVER_PORT}/upload", json={
+                    "manifest": manifest.model_dump(),
+                    "chunks_base64": chunks_b64
+                }, timeout=30).raise_for_status()
+                break
+            except requests.RequestException:
+                if ota_p.poll() is not None or time.monotonic() > upload_deadline:
+                    raise
+                time.sleep(0.5)
         
         print("\n[!] Servers are live. Run vehicular node in another terminal via --vehicle.")
         ota_p.wait()
     except KeyboardInterrupt:
+        pass
+    finally:
         ota_p.terminate()
         dash_p.terminate()
 
@@ -130,7 +141,6 @@ def run_vehicle_node():
     print(f"[*] Booting Vehicle Gateway ECU (Target URL: http://{OTA_SERVER_HOST}:{OTA_SERVER_PORT})...")
     FORCE_INTERRUPT_AT = int(os.environ.get("FORCE_INTERRUPT_AT", "-1"))
     ROGUE_HSM = os.environ.get("ROGUE_HSM", "false").lower() == "true"
-    FORCE_CVE = os.environ.get("FORCE_CVE", "false").lower() == "true"
     
     pinned_image_key = PINNED_IMAGE_PUB_CERT
     pinned_image_pqc_key = PINNED_IMAGE_PQC_PUB_CERT
@@ -196,12 +206,6 @@ def run_vehicle_node():
                 }
             }
 
-    if FORCE_CVE:
-        # We simulate the server providing an SBOM flagged config
-        # The ECU checks the payload dynamically, but for mock purposes we pass it to ECU state here
-        # Actually our SBOM generator uses an env var or we can pass it
-        os.environ["FORCE_CVE"] = "true" 
-
     #Battery constraints block installation
     if os.environ.get("SKIP_BAD_BATTERY", "false").lower() != "true":
         print("\n[+] ECU executing OTA Request (Battery low)...")
@@ -210,7 +214,7 @@ def run_vehicle_node():
         time.sleep(2)
 
     #Normal safe state
-    if not ROGUE_HSM and not FORCE_CVE and FORCE_INTERRUPT_AT == -1:
+    if not ROGUE_HSM and FORCE_INTERRUPT_AT == -1:
         print("\n[+] ECU executing OTA Request (Safe to flash)...")
     req_ok = UpdateRequest(device_id="VEH-1", current_version="v1.0.0", battery_level=100.0, engine_state="IDLE", gear_state="PARK")
     ecu.execute_ota_workflow("v2.0.0", req_ok, force_interrupt_at=FORCE_INTERRUPT_AT)

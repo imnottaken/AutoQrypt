@@ -7,7 +7,6 @@ from vehicle.chunk_manager import ChunkManager
 from vehicle.installer import ECUInstaller
 from sbom.generator import SBOMGenerator
 import time
-import os
 import json
 import tracemalloc
 import sys
@@ -242,26 +241,17 @@ class GatewayECU:
             self.logger.error(f"CVE DETECTED — {v['cve_id']} | Severity: {v['severity']} | Component: {v['name']} @ {v['version']}", event_type="sbom_cve_block", device_id=self.device_id, cve_meta=v)
             time.sleep(1.0)
 
-            # Demo 6 path: forcefully correct version and continue
-            if os.environ.get("FORCE_CVE", "false").lower() == "true":
-                # Step 4: Force patch WARNING (yellow)
-                self.logger.warning(f"SBOM OVERRIDE — Forcefully patching {v['name']} from {v['version']} → 8.4.0 (safe version)", event_type="sbom_force_patch", device_id=self.device_id)
-                time.sleep(1.0)
-                # Step 5: Corrected INFO (green)
-                self.logger.info(f"SBOM corrected — {v['name']} @ 8.4.0 verified safe. Proceeding with OTA.", event_type="sbom_corrected", device_id=self.device_id)
-                time.sleep(0.5)
-            else:
-                # Standard security policy: block
-                threat_detect_time = time.perf_counter_ns()
-                self.logger.critical(f"POLICY BLOCK — Update halted due to unresolved CVE in supply chain.", event_type="sbom_policy_block", device_id=self.device_id)
-                rollback_start = time.perf_counter()
-                self.installer.rollback(reason="SBOM_CVE_BLOCK")
-                rollback_end = time.perf_counter()
-                self.perf["rollback_execution_time_ms"] = round((rollback_end - rollback_start) * 1000, 2)
-                threat_halt_time = time.perf_counter_ns()
-                self.perf["threat_mitigation_latency_us"] = round((threat_halt_time - threat_detect_time) / 1000, 2)
-                self._emit_perf_report(workflow_start)
-                return
+            # Policy: a known-vulnerable dependency ALWAYS blocks the update. There is no override.
+            threat_detect_time = time.perf_counter_ns()
+            self.logger.critical("POLICY BLOCK — Update halted due to unresolved CVE in supply chain.", event_type="sbom_policy_block", device_id=self.device_id)
+            rollback_start = time.perf_counter()
+            self.installer.rollback(reason="SBOM_CVE_BLOCK")
+            rollback_end = time.perf_counter()
+            self.perf["rollback_execution_time_ms"] = round((rollback_end - rollback_start) * 1000, 2)
+            threat_halt_time = time.perf_counter_ns()
+            self.perf["threat_mitigation_latency_us"] = round((threat_halt_time - threat_detect_time) / 1000, 2)
+            self._emit_perf_report(workflow_start)
+            return
 
         # 3b. Merkle Root Binding Check
         # manifest.leaf_hashes travels with the manifest (and can be tampered

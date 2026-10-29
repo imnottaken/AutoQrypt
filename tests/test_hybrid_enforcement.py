@@ -398,6 +398,16 @@ class SbomIntegrity(unittest.TestCase):
     def test_signed_vulnerable_sbom_blocked_by_policy(self):
         self.assertRejected(self.run_ota(_with_sbom(VULN_SBOM)), "SBOM_CVE_BLOCK")
 
+    def test_force_cve_env_cannot_bypass_cve_block(self):
+        os.environ["FORCE_CVE"] = "true"  # restored by the setUp mock.patch.dict cleanup
+        reached, reasons, events = self.run_ota(_with_sbom(VULN_SBOM))
+        self.assertFalse(reached, "chunk download must not start")
+        self.assertEqual(reasons, ["SBOM_CVE_BLOCK"])
+        self.assertIn("sbom_policy_block", events)
+        self.assertNotIn("sbom_force_patch", events)
+        self.assertNotIn("sbom_corrected", events)
+        self.ecu.installer.execute_install.assert_not_called()
+
 
 class ChunkResumeIntegrity(unittest.TestCase):
     setUp, tearDown = HybridEnforcement.setUp, HybridEnforcement.tearDown

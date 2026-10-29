@@ -574,6 +574,8 @@ DEMO_ATTACKS = [
     ("other_vehicle", "Wrong vehicle", "A genuine Director authorisation, but for vehicle VEH-2."),
     ("tampered_manifest", "Edited manifest", "The security version in the manifest was raised after signing."),
     ("bad_falcon", "Forged Director signature", "The Falcon-512 Director signature was corrupted in transit."),
+    ("bad_ed25519", "Corrupted Ed25519 signature", "Classical Edwards-curve Ed25519 signature corrupted in transit."),
+    ("rogue_key_id", "Untrusted ML-DSA-44 key ID", "Signed with an untrusted ML-DSA-44 key ID not pinned in ECU flash."),
 ]
 
 

@@ -1667,84 +1667,119 @@
     }
   }
 
+  function setPillStyle(el, state, text) {
+    if (!el) return;
+    el.removeAttribute('style');
+    if (state === 'ok') {
+      el.className = el.id === 'verdict-decision' ? 'reason-pill ok' : (el.id === 'pill-2fa-gate' ? 'combinator-badge' : 'role-badge-status');
+    } else if (state === 'bad') {
+      el.className = el.id === 'verdict-decision' ? 'reason-pill' : (el.id === 'pill-2fa-gate' ? 'combinator-badge invalid' : 'role-badge-status invalid');
+    } else if (state === 'eval') {
+      el.className = el.id === 'verdict-decision' ? 'reason-pill' : (el.id === 'pill-2fa-gate' ? 'combinator-badge' : 'role-badge-status');
+      el.style.background = 'var(--blue-bg)';
+      el.style.borderColor = 'var(--blue-border)';
+      el.style.color = 'var(--blue)';
+    } else {
+      el.className = el.id === 'verdict-decision' ? 'reason-pill' : (el.id === 'pill-2fa-gate' ? 'combinator-badge' : 'role-badge-status');
+      el.style.background = 'var(--bg-subtle)';
+      el.style.borderColor = 'var(--border)';
+      el.style.color = 'var(--text-secondary)';
+    }
+    if (text !== undefined) el.innerText = text;
+  }
+
   function renderResult(r) {
     const ok = r.decision === 'ACCEPT';
+    const isRollback = r.decision === 'ROLLBACK';
     const vTitle = $('verdict-title');
     if (vTitle) {
       vTitle.className = `verdict-title ${ok ? 'ok' : 'bad'}`;
-      vTitle.innerText = `${ok ? 'Update installed' : 'Package rejected'}: ${r.title || (ok ? 'Genuine OEM update' : 'Attack Blocked')}`;
+      const prefix = ok ? 'Update installed' : (isRollback ? 'Boot crash rolled back' : 'Package rejected');
+      vTitle.innerText = `${prefix}: ${r.title || (ok ? 'Genuine OEM update' : 'Attack Blocked')}`;
     }
 
     if ($('verdict-desc')) {
       $('verdict-desc').innerText = r.explanation || (ok ? 'Signed by OEM image keys (Ed25519 + ML-DSA-44), authorised by Director (Falcon-512).' : 'Security policy triggered on ESP32 silicon.');
     }
     
-    const vDec = $('verdict-decision');
-    if (vDec) {
-      vDec.className = `reason-pill ${ok ? 'ok' : ''}`;
-      vDec.innerText = r.reason || (ok ? 'ALL_CHECKS_PASSED' : 'REJECTED');
-    }
+    setPillStyle($('verdict-decision'), ok ? 'ok' : 'bad', r.reason || (ok ? 'ALL_CHECKS_PASSED' : 'REJECTED'));
 
     if ($('verdict-led')) {
       $('verdict-led').innerText = ok
         ? `Now running ${esc(r.ecu_after?.app_version || 'v2.0.0')} at security version ${esc(r.ecu_after?.installed_security_version || 3)}. LED: 4 blinks, then solid. (${r.elapsed_s || 1.8} s)`
-        : `The ECU kept running its current firmware. LED: fast blinking alarm for 10 s. (${r.elapsed_s || 0.1} s)`;
+        : (isRollback
+            ? `Faulty image crashed on boot; hardware bootloader restored ${esc(r.ecu_after?.app_version || 'v2.0.0')} on ${esc(r.ecu_after?.running_slot || 'ota_1')}. (${r.elapsed_s || 3.9} s)`
+            : `The ECU kept running its current firmware. LED: fast blinking alarm for 10 s. (${r.elapsed_s || 0.1} s)`);
     }
 
+    // Default any verifier not reached due to early rejection to SKIPPED
+    ['pill-falcon', 'pill-mldsa', 'pill-ed25519'].forEach(id => setPillStyle($(id), 'neutral', 'SKIPPED'));
+
+    const vMap = {};
     if (r.verifiers && r.verifiers.length) {
       r.verifiers.forEach(v => {
         const lbl = (v.label || '').toLowerCase();
         if (lbl.includes('falcon')) {
-          if ($('pill-falcon')) { $('pill-falcon').className = v.ok ? 'role-badge-status' : 'role-badge-status invalid'; $('pill-falcon').innerText = v.ok ? 'VALID' : 'REJECTED'; }
-          if (v.ms && $('stat-falcon')) $('stat-falcon').innerText = `${v.ms.toFixed(1)} ms`;
-          if (v.stack_bytes && $('stat-falcon-stack')) $('stat-falcon-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
+          vMap.falcon = v;
+          setPillStyle($('pill-falcon'), v.ok ? 'ok' : 'bad', v.ok ? 'VALID' : 'REJECTED');
+          if (v.ms != null && $('stat-falcon')) { $('stat-falcon').removeAttribute('style'); $('stat-falcon').innerText = `${v.ms.toFixed(1)} ms`; }
+          if (v.stack_bytes != null && $('stat-falcon-stack')) $('stat-falcon-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
         } else if (lbl.includes('ml-dsa') || lbl.includes('mldsa')) {
-          if ($('pill-mldsa')) { $('pill-mldsa').className = v.ok ? 'role-badge-status' : 'role-badge-status invalid'; $('pill-mldsa').innerText = v.ok ? 'VALID' : 'REJECTED'; }
-          if (v.ms && $('stat-mldsa')) $('stat-mldsa').innerText = `${v.ms.toFixed(1)} ms`;
-          if (v.stack_bytes && $('stat-mldsa-stack')) $('stat-mldsa-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
+          vMap.mldsa = v;
+          setPillStyle($('pill-mldsa'), v.ok ? 'ok' : 'bad', v.ok ? 'VALID' : 'REJECTED');
+          if (v.ms != null && $('stat-mldsa')) { $('stat-mldsa').removeAttribute('style'); $('stat-mldsa').innerText = `${v.ms.toFixed(1)} ms`; }
+          if (v.stack_bytes != null && $('stat-mldsa-stack')) $('stat-mldsa-stack').innerText = `${v.stack_bytes.toLocaleString()} B`;
         } else if (lbl.includes('ed25519')) {
-          if ($('pill-ed25519')) { $('pill-ed25519').className = v.ok ? 'role-badge-status' : 'role-badge-status invalid'; $('pill-ed25519').innerText = v.ok ? 'VALID' : 'REJECTED'; }
-          if (v.ms && $('stat-ed25519')) $('stat-ed25519').innerText = `${v.ms.toFixed(1)} ms`;
+          vMap.ed25519 = v;
+          setPillStyle($('pill-ed25519'), v.ok ? 'ok' : 'bad', v.ok ? 'VALID' : 'REJECTED');
+          if (v.ms != null && $('stat-ed25519')) { $('stat-ed25519').removeAttribute('style'); $('stat-ed25519').innerText = `${v.ms.toFixed(1)} ms`; }
         }
       });
     }
 
-    if (r.sha3_ms && $('stat-sha3')) {
+    if (r.sha3_ms != null && $('stat-sha3')) {
       $('stat-sha3').innerText = `${r.sha3_ms.toFixed(1)} ms`;
     }
 
-    const gate = $('pill-2fa-gate');
-    if (gate) {
-      gate.className = ok ? 'combinator-badge' : 'combinator-badge invalid';
-      gate.innerText = ok ? 'DUAL-AUTHORITY INTERLOCK: PASS' : '2FA COMBINATOR: REJECTED';
+    const allSigsValid = Boolean(vMap.falcon?.ok && vMap.ed25519?.ok && vMap.mldsa?.ok);
+    if (ok) {
+      setPillStyle($('pill-2fa-gate'), 'ok', 'DUAL-AUTHORITY INTERLOCK: PASS');
+    } else if (isRollback) {
+      setPillStyle($('pill-2fa-gate'), 'bad', '2FA PASS · BOOTLOADER ROLLED BACK CRASHED IMAGE');
+    } else if (allSigsValid) {
+      setPillStyle($('pill-2fa-gate'), 'bad', '2FA SIGNATURES: PASS · PAYLOAD REJECTED');
+    } else {
+      setPillStyle($('pill-2fa-gate'), 'bad', '2FA COMBINATOR: REJECTED');
     }
 
-    let checkRows = "";
-    if (r.verifiers && r.verifiers.length) {
-      checkRows = r.verifiers.map(v => `
-        <tr>
-          <td>${esc(v.label)}</td>
-          <td class="${v.ok ? 'pass' : 'fail'}">${v.ok ? 'valid' : 'INVALID'}</td>
-          <td class="num">${v.ms != null ? v.ms.toFixed(1) + ' ms' : '—'}</td>
-          <td class="num">${v.stack_bytes != null ? v.stack_bytes.toLocaleString() + ' B' : '—'}</td>
-        </tr>
-      `).join('');
-    } else {
-      const isFalconOk = !String(r.reason || '').includes('FALCON');
-      const isEdOk = !String(r.reason || '').includes('ED25519');
-      const isMldsaOk = !String(r.reason || '').includes('MLDSA');
-      const isSha3Ok = !String(r.reason || '').includes('DIGEST') && !String(r.reason || '').includes('MISMATCH');
-      checkRows = `
-        <tr><td>Falcon-512 director signature</td><td class="${isFalconOk ? 'pass' : 'fail'}">${isFalconOk ? 'valid' : 'INVALID'}</td><td class="num">4.9 ms</td><td class="num">18,640 B</td></tr>
-        <tr><td>Ed25519 image signature</td><td class="${isEdOk ? 'pass' : 'fail'}">${isEdOk ? 'valid' : 'INVALID'}</td><td class="num">34.0 ms</td><td class="num">—</td></tr>
-        <tr><td>ML-DSA-44 image signature</td><td class="${isMldsaOk ? 'pass' : 'fail'}">${isMldsaOk ? 'valid' : 'INVALID'}</td><td class="num">17.7 ms</td><td class="num">36,496 B</td></tr>
-        <tr><td>SHA3-256 over image</td><td class="${isSha3Ok ? 'pass' : 'fail'}">${isSha3Ok ? 'valid' : 'MISMATCH'}</td><td class="num">42.1 ms</td><td class="num">—</td></tr>
-      `;
-    }
-    const shaRow = r.sha3_ms != null ? `<tr><td>SHA3-256 over image</td><td class="${ok ? 'pass' : 'fail'}">${ok ? 'valid' : 'MISMATCH'}</td><td class="num">${r.sha3_ms.toFixed(1)} ms</td><td class="num">—</td></tr>` : '';
+    const rowFor = (label, v) => {
+      if (!v) {
+        return `<tr><td>${esc(label)}</td><td style="color:var(--text-muted); font-family:var(--font-mono);">skipped (halted earlier)</td><td class="num">—</td><td class="num">—</td></tr>`;
+      }
+      return `<tr>
+        <td>${esc(label)}</td>
+        <td class="${v.ok ? 'pass' : 'fail'}">${v.ok ? 'valid' : 'INVALID'}</td>
+        <td class="num">${v.ms != null ? v.ms.toFixed(1) + ' ms' : '—'}</td>
+        <td class="num">${v.stack_bytes != null ? v.stack_bytes.toLocaleString() + ' B' : '—'}</td>
+      </tr>`;
+    };
+
+    const digestMismatch = String(r.reason || '').includes('DIGEST');
+    const interrupted = String(r.reason || '').includes('INTERRUPTED');
+    const shaRow = r.sha3_ms != null
+      ? `<tr><td>SHA3-256 over image</td><td class="${!digestMismatch ? 'pass' : 'fail'}">${!digestMismatch ? 'valid' : 'MISMATCH'}</td><td class="num">${r.sha3_ms.toFixed(1)} ms</td><td class="num">—</td></tr>`
+      : (interrupted
+          ? `<tr><td>SHA3-256 over image</td><td class="fail">INTERRUPTED (64 KB)</td><td class="num">—</td><td class="num">—</td></tr>`
+          : `<tr><td>SHA3-256 over image</td><td style="color:var(--text-muted); font-family:var(--font-mono);">skipped (halted earlier)</td><td class="num">—</td><td class="num">—</td></tr>`);
+
     const tbody = $('verdict-checks-tbody') || $('dash-verdict-checks-tbody');
     if (tbody) {
-      tbody.innerHTML = checkRows + (r.verifiers && r.verifiers.length ? shaRow : '');
+      tbody.innerHTML = [
+        rowFor('Falcon-512 director signature', vMap.falcon),
+        rowFor('Ed25519 image signature', vMap.ed25519),
+        rowFor('ML-DSA-44 image signature', vMap.mldsa),
+        shaRow
+      ].join('');
     }
 
     setAllChunks(ok);

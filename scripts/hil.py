@@ -382,28 +382,51 @@ class ECU:
         self.wait_for(lambda x: x == "AQ:READY", 10)
         return report
 
-    def resend_decision(self):
-        """Asks the (idle) ECU to repeat its last decision line after a garbled or missing one.
+    def drain(self):
+        """Discards anything already received, e.g. a late decision from an earlier package,
+        so it can't be mistaken for the answer to the next one."""
+        self.ser.reset_input_buffer()
+        self._partial = b""
 
-        The CP2102 link on the test bench intermittently delivers the first 64-byte USB packet
-        after ~5 s of idle as 0xFF. The ECU only accepts "AQLD" between packages, and it never
+    def recover_decision(self, idle=False):
+        """The decision line never arrived intact; ask the ECU to repeat it ("AQLD").
+
+        The CP2102 link on the test bench intermittently delivers a 64-byte USB packet as 0xFF.
+        "AQLD" is only safe once the ECU is idle: sent while it is still receiving, it lands in the
+        image stream and breaks the transfer. So unless its READY prompt was already seen (`idle`),
+        first wait for it, or 15 s (every ECU read gives up long before that). The ECU never
         repeats an earlier package's decision.
         """
         self.resends += 1
+        if not idle:
+            item = self.wait_for(lambda x: x == "AQ:READY" or is_decision(x), 15)
+            if is_decision(item):
+                return item
         self.ser.write(b"AQLD")
         return self.wait_for(is_decision, 10)
 
+    def await_decision(self, timeout, also=None):
+        """Waits for the decision (or a line matching `also`). READY without a decision means the
+        ECU finished but its decision line was lost: recover at once instead of timing out."""
+        item = self.wait_for(lambda x: is_decision(x) or x == "AQ:READY" or (also is not None and also(x)), timeout)
+        if item == "AQ:READY":
+            return self.recover_decision(idle=True)
+        return item or self.recover_decision()
+
     def send_package(self, header, image, mode, progress=True):
-        """Returns the ECU's ota_decision event, or None on timeout."""
+        """Returns the ECU's ota_decision event, or None on timeout.
+
+        Garbled lines are ignored while the ECU may still be receiving: only SEND, an ACK or a
+        decision changes what happens next."""
         self.resends = 0
+        self.drain()
         self.ser.write(b"AQPK" + bytes(header))
         if mode == "truncate_header":
-            item = self.wait_for(lambda x: is_decision(x) or is_garbled(x), 15)
-            return item if is_decision(item) else self.resend_decision()
+            return self.await_decision(15)
         # The ECU erases the target slot before asking for the image, so allow time.
-        item = self.wait_for(lambda x: x == "AQ:SEND" or is_decision(x) or is_garbled(x), 60)
+        item = self.await_decision(60, also=lambda x: x == "AQ:SEND")
         if item != "AQ:SEND":
-            return item if is_decision(item) else self.resend_decision()
+            return item
         # One chunk at a time: the ESP32 can't service the UART while it writes flash, so
         # bytes sent during a write are lost.
         is_ack = lambda x: isinstance(x, str) and x.startswith("AQ:ACK")
@@ -418,14 +441,13 @@ class ECU:
             if is_decision(item):
                 return item
             if item is None:
-                return self.resend_decision()
+                return self.recover_decision()
             if progress:
                 done = min(off + CHUNK, len(image))
                 print(f"\r    streaming {done * 100 // len(image):3d}%", end="", flush=True)
         if progress:
             print()
-        item = self.wait_for(lambda x: is_decision(x) or is_garbled(x), 30)
-        return item if is_decision(item) else self.resend_decision()
+        return self.await_decision(30)
 
     def send_bench(self, header):
         self.ser.write(b"AQBM" + bytes(header))
@@ -602,11 +624,15 @@ class Demo:
         }
         if entry["decision"] == "ACCEPT":
             self.state = self.ecu.boot(60) or self.state
-        else:
+        elif ev:
             self.ecu.wait_for(lambda x: x == "AQ:READY", 15)
-            if ev:
-                self.state = {**self.state, "running_slot": ev["running_slot"],
-                              "installed_security_version": ev["installed_security_version"]}
+            self.state = {**self.state, "running_slot": ev["running_slot"],
+                          "installed_security_version": ev["installed_security_version"]}
+        else:
+            # Outcome unknown (it may even have installed): re-read the ECU's real state so the
+            # next package targets the right security version instead of being refused as a replay.
+            self.ecu.reset()
+            self.state = self.ecu.boot() or self.state
         entry["elapsed_s"] = round(time.time() - t0, 1)
         entry["ecu_after"] = self.state
         self.history.append(entry)

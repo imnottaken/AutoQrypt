@@ -53,7 +53,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from key_management.hsm import SimulatedHSM  # noqa: E402
-from common.notifier import notify_hil_result, send_telegram_alert  # noqa: E402
+from common.notifier import notify_hil_result, send_telegram_alert, get_telegram_status  # noqa: E402
 
 KEYS_HEADER = os.path.join(ROOT, "firmware", "main", "trusted_keys.h")
 IMAGES = {v: os.path.join(ROOT, "firmware", d, "autoqrypt-ecu-surrogate.bin")
@@ -762,6 +762,8 @@ def cmd_demo(args):
                     self.reply(f.read(), "text/html; charset=utf-8")
             elif self.path == "/api/status":
                 self.reply(json.dumps(demo.status()).encode())
+            elif self.path == "/api/telegram/status":
+                self.reply(json.dumps(get_telegram_status()).encode())
             else:
                 self.reply(b"{}", code=404)
 
@@ -770,6 +772,17 @@ def cmd_demo(args):
             # open in the browser can't trigger packages.
             if self.headers.get("X-AutoQrypt") != "1":
                 return self.reply(b"{}", code=403)
+            if self.path == "/api/telegram/test":
+                st = get_telegram_status()
+                ok = send_telegram_alert(
+                    "🔔 AutoQrypt Test Alert\n"
+                    "• Source: ESP32 HIL Hardware Console\n"
+                    f"• Connected Phones: {st.get('subscriber_count', 0)}\n"
+                    "• Status: Live Silicon Alerts Active",
+                    async_send=False,
+                    force=True,
+                )
+                return self.reply(json.dumps({"ok": ok, "status": get_telegram_status()}).encode())
             if self.path.startswith("/api/case/"):
                 cid = self.path.split("/")[-1]
                 action = lambda: demo.run_case(cid)

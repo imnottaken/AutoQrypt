@@ -1111,12 +1111,18 @@
         <span class="nav-divider">/</span>
         <div class="brand-desc">Post-Quantum Automotive Security Operations Console (PQC-02 · Real ESP32 HIL)</div>
       </div>
-      <div class="header-status-pill" id="conn-pill">
-        <span class="status-dot-wrap">
-          <span class="status-dot-ping" id="conn-ping"></span>
-          <span class="status-dot" id="conn-dot"></span>
-        </span>
-        <span id="conn-text">ESP32 HARDWARE LINK ACTIVE</span>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button class="header-status-pill" id="tg-pill-btn" onclick="openTelegramModal()" style="cursor:pointer; background:var(--blue-bg); border-color:var(--blue-border); color:var(--blue);">
+          <span>📲</span>
+          <span id="tg-pill-text">Telegram Alerts (@autoqryptbot)</span>
+        </button>
+        <div class="header-status-pill" id="conn-pill">
+          <span class="status-dot-wrap">
+            <span class="status-dot-ping" id="conn-ping"></span>
+            <span class="status-dot" id="conn-dot"></span>
+          </span>
+          <span id="conn-text">ESP32 HARDWARE LINK ACTIVE</span>
+        </div>
       </div>
     </div>
   </header>
@@ -1560,6 +1566,46 @@
 
   </main>
 
+  <!-- Telegram Phone Alerts Modal -->
+  <div class="modal-backdrop" id="tg-modal" onclick="if(event.target===this) toggleTelegramModal(false)">
+    <div class="modal-dialog" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3 class="modal-title">📲 Connect Phone to Telegram Alerts (@autoqryptbot)</h3>
+        <button class="modal-close-btn" onclick="toggleTelegramModal(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
+          <div style="background:#ffffff; border:1px solid var(--border); border-radius:8px; padding:10px; text-align:center;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://t.me/autoqryptbot?start=subscribe" alt="Scan for @autoqryptbot" width="140" height="140" style="display:block; border-radius:4px;">
+            <div style="font-family:var(--font-mono); font-size:10px; color:var(--text-muted); margin-top:6px;">Scan with Phone Camera</div>
+          </div>
+          <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:10px;">
+            <div style="font-size:13px; font-weight:600; color:var(--text-primary);">How any user or judge gets live alerts:</div>
+            <ol style="padding-left:18px; display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--text-secondary);">
+              <li>Scan the QR code or open <a href="https://t.me/autoqryptbot?start=subscribe" target="_blank" style="color:var(--blue); font-weight:600;">t.me/autoqryptbot</a></li>
+              <li>Tap <strong>Start</strong> inside Telegram (no phone number needed).</li>
+              <li>Click <strong>Refresh Connected Phones</strong> below — every connected phone automatically receives live OTA &amp; attack summaries.</li>
+            </ol>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+              <button class="btn-info-modal" style="margin-left:0; background:var(--emerald);" onclick="sendTelegramTestAlert()" id="tg-test-btn">🔔 Send Test Alert</button>
+              <button class="btn-info-modal" style="margin-left:0;" onclick="refreshTelegramStatus(true)">↻ Refresh Connected Phones</button>
+            </div>
+            <div id="tg-feedback" style="font-family:var(--font-mono); font-size:11px; color:var(--emerald); display:none;"></div>
+          </div>
+        </div>
+        <div class="modal-callout" style="margin-top:4px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong>Connected Phones / Chats</strong>
+            <span class="tag-chip" id="tg-sub-count">1 Connected</span>
+          </div>
+          <div id="tg-sub-list" style="font-family:var(--font-mono); font-size:11.5px; color:var(--text-secondary);">
+            Loading subscribers...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Enterprise Architecture & Threat Model Modal -->
   <div class="modal-backdrop" id="arch-modal" onclick="if(event.target===this) toggleArchModal(false)">
     <div class="modal-dialog">
@@ -1626,6 +1672,61 @@
   <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+    function toggleTelegramModal(show) {
+      const m = $('tg-modal');
+      if (m) {
+        if (show) m.classList.add('open');
+        else m.classList.remove('open');
+      }
+    }
+
+    function openTelegramModal() {
+      toggleTelegramModal(true);
+      refreshTelegramStatus(false);
+    }
+
+    async function refreshTelegramStatus(showFeedback) {
+      try {
+        const res = await fetch('/api/telegram/status');
+        if (!res.ok) return;
+        const st = await res.json();
+        const count = st.subscriber_count || 0;
+        if ($('tg-pill-text')) $('tg-pill-text').innerText = `Telegram Alerts (${count} Phone${count === 1 ? '' : 's'})`;
+        if ($('tg-sub-count')) $('tg-sub-count').innerText = `${count} Connected`;
+        if ($('tg-sub-list')) {
+          if (st.subscribers && st.subscribers.length) {
+            $('tg-sub-list').innerHTML = st.subscribers.map(s => `• <strong>${esc(s.name)}</strong> <span style="color:var(--text-muted);">(Chat ${esc(s.chat_id_masked)})</span>`).join('<br>');
+          } else {
+            $('tg-sub-list').innerText = 'No phones connected yet. Scan the QR code above and tap Start!';
+          }
+        }
+        if (showFeedback && $('tg-feedback')) {
+          $('tg-feedback').style.display = 'block';
+          $('tg-feedback').innerText = `✓ Synced with @autoqryptbot (${count} phone${count === 1 ? '' : 's'} active)`;
+        }
+      } catch (e) {}
+    }
+
+    async function sendTelegramTestAlert() {
+      const btn = $('tg-test-btn');
+      const fb = $('tg-feedback');
+      if (btn) btn.disabled = true;
+      if (fb) { fb.style.display = 'block'; fb.style.color = 'var(--blue)'; fb.innerText = 'Sending test alert to connected phones...'; }
+      try {
+        const res = await fetch('/api/telegram/test', { method: 'POST', headers: { 'X-AutoQrypt': '1' } });
+        const data = await res.json();
+        await refreshTelegramStatus(false);
+        if (fb) {
+          fb.style.color = data.ok ? 'var(--emerald)' : 'var(--crimson)';
+          fb.innerText = data.ok ? '✓ Test alert delivered to your Telegram!' : '⚠ Could not send (tap Start on @autoqryptbot first)';
+        }
+      } catch (e) {
+        if (fb) { fb.style.color = 'var(--crimson)'; fb.innerText = '⚠ Failed to reach server'; }
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
 
     function toggleArchModal(show) {
       const m = $('arch-modal');
@@ -2191,6 +2292,7 @@
     fetchDashboardData();
     setInterval(fetchDashboardData, 1000);
     refreshHardwareStatus();
+    refreshTelegramStatus(false);
     setInterval(refreshHardwareStatus, 3000);
   </script>
 </body>

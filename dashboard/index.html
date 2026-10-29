@@ -116,6 +116,71 @@
     gap: 8px;
     box-shadow: var(--shadow-card);
   }
+  .tg-connect-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 4px 10px 4px 5px;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #bae6fd;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(2, 132, 199, 0.08);
+    transition: all 0.15s ease;
+  }
+  .tg-connect-btn:hover {
+    background: #f0f9ff;
+    border-color: #38bdf8;
+    box-shadow: 0 3px 8px rgba(2, 132, 199, 0.15);
+    transform: translateY(-1px);
+  }
+  .tg-connect-btn:active {
+    transform: translateY(0);
+  }
+  .tg-icon-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+    background: linear-gradient(135deg, #2AABEE 0%, #229ED9 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .tg-btn-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.15;
+  }
+  .tg-btn-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+  .tg-btn-sub {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    color: #0284c7;
+  }
+  .tg-btn-count {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--emerald-bg);
+    color: var(--emerald);
+    border: 1px solid var(--emerald-border);
+    margin-left: 2px;
+  }
   .status-dot-wrap {
     position: relative;
     width: 8px;
@@ -1112,9 +1177,17 @@
         <div class="brand-desc">Post-Quantum Automotive Security Operations Console (PQC-02 · Real ESP32 HIL)</div>
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
-        <button class="header-status-pill" id="tg-pill-btn" onclick="openTelegramModal()" style="cursor:pointer; background:var(--blue-bg); border-color:var(--blue-border); color:var(--blue);">
-          <span>📲</span>
-          <span id="tg-pill-text">Telegram Alerts (@autoqryptbot)</span>
+        <button class="tg-connect-btn" id="tg-pill-btn" onclick="openTelegramModal()" title="Connect Phone or Dispatch VSOC Telegram Alerts">
+          <span class="tg-icon-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M21.4 2.6L2.7 9.8c-1.2.5-1.2 1.2-.2 1.5l4.8 1.5 11.1-7c.5-.3 1-.1.6.2l-9 8.1-.3 4.9c.5 0 .7-.2 1-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8L22.7 4c.3-1.2-.5-1.8-1.3-1.4z" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="tg-btn-meta">
+            <span class="tg-btn-title">Telegram Alerts</span>
+            <span class="tg-btn-sub">@autoqryptbot · QR</span>
+          </span>
+          <span class="tg-btn-count" id="tg-pill-text">1 Live</span>
         </button>
         <div class="header-status-pill" id="conn-pill">
           <span class="status-dot-wrap">
@@ -1566,41 +1639,66 @@
 
   </main>
 
-  <!-- Telegram Phone Alerts Modal -->
+  <!-- Enterprise VSOC Mobile Telematics & Incident Dispatch Modal -->
   <div class="modal-backdrop" id="tg-modal" onclick="if(event.target===this) toggleTelegramModal(false)">
-    <div class="modal-dialog" style="max-width: 560px;">
+    <div class="modal-dialog" style="max-width: 720px;">
       <div class="modal-header">
-        <h3 class="modal-title">📲 Connect Phone to Telegram Alerts (@autoqryptbot)</h3>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="tag-chip" style="background:#0f172a; color:#ffffff; border-color:#0f172a;">ISO/SAE 21434</span>
+          <h3 class="modal-title">VSOC Mobile Telematics &amp; Incident Dispatch (@autoqryptbot)</h3>
+        </div>
         <button class="modal-close-btn" onclick="toggleTelegramModal(false)">✕</button>
       </div>
       <div class="modal-body">
-        <div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
-          <div style="background:#ffffff; border:1px solid var(--border); border-radius:8px; padding:10px; text-align:center;">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://t.me/autoqryptbot?start=subscribe" alt="Scan for @autoqryptbot" width="140" height="140" style="display:block; border-radius:4px;">
-            <div style="font-family:var(--font-mono); font-size:10px; color:var(--text-muted); margin-top:6px;">Scan with Phone Camera</div>
-          </div>
-          <div style="flex:1; min-width:220px; display:flex; flex-direction:column; gap:10px;">
-            <div style="font-size:13px; font-weight:600; color:var(--text-primary);">How any user or judge gets live alerts:</div>
-            <ol style="padding-left:18px; display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--text-secondary);">
-              <li>Scan the QR code or open <a href="https://t.me/autoqryptbot?start=subscribe" target="_blank" style="color:var(--blue); font-weight:600;">t.me/autoqryptbot</a></li>
-              <li>Tap <strong>Start</strong> inside Telegram (no phone number needed).</li>
-              <li>Click <strong>Refresh Connected Phones</strong> below — every connected phone automatically receives live OTA &amp; attack summaries.</li>
-            </ol>
-            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
-              <button class="btn-info-modal" style="margin-left:0; background:var(--emerald);" onclick="sendTelegramTestAlert()" id="tg-test-btn">🔔 Send Test Alert</button>
-              <button class="btn-info-modal" style="margin-left:0;" onclick="refreshTelegramStatus(true)">↻ Refresh Connected Phones</button>
+        <div style="display:grid; grid-template-columns: 185px 1fr; gap:18px; align-items:start;">
+          <div style="background:var(--bg-subtle); border:1px solid var(--border); border-radius:6px; padding:12px; text-align:center;">
+            <div style="background:#ffffff; border:1px solid var(--border); border-radius:4px; padding:8px; display:inline-block;">
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://t.me/autoqryptbot?start=subscribe" alt="Scan for @autoqryptbot" width="142" height="142" style="display:block;">
             </div>
-            <div id="tg-feedback" style="font-family:var(--font-mono); font-size:11px; color:var(--emerald); display:none;"></div>
+            <div style="font-family:var(--font-mono); font-size:10.5px; font-weight:700; color:var(--text-primary); margin-top:8px;">ENDPOINT ENROLLMENT</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Scan QR or open <a href="https://t.me/autoqryptbot?start=subscribe" target="_blank" style="color:var(--blue); font-weight:600; text-decoration:none;">t.me/autoqryptbot</a> and tap <strong>Start</strong>.</div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <div class="modal-section-title">Automated Out-of-Band Incident Telemetry</div>
+              <p style="font-size:12px; color:var(--text-secondary);">
+                Every OTA deployment and silicon verification event generates a signed forensic incident report (with SHA3-256 package digest and per-verifier cycle timing) pushed in real time to all enrolled VSOC operator endpoints.
+              </p>
+            </div>
+
+            <div class="modal-callout" style="padding:10px 12px;">
+              <div style="font-family:var(--font-mono); font-size:10.5px; font-weight:700; color:var(--text-primary); text-transform:uppercase; margin-bottom:6px;">2-Way Mobile Command Interface (Execute from Phone)</div>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-family:var(--font-mono); font-size:11px;">
+                <div><code style="color:var(--blue); font-weight:600;">/status</code> — Live ECU slot &amp; NVS lock</div>
+                <div><code style="color:var(--blue); font-weight:600;">/last</code> — Last SHA3 forensic receipt</div>
+                <div><code style="color:var(--emerald); font-weight:600;">/update</code> — Dispatch genuine OEM OTA</div>
+                <div><code style="color:var(--crimson); font-weight:600;">/attack</code> — Inject adversarial threat</div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <button class="btn-info-modal" style="margin-left:0; background:var(--emerald);" onclick="sendTelegramTestAlert()" id="tg-test-btn">Dispatch Diagnostic Report</button>
+              <button class="btn-info-modal" style="margin-left:0;" onclick="refreshTelegramStatus(true)">Sync Operator Endpoints</button>
+              <span id="tg-feedback" style="font-family:var(--font-mono); font-size:11px; color:var(--emerald); display:none;"></span>
+            </div>
           </div>
         </div>
-        <div class="modal-callout" style="margin-top:4px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <strong>Connected Phones / Chats</strong>
-            <span class="tag-chip" id="tg-sub-count">1 Connected</span>
-          </div>
-          <div id="tg-sub-list" style="font-family:var(--font-mono); font-size:11.5px; color:var(--text-secondary);">
-            Loading subscribers...
-          </div>
+
+        <div class="table-container" style="margin-top:4px;">
+          <table class="enterprise-table">
+            <thead>
+              <tr>
+                <th>Enrolled VSOC Operator</th>
+                <th>Endpoint ID</th>
+                <th>Clearance Role</th>
+                <th>Channel Status</th>
+              </tr>
+            </thead>
+            <tbody id="tg-sub-list">
+              <tr><td colspan="4" style="color:var(--text-muted); font-family:var(--font-mono);">Synchronizing operator endpoints...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1692,18 +1790,25 @@
         if (!res.ok) return;
         const st = await res.json();
         const count = st.subscriber_count || 0;
-        if ($('tg-pill-text')) $('tg-pill-text').innerText = `Telegram Alerts (${count} Phone${count === 1 ? '' : 's'})`;
-        if ($('tg-sub-count')) $('tg-sub-count').innerText = `${count} Connected`;
+        if ($('tg-pill-text')) $('tg-pill-text').innerText = `${count} Live`;
         if ($('tg-sub-list')) {
           if (st.subscribers && st.subscribers.length) {
-            $('tg-sub-list').innerHTML = st.subscribers.map(s => `• <strong>${esc(s.name)}</strong> <span style="color:var(--text-muted);">(Chat ${esc(s.chat_id_masked)})</span>`).join('<br>');
+            $('tg-sub-list').innerHTML = st.subscribers.map(s => `
+              <tr>
+                <td style="font-weight:600; color:var(--text-primary);">${esc(s.name)}${s.username ? ' <span style="color:var(--text-muted); font-weight:400;">(@' + esc(s.username) + ')</span>' : ''}</td>
+                <td class="num">${esc(s.chat_id_masked)}</td>
+                <td class="num">${esc(s.role || 'VSOC_OPERATOR')}</td>
+                <td class="pass">ACTIVE · TLS 1.3</td>
+              </tr>
+            `).join('');
           } else {
-            $('tg-sub-list').innerText = 'No phones connected yet. Scan the QR code above and tap Start!';
+            $('tg-sub-list').innerHTML = '<tr><td colspan="4" style="color:var(--text-muted); font-family:var(--font-mono);">No endpoints enrolled. Scan QR code above and tap Start in Telegram.</td></tr>';
           }
         }
         if (showFeedback && $('tg-feedback')) {
-          $('tg-feedback').style.display = 'block';
-          $('tg-feedback').innerText = `✓ Synced with @autoqryptbot (${count} phone${count === 1 ? '' : 's'} active)`;
+          $('tg-feedback').style.display = 'inline';
+          $('tg-feedback').style.color = 'var(--emerald)';
+          $('tg-feedback').innerText = `Synced (${count} active)`;
         }
       } catch (e) {}
     }
@@ -1712,17 +1817,17 @@
       const btn = $('tg-test-btn');
       const fb = $('tg-feedback');
       if (btn) btn.disabled = true;
-      if (fb) { fb.style.display = 'block'; fb.style.color = 'var(--blue)'; fb.innerText = 'Sending test alert to connected phones...'; }
+      if (fb) { fb.style.display = 'inline'; fb.style.color = 'var(--blue)'; fb.innerText = 'Dispatching diagnostic report...'; }
       try {
         const res = await fetch('/api/telegram/test', { method: 'POST', headers: { 'X-AutoQrypt': '1' } });
         const data = await res.json();
         await refreshTelegramStatus(false);
         if (fb) {
           fb.style.color = data.ok ? 'var(--emerald)' : 'var(--crimson)';
-          fb.innerText = data.ok ? '✓ Test alert delivered to your Telegram!' : '⚠ Could not send (tap Start on @autoqryptbot first)';
+          fb.innerText = data.ok ? 'Diagnostic report delivered to VSOC endpoints' : 'Dispatch failed (enroll endpoint first)';
         }
       } catch (e) {
-        if (fb) { fb.style.color = 'var(--crimson)'; fb.innerText = '⚠ Failed to reach server'; }
+        if (fb) { fb.style.color = 'var(--crimson)'; fb.innerText = 'Server unreachable'; }
       } finally {
         if (btn) btn.disabled = false;
       }

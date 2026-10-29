@@ -155,10 +155,12 @@ class SendPackage(unittest.TestCase):
                 total_ms=12.4,
             )
         self.assertEqual(len(sent), 2)
-        self.assertIn("AutoQrypt ESP32: Update Successful", sent[0])
+        self.assertIn("[VSOC-PASS]", sent[0])
         self.assertIn("ALL_CHECKS_PASSED", sent[0])
-        self.assertIn("AutoQrypt OTA Blocked (VEH-1)", sent[1])
+        self.assertIn("Forensic SHA3:", sent[0])
+        self.assertIn("[VSOC-CRIT]", sent[1])
         self.assertIn("ROLLBACK_ATTACK_DETECTED", sent[1])
+        self.assertIn("Forensic SHA3:", sent[1])
 
 
 if __name__ == "__main__":

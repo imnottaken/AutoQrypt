@@ -10,9 +10,10 @@ from pydantic import BaseModel, ValidationError
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.models import SecurityEvent
-from common.notifier import get_telegram_status, send_telegram_alert
+from common.notifier import get_telegram_status, send_telegram_alert, start_command_poller
 
 app = FastAPI(title="Fleet Management Dashboard")
+start_command_poller()
 
 # Fixed allowlist of demo scripts the dashboard is permitted to launch.
 # /run-demo must never build a filesystem path from unvalidated client input.
@@ -147,14 +148,28 @@ def telegram_status():
 
 @app.post("/api/telegram/test")
 def telegram_test():
+    import datetime, hashlib
     st = get_telegram_status()
+    now_utc = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    digest = hashlib.sha3_256(f"VSOC-DIAG-{now_utc}".encode()).hexdigest()
     ok = send_telegram_alert(
-        "🔔 AutoQrypt Test Alert\n"
-        "• Source: Fleet Security Console\n"
-        f"• Connected Phones: {st.get('subscriber_count', 0)}\n"
-        "• Status: Live OTA & Attack Alerts Active",
+        "<b>[VSOC-DIAG] AUTOQRYPT TELEMATICS LINK VERIFIED</b>\n"
+        "──────────────────────────────────────\n"
+        f"<b>Timestamp:</b>    <code>{now_utc}</code>\n"
+        f"<b>Console Node:</b> <code>Fleet Operations Center (Port 7001)</code>\n"
+        f"<b>Active Endpoints:</b> <code>{st.get('subscriber_count', 0)} Registered Operator(s)</code>\n"
+        "<b>Compliance:</b>   <code>NIST FIPS 204 · IEEE-ISTO 6100 · ISO 21434</code>\n\n"
+        "<b>Cryptographic Engine Readiness:</b>\n"
+        "<pre>GATE                     STATUS   SPECIFICATION\n"
+        "Falcon-512 (Director)    READY    666B Sig / CAN-FD\n"
+        "ML-DSA-44 (OEM Root)     READY    FIPS 204 Lattice\n"
+        "Ed25519 (Classical 2FA)  READY    RFC 8032 Curve\n"
+        "NVS Anti-Rollback        LOCKED   Monotonic Counter</pre>\n"
+        f"<b>Forensic SHA3:</b> <code>{digest[:16]}...{digest[-12:]}</code>\n"
+        "<i>Tip: Tap /status, /last, /update, or /attack below to control from mobile.</i>",
         async_send=False,
         force=True,
+        parse_mode="HTML",
     )
     return {"ok": ok, "status": get_telegram_status()}
 

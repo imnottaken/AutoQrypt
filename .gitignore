@@ -36,6 +36,5 @@ firmware/build*/
 firmware/sdkconfig
 firmware/sdkconfig.old
 
-# Auto-generated HIL demo packages
-demo_packages/
+# Scratch
 .taste-skill/
